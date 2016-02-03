@@ -1,0 +1,13 @@
+%%-*- mode: erlang -*-
+{application, occi,
+ [
+  {id, ""},
+  {description, "OCCI Core Implementation"},
+  {mod, {occi , []}},
+  {modules, []},
+  {registered, []},
+  {applications, 
+   [ 
+   ]},
+  {env, []}
+ ]}.

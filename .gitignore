@@ -1,0 +1,24 @@
+# Garbage
+*~
+erl_crash.dump
+
+# Generic erlang build output
+*.beam
+*.app
+/deps
+/*.d
+/.erlang.mk
+
+# Specific build output
+
+# Dialyzer output
+/.*.plt
+/.deps_plt
+
+# Test output
+/.eunit
+/log/
+/logs/
+
+# Dist
+/_rel
