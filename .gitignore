@@ -8,6 +8,7 @@ erl_crash.dump
 /deps
 /*.d
 /.erlang.mk
+/ebin
 
 # Specific build output
 
