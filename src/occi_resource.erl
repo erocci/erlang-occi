@@ -7,7 +7,9 @@
 
 -module(occi_resource).
 
--mixin([occi_entity]).
+-include_lib("mixer/include/mixer.hrl").
+
+-mixin([{occi_entity, except, [new/2]}]).
 
 -export([new/2,
 	 summary/1,
@@ -46,5 +48,11 @@ summary_test() ->
     R = new("http://example.org:8081/myresource", "http://example.org/occi#type"),
     R0 = summary(<<"my summary">>, R),
     ?assertMatch("my summary", summary(R0)).
+
+mixin_test_() ->
+    R = new("http://example.org:8081/myresource", "http://example.org/occi#type"),
+    [
+     ?_assertMatch({uri, _, _, _, _, _, _, _, _}, id(R))
+    ].
 
 -endif.
