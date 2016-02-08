@@ -29,7 +29,6 @@
 
 
 %% @throws {invalid_uri, iolist()}
-%% @throws {unknown_category, term()}
 -spec new(uri:t()) -> t().
 new(Id) ->
     new(Id, ?category_id).

@@ -76,10 +76,11 @@ attributes(CatId) ->
 core_categories() ->
     Op = fun() ->
 		 E = occi_entity:category(),
-		 R = occi_resource:category(),
 		 ok = mnesia:write(category, #category{id=occi_category:id(E), value=E}, write),
-		 ok = mnesia:write(category, #category{id=occi_category:id(R), value=R}, write)
-		 %%ok = mnesia:write(category, occi_link:category(), write)
+		 R = occi_resource:category(),
+		 ok = mnesia:write(category, #category{id=occi_category:id(R), value=R}, write),
+		 L = occi_link:category(),
+		 ok = mnesia:write(category, #category{id=occi_category:id(L), value=L}, write)
 	 end,
     {atomic, ok} = mnesia:transaction(Op),
     ok.		 

@@ -78,10 +78,7 @@ attributes(C) ->
 
 %% @throws {invalid_cid, term()}
 -spec parse_id(string() | binary()) -> id().
-parse_id(Id) when is_binary(Id) ->
-    parse_id(binary_to_list(Id));
-
-parse_id(Id) when is_list(Id) ->
+parse_id(Id) when is_list(Id); is_binary(Id) ->
     try uri:from_string(Id) of
 	Uri ->
 	    Scheme = binary_to_list(uri:to_string(uri:frag(Uri, <<>>))) ++ "#",
