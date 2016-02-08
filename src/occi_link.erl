@@ -16,8 +16,6 @@
 	 source/1,
 	 target/1]).
 
--export([category/0]).
-
 -type t() :: occi_entity:t().
 -export_type([t/0]).
 
@@ -67,13 +65,6 @@ source(E) ->
 -spec target(t()) -> uri:t().
 target(E) ->
     maps:get(target, E).
-
-%%%
-%%% internal
-%%%
-category() ->
-    C = occi_category:new(?category_id),
-    occi_category:title("Link", C).
 
 %%%
 %%% eunit

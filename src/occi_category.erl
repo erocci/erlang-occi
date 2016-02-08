@@ -7,21 +7,27 @@
 
 -module(occi_category).
 
--export([new/1, 
-	 new/2,
+-export([new/2, 
+	 new/3,
 	 id/1,
+	 class/1,
 	 title/1,
 	 title/2,
 	 attribute/2,
 	 attributes/1]).
 
+-export([entity/0,
+	 resource/0,
+	 link_/0]).
+
 -export([parse_id/1]).
 
+-type class() :: category | kind | mixin.
 -type id() :: {Scheme :: string(), Term :: string()}.
 
 -type t() :: #{}.
 
--export_type([id/0, t/0]).
+-export_type([id/0, class/0, t/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -29,25 +35,38 @@
 
 
 %% @throws {invalid_cid, term()}
--spec new(Id :: string() | id()) -> t().
-new(CatId) when is_list(CatId); is_binary(CatId) ->
-    new(parse_id(CatId));
+-spec new(Id :: string() | id(), Cls :: class()) -> t().
+new(CatId, Cls) when is_list(CatId); is_binary(CatId) ->
+    new(parse_id(CatId), Cls);
 
-new({Scheme, Term}) ->
+new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin ->
     #{
      id => {Scheme, Term},
      title => "",
+     class => Cls,
      attributes => #{}
-    }.
+     };
+
+new({"http://schemas.ogf.org/occi/core#", "entity"}=Id, category) ->
+    #{ id => Id,
+       title => "Entity",
+       class => category,
+       attributes => "" }.
+
 
 
 %% throws {invalid_cid, {term(), term()}}
--spec new(Scheme :: string(), Term :: string()) -> t().
-new(Scheme, Term) when is_list(Scheme), is_list(Term) ->
-    new({Scheme, Term});
+-spec new(Scheme :: string(), Term :: string(), Cls :: class()) -> t().
+new(Scheme, Term, Cls) when is_list(Scheme), is_list(Term) ->
+    new({Scheme, Term}, Cls);
 
-new(Scheme, Term) ->
+new(Scheme, Term, _Cls) ->
     throw({invalid_cid, {Scheme ,Term}}).
+
+
+-spec class(t()) -> class().
+class(C) ->
+    maps:get(class, C).
 
 
 -spec id(t()) -> occi_category:id().
@@ -96,7 +115,28 @@ parse_id(Id) when is_list(Id); is_binary(Id) ->
 parse_id(Id) ->
     throw({invalid_cid, Id}).
 
+%%%
+%%% constructors
+%%%
+entity() ->
+    #{ id => {"http://schemas.ogf.org/occi/core#", "entity"},
+       title => "Entity",
+       class => category,
+       attributes => #{} }.
 
+
+resource() ->
+    #{ id => {"http://schemas.ogf.org/occi/core#", "resource"},
+       title => "Resource",
+       class => category,
+       attributes => #{} }.
+
+
+link_() ->
+    #{ id => {"http://schemas.ogf.org/occi/core#", "link"},
+       title => "Link",
+       class => category,
+       attributes => #{} }.
 
 %%%
 %%% eunit

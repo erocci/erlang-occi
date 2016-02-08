@@ -16,8 +16,6 @@
 	 summary/1,
 	 summary/2]).
 
--export([category/0]).
-
 -type t() :: occi_entity:t().
 -export_type([t/0]).
 
@@ -54,13 +52,6 @@ summary(Summary, E) when is_binary(Summary) ->
 summary(Summary, E) when is_list(Summary) ->
     E#{ summary := Summary }.
 
-
-%%%
-%%% internal
-%%%
-category() ->
-    C = occi_category:new(?category_id),
-    occi_category:title("Resource", C).
 
 %%%
 %%% eunit

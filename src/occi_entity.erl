@@ -26,8 +26,6 @@
 	 get/2,
 	 set/3]).
 
--export([category/0]).
-
 -type t() :: #{}.
 -export_type([t/0]).
 
@@ -140,10 +138,6 @@ set(Key, Value, E) ->
 %%%
 %%% internal
 %%%
-category() ->
-    C = occi_category:new(?category_id),
-    occi_category:title("Entity", C).
-
 get_default(Key, E) ->
     Categories = maps:get(mixins, E) ++ [maps:get(kind, E)],
     occi_attribute:default(occi_models:attribute(Key, Categories)).
