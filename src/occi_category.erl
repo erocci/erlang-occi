@@ -7,9 +7,18 @@
 
 -module(occi_category).
 
+-export([new/1, 
+	 new/2,
+	 id/1,
+	 title/1,
+	 title/2,
+	 attribute/2,
+	 attributes/1]).
+
 -export([parse_id/1]).
 
 -type id() :: {Scheme :: string(), Term :: string()}.
+
 -type t() :: #{}.
 
 -export_type([id/0, t/0]).
@@ -18,6 +27,56 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+
+%% @throws {invalid_cid, term()}
+-spec new(Id :: string() | id()) -> t().
+new(CatId) when is_list(CatId); is_binary(CatId) ->
+    new(parse_id(CatId));
+
+new({Scheme, Term}) ->
+    #{
+     id => {Scheme, Term},
+     title => "",
+     attributes => #{}
+    }.
+
+
+%% throws {invalid_cid, {term(), term()}}
+-spec new(Scheme :: string(), Term :: string()) -> t().
+new(Scheme, Term) when is_list(Scheme), is_list(Term) ->
+    new({Scheme, Term});
+
+new(Scheme, Term) ->
+    throw({invalid_cid, {Scheme ,Term}}).
+
+
+-spec id(t()) -> occi_category:id().
+id(C) ->
+    maps:get(id, C).
+
+
+-spec title(t()) -> string().
+title(C) ->
+    maps:get(title, C).
+
+
+-spec title(string(), t()) -> t().
+title(Title, C) ->
+    C#{ title := Title }.
+
+
+-spec attribute(occi_attribute:key(), t()) -> occi_attribute:t().
+attribute(Key, T) ->
+    Attrs = maps:get(attributes, T),
+    map:get(Key, Attrs, undefined).
+
+
+-spec attributes(occi_category:t()) -> map().
+attributes(C) ->
+    maps:get(attributes, C).
+
+
+%% @throws {invalid_cid, term()}
 -spec parse_id(string() | binary()) -> id().
 parse_id(Id) when is_binary(Id) ->
     parse_id(binary_to_list(Id));
@@ -39,6 +98,8 @@ parse_id(Id) when is_list(Id) ->
 
 parse_id(Id) ->
     throw({invalid_cid, Id}).
+
+
 
 %%%
 %%% eunit

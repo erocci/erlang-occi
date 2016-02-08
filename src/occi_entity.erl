@@ -1,27 +1,52 @@
 %%% @author Jean Parpaillon <jean.parpaillon@free.fr>
 %%% @copyright (C) 2016, Jean Parpaillon
-%%% @doc
+%%% @doc Represents an OCCI entity.
+%%%
+%%% Uses maps for internal representation.
+%%% Type checking is achieved with check/1. When setting an attribute,
+%%% only attribute existence is checked.
 %%%
 %%% @end
+%%%
+%%% @todo Should type check when setting attribute ? (see renderings 
+%%% where attributes can be set before categories declaration)
 %%% Created :  3 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
 
 -module(occi_entity).
 
--export([new/2,
+-export([new/1, 
+	 new/2,
 	 id/1,
 	 kind/1,
 	 mixins/1,
 	 add_mixin/2,
 	 title/1,
-	 title/2]).
+	 title/2,
+	 attributes/1,
+	 get/2,
+	 set/3]).
+
+-export([category/0]).
 
 -type t() :: #{}.
 -export_type([t/0]).
+
+-define(category_id, {"http://schemas.ogf.org/occi/core#", "entity"}).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+
+%% @throws {invalid_uri, iolilst()}
+%% @throws {unknown_category, term()}
+-spec new(uri:t()) -> t().
+new(Id) ->
+    new(Id, ?category_id).
+
+
+%% @throws {invalid_uri, iolist()}
+%% @throws {unknown_category, term()}
 -spec new(uri:t() | string() | binary(), occi_category:id() | string() | binary()) -> t().
 new(IdStr, KindId) when is_list(IdStr); is_binary(IdStr) ->
     try uri:from_string(IdStr) of
@@ -34,12 +59,15 @@ new(IdStr, KindId) when is_list(IdStr); is_binary(IdStr) ->
 new(Id, KindId) when is_list(KindId); is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId));
 
-new(Id, {Scheme, Term}) ->
+new(Id, {_Scheme, _Term}=CatId) ->
+    Attrs = maps:fold(fun (K, _V, Acc) ->
+			      Acc#{ K => undefined }
+		      end, #{}, occi_models:attributes(CatId)),
     #{id => Id,
-      kind => {Scheme, Term},
+      kind => CatId,
       mixins => [],
       title => "",
-      attributes => #{}}.
+      attributes => Attrs}.
 
 
 -spec id(t()) -> uri:t().
@@ -63,7 +91,13 @@ add_mixin(MixinId, E) when is_list(MixinId); is_binary(MixinId) ->
 
 add_mixin(MixinId, E) ->
     Mixins = maps:get(mixins, E),
-    E#{ mixins := [ MixinId | Mixins ]}.
+    Attrs = maps:fold(fun (K, _V, Acc) ->
+			      case maps:is_key(K, Acc) of
+				  true -> Acc;
+				  false -> Acc#{ K => undefined }
+			      end
+		      end, maps:get(attributes, E), occi_models:attributes(MixinId)),
+    E#{ mixins := [ MixinId | Mixins ], attributes := Attrs }.
 
 
 -spec title(t()) -> string().
@@ -78,6 +112,43 @@ title(Title, E) when is_binary(Title) ->
 title(Title, E) when is_list(Title) ->
     E#{ title := Title }.
 
+
+-spec attributes(t()) -> map().
+attributes(E) ->
+    maps:get(attributes, E).
+
+
+-spec get(occi_attribute:key(), t()) -> occi_attribute:value().
+get(Key, E) ->
+    try maps:get(Key, maps:get(attributes, E)) of
+	Value -> Value
+    catch error:{badkey, _} ->
+	    get_default(Key, E)
+    end.
+
+
+%% @throws {invalid_key, occi_attribute:key()}
+-spec set(occi_attribute:key(), occi_attribute:value(), t()) -> occi_attribute:value().
+set(Key, Value, E) ->
+    Attrs = maps:get(attributes, E),
+    try maps:update(Key, Value, Attrs) of
+	Attrs2 -> E#{ attributes := Attrs2 }
+    catch error:{badkey, Key} ->
+	    throw({invalid_key, Key})
+    end.
+
+%%%
+%%% internal
+%%%
+category() ->
+    C = occi_category:new(?category_id),
+    occi_category:title("Entity", C).
+
+get_default(Key, E) ->
+    Categories = maps:get(mixins, E) ++ [maps:get(kind, E)],
+    occi_attribute:default(occi_models:attribute(Key, Categories)).
+
+
 %%%
 %%% eunit
 %%%
@@ -86,7 +157,7 @@ new_test_() ->
     [
      ?_assertThrow({invalid_uri, ""}, new("", "")),
      ?_assertThrow({invalid_cid, ""}, new("http://example.org:8081/myentity0", "")),
-     ?_assertMatch(#{ id := {uri, <<"http">>, <<>>, <<"example.org">>, 8081, <<"/myentity0">>, [], <<>>, <<"http://example.org:8081/myentity0">>}, kind := {"http://example.org/occi#", "type"} }, new("http://example.org:8081/myentity0", "http://example.org/occi#type"))
+     ?_assertMatch(#{ id := {uri, <<"http">>, <<>>, <<"example.org">>, 8081, <<"/myentity0">>, [], <<>>, <<"http://example.org:8081/myentity0">>}, kind := {"http://schemas.ogf.org/occi/core#", "entity"} }, new("http://example.org:8081/myentity0", "http://schemas.ogf.org/occi/core#entity"))
     ].
 
 -endif.

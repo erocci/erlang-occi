@@ -13,7 +13,7 @@
 	 stop/1]).
 
 start(_Type, _Args) ->
-	occi_sup:start_link().
+    occi_sup:start_link().
 
 stop(_State) ->
 	ok.

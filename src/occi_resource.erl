@@ -9,19 +9,34 @@
 
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/2]}]).
+-mixin([{occi_entity, except, [new/1, new/2, category/0]}]).
 
--export([new/2,
+-export([new/1, 
+	 new/2,
 	 summary/1,
 	 summary/2]).
 
+-export([category/0]).
+
 -type t() :: occi_entity:t().
 -export_type([t/0]).
+
+-define(category_id, {"http://schemas.ogf.org/occi/core#", "resource"}).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+
+%% @throws {invalid_uri, iolist()}
+%% @throws {unknown_category, term()}
+-spec new(uri:t()) -> t().
+new(Id) ->
+    new(Id, ?category_id).
+
+
+%% @throws {invalid_uri, iolist()}
+%% @throws {unknown_category, term()}
 -spec new(uri:t() | string() | binary(), occi_category:id() | string() | binary()) -> t().
 new(Id, KindId) ->
     Entity = occi_entity:new(Id, KindId),
@@ -40,19 +55,24 @@ summary(Summary, E) when is_binary(Summary) ->
 summary(Summary, E) when is_list(Summary) ->
     E#{ summary := Summary }.
 
+
+%%%
+%%% internal
+%%%
+category() ->
+    C = occi_category:new(?category_id),
+    occi_category:title("Resource", C).
+
 %%%
 %%% eunit
 %%%
 -ifdef(TEST).
+core() ->
+    R = new("http://example.org/myresource0"),
+    ?assertEqual(?category_id, kind(R)).
+
 summary_test() ->
-    R = new("http://example.org:8081/myresource", "http://example.org/occi#type"),
+    R = new("http://example.org:8081/myresource", "http://schemas.ogf.org/occi/core#resource"),
     R0 = summary(<<"my summary">>, R),
     ?assertMatch("my summary", summary(R0)).
-
-mixin_test_() ->
-    R = new("http://example.org:8081/myresource", "http://example.org/occi#type"),
-    [
-     ?_assertMatch({uri, _, _, _, _, _, _, _, _}, id(R))
-    ].
-
 -endif.
