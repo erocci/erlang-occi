@@ -13,6 +13,7 @@
 -export([load_path/2,
 	 load/2,
 	 category/1,
+	 add_category/2,
 	 attribute/2,
 	 attributes/1]).
 
@@ -85,6 +86,17 @@ category(Id) ->
     end.
 
 
+-spec add_category(occi_extension:id(), occi_category:t()) -> ok.
+add_category(ExtId, Cat) ->
+    C = #category{id=occi_category:id(Cat), extension=ExtId, value=Cat},
+    case mnesia:transaction(fun() -> mnesia:write(C) end) of
+	{atomic, ok} ->
+	    ok;
+	{aborted, Err} ->
+	    throw(Err)
+    end.
+
+
 %% @throws {unknown_category, term()}
 -spec attribute(occi_attribute:key(), [occi_category:id()]) -> occi_attribute:t() | undefined.
 attribute(_Key, []) ->
@@ -116,30 +128,17 @@ attributes(CatId) ->
 %%
 %% Priv
 %%
-entity() ->
-    E = occi_category:entity(),
-    #category{id=occi_category:id(E), extension=?core_scheme, value=E}.
-
-resource() ->
-    R = occi_category:resource(),
-    #category{id=occi_category:id(R), extension=?core_scheme, value=R}.
-
-link_() ->
-    L = occi_category:link_(),
-    #category{id=occi_category:id(L), extension=?core_scheme, value=L}.
-
 core_categories() ->
-    Op = fun() ->
-		 ok = mnesia:write(category, entity(), write),
-		 ok = mnesia:write(category, resource(), write),
-		 ok = mnesia:write(category, link_(), write)
-	 end,
-    {atomic, ok} = mnesia:transaction(Op),
+    ok = add_category(?core_scheme, occi_category:entity()),
+    ok = add_category(?core_scheme, occi_category:resource()),
+    ok = add_category(?core_scheme, occi_category:link_()),
     ok.
 
 
-load_extension(Extension) ->
-    ok = load_imports(occi_extension:imports(Extension)).
+load_extension(E) ->
+    ok = load_imports(occi_extension:imports(E)),
+    ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
+    ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
 
 
 %% Check extension exists in the database, throw error if not
@@ -156,6 +155,14 @@ load_imports([ Scheme | Imports ]) ->
 	{atomic, _} ->
 	    load_extension(Imports)
     end.
+
+
+load_categories(_Ext, []) ->
+    ok;
+
+load_categories(Ext, [ Cat | Categories ]) ->
+    ok = add_category(Ext, Cat),
+    load_categories(Ext, Categories).
 
 
 parser({<<"application">>, <<"xml">>, []}) -> occi_parser_xml;
