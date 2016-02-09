@@ -11,6 +11,7 @@ erl_crash.dump
 /ebin
 
 # Specific build output
+/annotations.config
 
 # Dialyzer output
 /.*.plt

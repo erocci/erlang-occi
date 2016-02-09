@@ -14,7 +14,9 @@
 	 title/1,
 	 title/2,
 	 attribute/2,
-	 attributes/1]).
+	 add_attribute/2,
+	 attributes/1,
+	 add_action/2]).
 
 -export([entity/0,
 	 resource/0,
@@ -22,7 +24,7 @@
 
 -export([parse_id/1]).
 
--type class() :: category | kind | mixin.
+-type class() :: kind | mixin | action.
 -type id() :: {Scheme :: string(), Term :: string()}.
 
 -type t() :: #{}.
@@ -39,20 +41,21 @@
 new(CatId, Cls) when is_list(CatId); is_binary(CatId) ->
     new(parse_id(CatId), Cls);
 
-new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin ->
+new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
     #{
-     id => {Scheme, Term},
-     title => "",
-     class => Cls,
-     attributes => #{}
+       id => {Scheme, Term},
+       title => "",
+       class => Cls,
+       attributes => #{}
      };
 
-new({"http://schemas.ogf.org/occi/core#", "entity"}=Id, category) ->
-    #{ id => Id,
-       title => "Entity",
-       class => category,
-       attributes => "" }.
-
+new({"http://schemas.ogf.org/occi/core#", "entity"}=Id, kind) ->
+    #{ 
+     id => Id,
+     title => "Entity",
+     class => kind,
+     attributes => "" 
+    }.
 
 
 %% throws {invalid_cid, {term(), term()}}
@@ -85,14 +88,26 @@ title(Title, C) ->
 
 
 -spec attribute(occi_attribute:key(), t()) -> occi_attribute:t().
-attribute(Key, T) ->
-    Attrs = maps:get(attributes, T),
+attribute(Key, C) ->
+    Attrs = maps:get(attributes, C),
     map:get(Key, Attrs, undefined).
+
+
+-spec add_attribute(occi_attribute:t(), t()) -> t().
+add_attribute(Attr, C) ->
+    Attrs = maps:get(attributes, C),
+    C#{ attributes := Attrs#{ occi_attribute:name(Attr) => Attr } }.
 
 
 -spec attributes(occi_category:t()) -> map().
 attributes(C) ->
     maps:get(attributes, C).
+
+
+-spec add_action(occi_action:t(), t()) -> t().
+add_action(Action, #{ class := Cls}=C) when Cls =:= kind; Cls =:= mixin ->
+    Actions = maps:get(actions, C),
+    C#{ actions := Actions#{ occi_action:id(Action) => Action} }.
 
 
 %% @throws {invalid_cid, term()}
@@ -121,21 +136,21 @@ parse_id(Id) ->
 entity() ->
     #{ id => {"http://schemas.ogf.org/occi/core#", "entity"},
        title => "Entity",
-       class => category,
+       class => kind,
        attributes => #{} }.
 
 
 resource() ->
     #{ id => {"http://schemas.ogf.org/occi/core#", "resource"},
        title => "Resource",
-       class => category,
+       class => kind,
        attributes => #{} }.
 
 
 link_() ->
     #{ id => {"http://schemas.ogf.org/occi/core#", "link"},
        title => "Link",
-       class => category,
+       class => kind,
        attributes => #{} }.
 
 %%%

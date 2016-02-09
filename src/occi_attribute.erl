@@ -1,0 +1,87 @@
+%%% @author Jean Parpaillon <jean.parpaillon@free.fr>
+%%% @copyright (C) 2016, Jean Parpaillon
+%%% @doc
+%%%
+%%% @end
+%%% Created :  9 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
+
+-module(occi_attribute).
+
+-export([new/2,
+	 name/1,
+	 type/1,
+	 title/1,
+	 title/2,
+	 required/1,
+	 required/2,
+	 mutable/1,
+	 mutable/2,
+	 default/1,
+	 default/2]).
+
+-type name_t() :: string().
+-type type_t() :: occi_type:t().
+-type t() :: #{}.
+
+-export_type([t/0]).
+
+-spec new(Name :: string(), Type :: type_t()) -> t().
+new(Name, Type) ->
+    #{ 
+     name => Name,
+     type => Type,
+     title => "",
+     required => false,
+     mutable => true,
+     default => undefined
+    }.
+
+
+-spec name(t()) -> name_t().
+name(A) ->
+    maps:get(name, A).
+
+
+-spec type(t()) -> type_t().
+type(A) ->
+    maps:get(type, A).
+
+
+-spec title(t()) -> string().
+title(A) ->
+    maps:get(title, A).
+
+
+-spec title(string(), t()) -> t().
+title(Title, A) ->
+    A#{ title := Title }.
+
+
+-spec required(t()) -> boolean().
+required(A) ->
+    maps:get(required, A).
+
+
+-spec required(boolean(), t()) -> t().
+required(Required, A) when is_boolean(Required) ->
+    A#{ required := Required }.
+
+
+-spec mutable(t()) -> boolean().
+mutable(A) ->
+    maps:get(mutable, A).
+
+
+-spec mutable(boolean(), t()) -> t().
+mutable(Mutable, A) when is_boolean(Mutable) ->
+    A#{ mutable := Mutable}.
+
+
+-spec default(t()) -> occi_type:t().
+default(A) ->
+    maps:get(default, A).
+
+
+-spec default(occi_type:t(), t()) -> t().
+default(Value, A) ->
+    A#{ default := Value }.
