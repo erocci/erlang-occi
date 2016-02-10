@@ -47,7 +47,7 @@ init() ->
 
 %% @throws enoent | eacces | eisdir | enotdir | enomem
 -spec load_path(MimeType :: mimetype(), file:filename_all()) -> ok.
-load_path(MimeType, {path, Filename}) ->
+load_path(MimeType, Filename) ->
     case file:read_file(Filename) of
 	{ok, Bin} ->
 	    load(MimeType, Bin);
@@ -87,8 +87,8 @@ category(Id) ->
 
 
 -spec add_category(occi_extension:id(), occi_category:t()) -> ok.
-add_category(ExtId, Cat) ->
-    C = #category{id=occi_category:id(Cat), extension=ExtId, value=Cat},
+add_category(Scheme, Cat) ->
+    C = #category{id=occi_category:id(Cat), extension=Scheme, value=Cat},
     case mnesia:transaction(fun() -> mnesia:write(C) end) of
 	{atomic, ok} ->
 	    ok;
@@ -153,16 +153,16 @@ load_imports([ Scheme | Imports ]) ->
 	{atomic, []} ->
 	    throw({unknown_extension, Scheme});
 	{atomic, _} ->
-	    load_extension(Imports)
+	    load_imports(Imports)
     end.
 
 
-load_categories(_Ext, []) ->
+load_categories(_Scheme, []) ->
     ok;
 
-load_categories(Ext, [ Cat | Categories ]) ->
-    ok = add_category(Ext, Cat),
-    load_categories(Ext, Categories).
+load_categories(Scheme, [ Cat | Categories ]) ->
+    ok = add_category(Scheme, Cat),
+    load_categories(Scheme, Categories).
 
 
 parser({<<"application">>, <<"xml">>, []}) -> occi_parser_xml;
@@ -174,5 +174,34 @@ parser({<<"application">>, <<"occi+json">>, []}) -> occi_parser_json.
 %%% eunit
 %%%
 -ifdef(TEST).
+load_path_test_() ->
+    load_path({<<"application">>, <<"xml">>, []}, filename:join([priv_dir(), "schemas", "occi-infrastructure.xml"])),
+    [
+     ?_assertMatch(kind, 
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "compute"}))),
+     ?_assertMatch(kind,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "network"}))),
+     ?_assertMatch(kind,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "storage"}))),
+     ?_assertMatch(kind,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "storagelink"}))),
+     ?_assertMatch(kind,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}))),
+     ?_assertMatch(mixin,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure/network#", "ipnetwork"}))),
+     ?_assertMatch(mixin, 
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure/networkinterface#", "ipnetworkinterface"}))),
+     ?_assertMatch(mixin,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "os_tpl"}))),
+     ?_assertMatch(mixin,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "resource_tpl"}))),
+     ?_assertMatch(mixin,
+		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "large"}))),
+     ?_assertMatch(mixin,
+		   occi_category:class(category({"http://occi.example.org/occi/infrastructure/os_tpl#", "debian6"})))
+    ].
+
+priv_dir() ->
+    filename:join([filename:dirname(code:which(?MODULE)), "..", "priv"]).
 
 -endif.

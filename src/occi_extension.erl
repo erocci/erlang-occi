@@ -35,8 +35,8 @@ new(Scheme) when is_list(Scheme); is_binary(Scheme) ->
 	    #{ 
 	  name => "",
 	  scheme => Scheme,
-	  kinds => #{},
-	  mixins => #{},
+	  kinds => [],
+	  mixins => [],
 	  imports => []
 	 }
     catch 
@@ -94,10 +94,11 @@ imports(E) ->
 %%% eunit
 %%%
 -ifdef(TEST).
-new_() ->
+new_test_() ->
+    E = new("http://example.org"),
     [
-     ?_assertMatch(#{ name := "", scheme := "http://example.org", kinds := #{}, mixins := #{}, import := [] },
-		   new("http://example.org"))
+     ?_assertMatch("", name(E)),
+     ?_assertMatch("http://example.org", scheme(E))
     ].
 
 -endif.

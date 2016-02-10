@@ -26,8 +26,10 @@
 -spec parse_extension(iolist()) -> occi_extension:t().
 parse_extension(Xml) ->
     case xmerl_sax_parser:stream(Xml, options(fun handle_event/3)) of
-	{ok, Res, _Rest} -> 
-	    Res;
+	{ok, #{ stack := [ {extension, Ext} ] }, _Rest} -> 
+	    Ext;
+	{ok, Else, _Rest} ->
+	    throw({parse_error, Else});
 	{Tag, {_, _, LineNo}, Reason, _EndTags, _EventState}=Err -> 
 	    ?error("[line ~b] parse error: {~p, ~p}", [LineNo, Tag, Reason]),
 	    throw({parse_error, Err})
