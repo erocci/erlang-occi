@@ -18,7 +18,9 @@
 	 attributes/1]).
 
 %% Defines mimetype as in cowlib
--type mimetype() :: {Type :: binary(), SubType :: binary(), Options :: list()}.
+-type mimetype() :: {Type :: binary(), SubType :: binary(), Options :: list()}
+		  | xml
+		  | json.
 
 %% internal
 -define(core_scheme, "http://schemas.ogf.org/occi/core#").
@@ -165,43 +167,16 @@ load_categories(Scheme, [ Cat | Categories ]) ->
     load_categories(Scheme, Categories).
 
 
-parser({<<"application">>, <<"xml">>, []}) -> occi_parser_xml;
-parser({<<"application">>, <<"occi+xml">>, []}) -> occi_parser_xml;
-parser({<<"application">>, <<"json">>, []}) -> occi_parser_json;
-parser({<<"application">>, <<"occi+json">>, []}) -> occi_parser_json.
+parser({<<"application">>, <<"xml">>, []})       -> occi_parser_xml;
+parser({<<"application">>, <<"occi+xml">>, []})  -> occi_parser_xml;
+parser(xml)                                      -> occi_parser_xml;
+parser({<<"application">>, <<"json">>, []})      -> occi_parser_json;
+parser({<<"application">>, <<"occi+json">>, []}) -> occi_parser_json;
+parser(json)                                     -> occi_parser_json.
 
 %%%
 %%% eunit
 %%%
 -ifdef(TEST).
-load_path_test_() ->
-    load_path({<<"application">>, <<"xml">>, []}, filename:join([priv_dir(), "schemas", "occi-infrastructure.xml"])),
-    [
-     ?_assertMatch(kind, 
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "compute"}))),
-     ?_assertMatch(kind,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "network"}))),
-     ?_assertMatch(kind,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "storage"}))),
-     ?_assertMatch(kind,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "storagelink"}))),
-     ?_assertMatch(kind,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}))),
-     ?_assertMatch(mixin,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure/network#", "ipnetwork"}))),
-     ?_assertMatch(mixin, 
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure/networkinterface#", "ipnetworkinterface"}))),
-     ?_assertMatch(mixin,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "os_tpl"}))),
-     ?_assertMatch(mixin,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "resource_tpl"}))),
-     ?_assertMatch(mixin,
-		   occi_category:class(category({"http://schemas.ogf.org/occi/infrastructure#", "large"}))),
-     ?_assertMatch(mixin,
-		   occi_category:class(category({"http://occi.example.org/occi/infrastructure/os_tpl#", "debian6"})))
-    ].
-
-priv_dir() ->
-    filename:join([filename:dirname(code:which(?MODULE)), "..", "priv"]).
 
 -endif.

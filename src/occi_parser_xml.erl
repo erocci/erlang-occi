@@ -63,7 +63,7 @@ handle_event({endPrefixMapping, _Prefix}, _, S) ->
 handle_event({startElement, ?occi_uri, "extension", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Scheme = attr("scheme", A),
     Ext = occi_extension:new(Scheme),
-    E2 = occi_extension:name(attr(name, A, ""), Ext),
+    E2 = occi_extension:name(attr("name", A, ""), Ext),
     S#{ stack => [ {extension, E2} | Stack ] };
 
 handle_event({startElement, ?occi_uri, "import", _QN, A}, _Pos, #{ stack := [ {extension, Ext} | Stack ] }=S) ->
@@ -274,11 +274,5 @@ from_xsd_type(Else, _) ->
 %%% eunit
 %%%
 -ifdef(TEST).
-parse_test() ->
-    {ok, Xml} = file:read_file(filename:join([priv_dir(), "schemas", "occi-infrastructure.xml"])),
-    ?assertMatch(#{}, parse_extension(Xml)).
-
-priv_dir() ->
-    filename:join([filename:dirname(code:which(?MODULE)), "..", "priv"]).
 
 -endif.
