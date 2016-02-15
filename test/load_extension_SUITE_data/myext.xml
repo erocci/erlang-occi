@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<occi:extension xmlns:occi="http://schemas.ogf.org/occi"
+		name="Cusstom"
+		scheme="http://example.org/occi#"
+                status="stable" version="1">
+  <occi:import scheme="http://schemas.ogf.org/occi/infrastructure#" />
+</occi:extension>

@@ -7,10 +7,12 @@
 
 -module(occi_models).
 
+-include("occi_log.hrl").
+
 -export([init/0]).
 -on_load(init/0).
 
--export([load_path/2,
+-export([load_path/1,
 	 load/2,
 	 category/1,
 	 add_category/2,
@@ -18,9 +20,6 @@
 	 attributes/1]).
 
 %% Defines mimetype as in cowlib
--type mimetype() :: {Type :: binary(), SubType :: binary(), Options :: list()}
-		  | xml
-		  | json.
 
 %% internal
 -define(core_scheme, "http://schemas.ogf.org/occi/core#").
@@ -29,10 +28,12 @@
 		   extension :: occi_extension:id(),
 		   value     :: occi_category:t()}.
 
+-type extension_status() :: loaded | pending | {error, term()}.
+-record extension, {scheme    :: occi_extension:id(), status    :: extension_status()}.
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
-
 
 %% @doc Called on module load. Allows unit testing.
 -spec init() -> ok.
@@ -43,16 +44,21 @@ init() ->
 	{aborted, {already_exists, category}} -> ok;
 	{aborted, _} = Err -> throw(Err)
     end,
+    case mnesia:create_table(extension, [{ram_copies, nodes()}, {attributes, record_info(fields, extension)}]) of
+	{atomic, ok} -> ok;
+	{aborted, {already_exists, category}} -> ok;
+	{aborted, _} = Err2 -> throw(Err2)
+    end,
     ok = core_categories(),
     ok.
 
 
 %% @throws enoent | eacces | eisdir | enotdir | enomem
--spec load_path(MimeType :: mimetype(), file:filename_all()) -> ok.
-load_path(MimeType, Filename) ->
+-spec load_path(file:filename_all()) -> ok.
+load_path(Filename) ->
     case file:read_file(Filename) of
 	{ok, Bin} ->
-	    load(MimeType, Bin);
+	    load(occi_utils:mimetype(Filename), Bin);
 	{error, Reason} ->
 	    throw(Reason)
     end.
@@ -148,14 +154,13 @@ load_imports([]) ->
     ok;
 
 load_imports([ Scheme | Imports ]) ->
-    Op = fun() ->
-		 mnesia:match_object({category, '_', Scheme, '_'})
-	 end,
-    case mnesia:transaction(Op) of
-	{atomic, []} ->
-	    throw({unknown_extension, Scheme});
-	{atomic, _} ->
-	    load_imports(Imports)
+    ?debug("Import extension: ~s", [Scheme]),
+    case import(Scheme) of
+	{ok, Path} ->
+	    ok = load_path(Path),
+	    load_imports(Imports);
+	{error, Err} ->
+	    throw({import, Err})
     end.
 
 
@@ -163,8 +168,26 @@ load_categories(_Scheme, []) ->
     ok;
 
 load_categories(Scheme, [ Cat | Categories ]) ->
+    ?debug("Add category: ~p", [occi_category:id(Cat)]),
     ok = add_category(Scheme, Cat),
     load_categories(Scheme, Categories).
+
+
+import(Scheme) ->
+    Base = baseurl(),
+    Urls = [{Base ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
+    occi_dl:resource(Scheme, Urls).
+
+
+baseurl() ->
+    case application:get_env(occi, schemas_baseurl, undefined) of
+	undefined ->
+	    throw({undefined_env, schemas_baseurl});
+	{priv_dir, Dir} ->
+	    filename:join([occi_utils:priv_dir(), Dir]);
+	Dir when is_list(Dir) ->
+	    Dir
+    end.
 
 
 parser({<<"application">>, <<"xml">>, []})       -> occi_parser_xml;

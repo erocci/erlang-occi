@@ -8,7 +8,13 @@
   {registered, []},
   {applications, 
    [ 
+     inets,
+     ssl,
      mnesia
    ]},
-  {env, []}
+  {env, [
+	 {resources_dir, {priv_dir, "resources"}},
+	 {schemas_baseurl, "http://raw.githubusercontent.com/occiware/occi-schemas/master/schemas"},
+	 {schemas_max_retry, 5}
+	]}
  ]}.

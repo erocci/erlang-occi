@@ -12,6 +12,7 @@ erl_crash.dump
 
 # Specific build output
 /annotations.config
+/priv/resources
 
 # Dialyzer output
 /.*.plt
