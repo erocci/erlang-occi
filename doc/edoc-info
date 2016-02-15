@@ -1,0 +1,6 @@
+%% encoding: UTF-8
+{application,occi}.
+{modules,[logging,occi,occi_action,occi_attribute,occi_category,occi_dl,
+          occi_entity,occi_extension,occi_kind,occi_link,occi_mixin,
+          occi_models,occi_parser_xml,occi_resource,occi_sup,occi_type,
+          occi_utils]}.
