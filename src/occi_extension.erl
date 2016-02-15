@@ -1,6 +1,6 @@
 %%% @author Jean Parpaillon <jean.parpaillon@free.fr>
 %%% @copyright (C) 2016, Jean Parpaillon
-%%% @doc
+%%% @doc An extension is a set of categories in the OCCI Core Model.
 %%%
 %%% @end
 %%% Created :  8 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
@@ -32,6 +32,11 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+%% @doc Creates an extension with a given scheme.
+%% The scheme is used as namespace for categories.
+%%
+%% Throws extension if the scheme is not a valid URI.
+%% @end
 %% @throws {invalid_uri, string() | binary()}
 -spec new(Scheme :: string() | binary()) -> t().
 new(Scheme) when is_list(Scheme); is_binary(Scheme) ->
@@ -49,22 +54,30 @@ new(Scheme) when is_list(Scheme); is_binary(Scheme) ->
 	    throw({invalid_uri, Scheme})
     end.
 
-
+%% @doc Get the name of the extension.
+%% @end
 -spec name(t()) -> string().
 name(E) ->
     maps:get(name, E).
 
 
+%% @doc Set (optional) name of the extension
+%% @end
 -spec name(string(), t()) -> t().
 name(Name, E) ->
     E#{ name := Name }.
 
 
+%% @doc Get scheme of the extension
+%% @end
 -spec scheme(t()) -> id().
 scheme(E) ->
     maps:get(scheme, E).
 
 
+%% @doc Add a category (kind or mixin) to the extension.
+%% Actions are contained within a kind or mixin.
+%% @end
 -spec add_category(occi_category:t(), t()) -> t().
 add_category(Category, E) ->
     case occi_category:class(Category) of
@@ -75,21 +88,31 @@ add_category(Category, E) ->
     end.
 
 
+%% @doc Get the list of kinds of this extension
+%% @end
 -spec kinds(t()) -> [occi_category:t()].
 kinds(E) ->
     maps:get(kinds, E).
 
 
+%% @doc Get the list of mixins of this extension
+%% @end
 -spec mixins(t()) -> [occi_category:t()].
 mixins(E) ->
     maps:get(mixins, E).
 
 
+%% @doc Declare an extension to import
+%%
+%% WARNING: cycles are forbidden
+%% @end
 -spec add_import(string(), t()) -> t().
 add_import(Scheme, E) ->
     E#{ imports := [ Scheme | maps:get(imports, E) ] }.
 
 
+%% @doc Get list of imports
+%% @end
 -spec imports(t()) -> [occi_extension:id()].
 imports(E) ->
     maps:get(imports, E).
@@ -99,6 +122,11 @@ imports(E) ->
 %% Loading API
 %%
 
+%% @doc Load an extension from a file. 
+%%
+%% Mimetype is detected from file extension.
+%%
+%% Supported mimetypes are: xml
 %% @throws enoent | eacces | eisdir | enotdir | enomem
 -spec load_path(file:filename_all()) -> ok.
 load_path(Filename) ->
@@ -109,7 +137,7 @@ load_path(Filename) ->
 	    throw(Reason)
     end.
 
-%% @doc Load a model from an iolist()
+%% @doc Load an extension from an iolist()
 %% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
 %%
 %% Supported types are:
