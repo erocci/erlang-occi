@@ -11,7 +11,7 @@
 -include_lib("annotations/include/annotations.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
 
--export([parse_extension/1]).
+-export([parse/2]).
 
 -define(occi_uri, "http://schemas.ogf.org/occi").
 -define(xsd_uri, "http://www.w3.org/2001/XMLSchema").
@@ -23,11 +23,23 @@
 -endif.
 
 %% @throws {parse_error, term()}
--spec parse_extension(iolist()) -> occi_extension:t().
-parse_extension(Xml) ->
+-spec parse(occi:t_name(), iolist()) -> occi_extension:t().
+parse(occi_extension, Xml) ->
+    parse2(extension, Xml);
+
+parse(Else, _) ->
+    throw({invalid_type, Else}).
+
+
+%%%
+%%% Priv
+%%%
+parse2(RootType, Xml) ->
     case xmerl_sax_parser:stream(Xml, options(fun handle_event/3)) of
-	{ok, #{ stack := [ {extension, Ext} ] }, _Rest} -> 
-	    Ext;
+	{ok, #{ stack := [ {RootType, Type} ] }, _Rest} -> 
+	    Type;
+	{ok, #{ stack := [ {Other, _} ] }, _Rest} ->
+	    throw({parse_error, {invalid_type, Other}});
 	{ok, Else, _Rest} ->
 	    throw({parse_error, Else});
 	{Tag, {_, _, LineNo}, Reason, _EndTags, _EventState}=Err -> 
@@ -35,10 +47,6 @@ parse_extension(Xml) ->
 	    throw({parse_error, Err})
     end.
 
-
-%%%
-%%% Priv
-%%%
 options(Fun) ->
     [{event_fun, Fun},
      {event_state, #{ stack => [], ns => #{} }}].

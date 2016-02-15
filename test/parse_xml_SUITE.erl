@@ -51,7 +51,7 @@ all() ->
 parse_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Xml} = file:read_file(ExtFile),
-    Ext = occi_parser_xml:parse_extension(Xml),
+    Ext = occi_parser_xml:parse(occi_extension, Xml),
     ct:log(info, "extension: ~p", [Ext]),
     ?assertMatch("Infrastructure", occi_extension:name(Ext)),
     ?assertMatch("http://schemas.ogf.org/occi/infrastructure#", occi_extension:scheme(Ext)),

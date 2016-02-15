@@ -54,7 +54,8 @@ all() ->
 
 load_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
-    occi_extension:load_path(ExtFile),
+    Ext = occi_extension:load_path(ExtFile),
+    occi_models:register(Ext),
     ?assertMatch(kind,
 		 occi_category:class(occi_models:category({"http://schemas.ogf.org/occi/infrastructure#", "compute"}))),
     ?assertMatch(kind,
@@ -81,13 +82,14 @@ load_extension(Config) ->
 
 
 load_import(_Config) ->
-    occi_extension:load(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-			       "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
-			       " name=\"Custom\""
-			       " scheme=\"http://example.org/occi#\""
-			       " status=\"stable\" version=\"1\">"
-			       " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
-			       "</occi:extension>">>),
+    Ext = occi_extension:load(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+				     "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
+				     " name=\"Custom\""
+				     " scheme=\"http://example.org/occi#\""
+				     " status=\"stable\" version=\"1\">"
+				     " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
+				     "</occi:extension>">>),
+    occi_models:register(Ext),
     ?assertMatch(kind,
 		 occi_category:class(occi_models:category({"http://schemas.ogf.org/occi/infrastructure#", "compute"}))),
     ?assertMatch(kind,

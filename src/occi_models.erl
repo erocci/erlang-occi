@@ -12,7 +12,8 @@
 -export([init/0]).
 -on_load(init/0).
 
--export([category/1,
+-export([register/1,
+	 category/1,
 	 add_category/2,
 	 attribute/2,
 	 attributes/1]).
@@ -49,6 +50,15 @@ init() ->
     end,
     ok = core_categories(),
     ok.
+
+
+%% @doc Register categories of the given extension
+%% @end
+-spec register(occi_extension:t()) -> ok.
+register(E) ->
+    ok = load_imports(occi_extension:imports(E)),
+    ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
+    ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
 
 
 -spec category(occi_category:id()) -> occi_category:t() | undefined.
@@ -107,6 +117,45 @@ core_categories() ->
     ok = add_category(?core_scheme, occi_category:link_()),
     ok.
 
+%% Check extension exists in the database, throw error if not
+load_imports([]) ->
+    ok;
+
+load_imports([ Scheme | Imports ]) ->
+    ?debug("Import extension: ~s", [Scheme]),
+    case import(Scheme) of
+	{ok, Path} ->
+	    register(occi_extension:load_path(Path)),
+	    load_imports(Imports);
+	{error, Err} ->
+	    throw({import, Err})
+    end.
+
+
+load_categories(_Scheme, []) ->
+    ok;
+
+load_categories(Scheme, [ Cat | Categories ]) ->
+    ?debug("Add category: ~p", [occi_category:id(Cat)]),
+    ok = add_category(Scheme, Cat),
+    load_categories(Scheme, Categories).
+
+
+import(Scheme) ->
+    Base = baseurl(),
+    Urls = [{Base ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
+    occi_dl:resource(Scheme, Urls).
+
+
+baseurl() ->
+    case application:get_env(occi, schemas_baseurl, undefined) of
+	undefined ->
+	    throw({undefined_env, schemas_baseurl});
+	{priv_dir, Dir} ->
+	    filename:join([occi_utils:priv_dir(), Dir]);
+	Dir when is_list(Dir) ->
+	    Dir
+    end.
 %%%
 %%% eunit
 %%%
