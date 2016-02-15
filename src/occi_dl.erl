@@ -1,9 +1,11 @@
 %%%-------------------------------------------------------------------
 %%% @author Jean Parpaillon <jean.parpaillon@free.fr>
 %%% @copyright (C) 2016, Jean Parpaillon
-%%% @doc
+%%% @doc Download resources, handling multiple urls for a single resource.
+%%% Queue requests for a same resource.
 %%%
 %%% @end
+%%% @todo handle update only if modified
 %%% Created : 11 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
 %%%-------------------------------------------------------------------
 -module(occi_dl).
@@ -32,7 +34,6 @@
 	     retry   = 0         :: integer(),
 	     dev     = undefined :: file:io_device(),
 	     pending             :: [pid()],
-	     path                :: file:filename_all(),
 	     ref                 :: reference(),
 	     request             :: reference()}).
 -type dl() :: #dl{}.
@@ -145,7 +146,11 @@ handle_info({http, {RequestID, {{_Version, Status, _Reason}, _Headers, _Body}}},
 	    _ = send_pending({error, {http_to_error(Status), dl_url(Dl)}}, Dl),
 	    true = ets:delete(S, dl_id(Dl)),
 	    {noreply, S}
-    end.
+    end;
+
+handle_info(timeout, S) ->
+    _ = send_all_pending({error, timeout}, S),
+    {noreply, S}.
 
 
 handle_call({import, Id, Urls}, {Pid, _Tag}=From, S) ->
@@ -155,13 +160,13 @@ handle_call({import, Id, Urls}, {Pid, _Tag}=From, S) ->
 	[Dl] ->
 	    case dl_status(Dl) of
 		imported ->
-		    {reply, {imported, dl_path(Dl)}};
+		    {reply, {imported, dl_path(Dl)}, S};
 		request ->
 		    true = ets:insert(S, dl_add_pending(Pid, Dl)),
-		    {reply, {pending, dl_ref(Dl)}};
+		    {reply, {pending, dl_ref(Dl)}, S};
 		recv ->
 		    true = ets:insert(S, dl_add_pending(Pid, Dl)),
-		    {reply, {pending, dl_ref(Dl)}}
+		    {reply, {pending, dl_ref(Dl)}, S}
 	    end
     end.
 
@@ -171,11 +176,7 @@ handle_cast(_Evt, S) ->
 
 
 terminate(Reason, S) ->
-    F = fun (Dl, Acc) ->
-		_ = send_pending({error, Reason}, Dl),
-		Acc
-	end,
-    _ = ets:foldl(F, [], S),
+    send_all_pending({error, Reason}, S),
     ok.
 
 
@@ -188,14 +189,15 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 maybe_request(Id, [{Url, _Local} | _]=Urls, {Pid, Tag}, S) ->
     try begin
-	    case dl_find(Urls) of
+	    Urls2 = fullnames(Urls),
+	    case dl_find(Urls2) of
 		undefined ->
 		    RequestID = send_request(Url),
-		    Dl = dl_new_request(Id, Urls, Pid, Tag, RequestID),
+		    Dl = dl_new_request(Id, Urls2, Pid, Tag, RequestID),
 		    true = ets:insert(S, Dl),
 		    {reply, {pending, Tag}, S, 5000};
-		Path ->
-		    true = ets:insert(S, dl_new_imported(Id, Path)),
+		{Url, Path} ->
+		    true = ets:insert(S, dl_new_imported(Id, {Url, Path})),
 		    {reply, {imported, Path}, S}
 	    end
 	end
@@ -252,6 +254,14 @@ send_pending(Res, Dl) ->
 		  end, dl_pending(Dl)).
 
 
+send_all_pending(Res, S) ->
+    F = fun (Dl, Acc) ->
+		_ = send_pending(Res, Dl),
+		Acc
+	end,
+    _ = ets:foldl(F, [], S).
+
+
 http_to_error(404) -> not_found;
 http_to_error(Other) -> Other.
 
@@ -259,8 +269,8 @@ http_to_error(Other) -> Other.
 %% dl structure functions
 %% 
 -spec dl_new_imported(term(), file:filename_all()) -> dl().
-dl_new_imported(Id, Path) ->
-    #dl{id=Id, status=imported, path=Path}.
+dl_new_imported(Id, {Url, Path}) ->
+    #dl{id=Id, status=imported, urls=[{Url, Path}]}.
 
 
 -spec dl_new_request(term(), [], pid(), reference(), reference()) -> dl().
@@ -294,8 +304,11 @@ dl_add_pending(Pid, #dl{pending=Pids}=Dl) ->
 
 
 -spec dl_pending(dl()) -> [pid()].
-dl_pending(#dl{pending=Pids}) ->
-    Pids.			
+dl_pending(#dl{pending=Pids}) when is_list(Pids) ->
+    Pids;
+
+dl_pending(_) ->
+    [].
 
 
 -spec dl_ref(#dl{}) -> reference().
@@ -310,7 +323,7 @@ dl_recv(Dev, #dl{}=Dl) ->
 
 -spec dl_imported(dl()) -> dl().
 dl_imported(#dl{}=Dl) ->
-    Dl#dl{status=imported, dev=undefined, pending=[], ref=undefined, path=dl_path(Dl)}.
+    Dl#dl{status=imported, dev=undefined, pending=[], ref=undefined}.
 
 
 -spec dl_retry(dl()) -> integer().
@@ -338,11 +351,21 @@ dl_dev(#dl{dev=Dev}) ->
 dl_find([]) ->
     undefined;
 
-dl_find([{_Url, Local} | Tail]) ->
-    Fullname = filename:join([occi_utils:resources_dir(), Local]),
-    case filelib:wildcard(Fullname) of
+dl_find([{Url, Path} | Tail]) ->
+    case filelib:wildcard(Path) of
 	[] ->
 	    dl_find(Tail);
 	[Path] ->
-	    Path
+	    {Url, Path}
     end.
+
+fullnames(Urls) ->
+    fullnames(Urls, []).
+
+
+fullnames([], Acc) ->
+    lists:reverse(Acc);
+
+fullnames([ {Url, Local} | Tail ], Acc) ->
+    Fullname = filename:join([occi_utils:resources_dir(), Local]),
+    fullnames(Tail, [ {Url, Fullname} | Acc ]).
