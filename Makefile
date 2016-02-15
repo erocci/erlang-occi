@@ -15,6 +15,6 @@ ANNOTATIONS = logging
 
 EDOC_OPTS = {app_default, "http://www.erlang.org/doc/"} \
            ,{doclet, edown_doclet} \
-           ,{top_level_readme, {"$(CURDIR)/README.md", "http://github.com/erocci/erlang-occi"}}
+           ,{top_level_readme, {"$(CURDIR)/doc/README.md", "http://github.com/erocci/erlang-occi"}}
 
 include erlang.mk
