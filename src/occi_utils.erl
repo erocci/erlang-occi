@@ -42,7 +42,6 @@ resources_dir() ->
     end.
 
 
-%% @throw term()
 -spec mkdir(file:filename_all()) -> ok.
 mkdir(Dir) ->
     case filelib:is_dir(Dir) of

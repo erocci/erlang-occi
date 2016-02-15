@@ -32,8 +32,7 @@ new(Id) ->
     new(Id, ?category_id).
 
 
-%% @throws {invalid_uri, iolist()}
-%% @throws {unknown_category, term()}
+%% @throws {unknown_category, term()} | {invalid_uri, iolist()}
 -spec new(uri:t() | string() | binary(), occi_category:id() | string() | binary()) -> t().
 new(Id, KindId) ->
     Entity = occi_entity:new(Id, KindId),

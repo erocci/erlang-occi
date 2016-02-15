@@ -142,14 +142,13 @@ load_path(Filename) ->
 %%
 %% Supported types are:
 %% <ul>
-%%   <li>{<<"application">>, <<"xml">>, []}</li>
-%%   <li>{<<"application">>, <<"occi+xml">>, []}</li>
-%%   <li>{<<"application">>, <<"json">>, []}</li>
-%%   <li>{<<"application">>, <<"occi+json">>, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"xml"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
 %% </ul>
-%% @throws {unknown_mimetype, term()}
-%% @throws {parse_error, occi_parser:errors()}
-%% @throws {unknown_extension, occi_extension:id()}
+%% @end
+%% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()} | {unknown_extension, occi_extension:id()}
 load(MimeType, Bin) when is_list(Bin); is_binary(Bin) ->
     case parser(MimeType) of
 	undefined -> 

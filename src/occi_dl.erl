@@ -4,8 +4,8 @@
 %%% @doc Download resources, handling multiple urls for a single resource.
 %%% Queue requests for a same resource.
 %%%
-%%% @end
 %%% @todo handle update only if modified
+%%% @end
 %%% Created : 11 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
 %%%-------------------------------------------------------------------
 -module(occi_dl).

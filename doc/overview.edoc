@@ -1,0 +1,11 @@
+** this is the overview.doc file for the application 'occi' **
+
+@author Jean Parpaillon <jean.parpaillon@free.fr>
+@copyright 2016 Jean Parpaillon
+@version 0.0.1
+@title OCCI Core implementation
+
+@doc This application implements the OCCI Core meta-model and its
+renderings.
+
+@end

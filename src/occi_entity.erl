@@ -10,6 +10,7 @@
 %%%
 %%% @todo Should type check when setting attribute ? (see renderings 
 %%% where attributes can be set before categories declaration)
+%%% @end
 %%% Created :  3 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
 
 -module(occi_entity).
@@ -36,15 +37,13 @@
 -endif.
 
 
-%% @throws {invalid_uri, iolilst()}
-%% @throws {unknown_category, term()}
+%% @throws {unknown_category, term()} | {invalid_uri, iolilst()}
 -spec new(uri:t()) -> t().
 new(Id) ->
     new(Id, ?category_id).
 
 
-%% @throws {invalid_uri, iolist()}
-%% @throws {unknown_category, term()}
+%% @throws {unknown_category, term()} | {invalid_uri, iolist()}
 -spec new(uri:t() | string() | binary(), occi_category:id() | string() | binary()) -> t().
 new(IdStr, KindId) when is_list(IdStr); is_binary(IdStr) ->
     try uri:from_string(IdStr) of

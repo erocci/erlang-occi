@@ -34,8 +34,7 @@ new(Id, Src, Target) ->
     new(Id, ?category_id, Src, Target).
 
 
-%% @throws {invalid_uri, iolist()}
-%% @throws {unknown_category, term()}
+%% @throws {unknown_category, term()} | {invalid_uri, iolist()}
 -spec new(uri:t() | string() | binary(), 
 	  occi_category:id() | string() | binary(),
 	  uri:t() | string() | binary(),
