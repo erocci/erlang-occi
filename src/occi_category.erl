@@ -48,15 +48,13 @@ new(CatId, Cls) when is_list(CatId); is_binary(CatId) ->
 new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
     {Cls, {Scheme, Term}, #{
 	    title => "",
-	    class => Cls,
 	    attributes => #{}
 	   }};
 
 new({"http://schemas.ogf.org/occi/core#", "entity"}=Id, kind) ->
     {kind, Id, #{ 
 	     title => "Entity",
-	     class => kind,
-	     attributes => "" 
+	     attributes => #{} 
 	    }}.
 
 
@@ -101,9 +99,10 @@ add_attribute(Attr, C) ->
     ?s(attributes, Attrs#{ occi_attribute:name(Attr) => Attr }, C).
 
 
--spec attributes(occi_category:t()) -> map().
+-spec attributes(occi_category:t()) -> [occi_attribute:t()].
 attributes(C) ->
-    ?g(attributes, C).
+    Attrs = ?g(attributes, C),
+    maps:values(Attrs).
 
 
 -spec add_action(occi_action:t(), t()) -> t().

@@ -48,10 +48,52 @@ to_xml(kind, K) ->
 	     Title -> [{title, Title} | A]
 	 end,
     C = [],
-    {kind, lists:reverse(A0), lists:reverse(C)};
+    C0 = case occi_kind:parent(K) of
+	     undefined -> C;
+	     {ParentScheme, ParentTerm} -> [{parent, [{scheme, ParentScheme}, {term, ParentTerm}], []}]
+	 end,
+    C1 = lists:foldl(fun (Attr, Acc) ->
+			   [ to_xml(attribute, Attr) | Acc ]
+		   end, C0, occi_kind:attributes(K)),
+    {kind, lists:reverse(A0), lists:reverse(C1)};
 
-to_xml(mixin, _M) ->
-    {mixin, [], []}.
+to_xml(mixin, M) ->
+    {Scheme, Term} = occi_mixin:id(M),
+    A = [{scheme, Scheme}, {term, Term}],
+    C = [],
+    {mixin, lists:reverse(A), lists:reverse(C)};
+
+to_xml(attribute, Attr) ->
+    A = [{name, occi_attribute:name(Attr)}],
+    C = [],
+    {A0, C0} = case occi_attribute:type(Attr) of
+		   string ->   {[{type, "xs:string"} | A], C};
+		   integer ->  {[{type, "xs:integer"} | A], C};
+		   float ->    {[{type, "xs:float"} | A], C};
+		   {enum, Values} ->
+		       Restriction = {'xs:restriction', [{base, 'xs:string'}], 
+				      lists:map(fun (V) ->
+							{'xs:enumeration', [{value, V}], []}
+						end, Values)}, 
+		       {A, [Restriction, C]}
+	       end,
+    A1 = case occi_attribute:title(Attr) of
+	     [] -> A0;
+	     Title -> [{title, Title} | A0]
+	 end,
+    A2 = case occi_attribute:default(Attr) of
+	     undefined -> A1;
+	     Default -> [{default, Default} | A1]
+	 end,
+    A3 = case occi_attribute:mutable(Attr) of
+	     true -> A2;
+	     false -> [{immutable, "true"} | A2]
+	 end,
+    A4 = case occi_attribute:required(Attr) of
+	     true -> [{use, "required"} | A3];
+	     false -> A3
+	 end,
+    {attribute, lists:reverse(A4), lists:reverse(C0)}.
 
 
 %%%
