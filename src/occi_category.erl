@@ -18,7 +18,8 @@
 	 attribute/2,
 	 add_attribute/2,
 	 attributes/1,
-	 add_action/2]).
+	 add_action/2,
+	 actions/1]).
 
 -export([entity/0,
 	 resource/0,
@@ -109,6 +110,12 @@ attributes(C) ->
 add_action(Action, {Cls, _,  M}=C) when Cls =:= kind; Cls =:= mixin ->
     Actions = maps:get(actions, M),
     ?s(actions, Actions#{ occi_action:id(Action) => Action}, C).
+
+
+-spec actions(occi_category:t()) -> [occi_action:t()].
+actions(C) ->
+    Actions = ?g(actions, C),
+    maps:values(Actions).
 
 
 %% @throws {invalid_cid, term()}

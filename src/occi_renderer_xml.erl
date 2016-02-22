@@ -55,13 +55,28 @@ to_xml(kind, K) ->
     C1 = lists:foldl(fun (Attr, Acc) ->
 			   [ to_xml(attribute, Attr) | Acc ]
 		   end, C0, occi_kind:attributes(K)),
-    {kind, lists:reverse(A0), lists:reverse(C1)};
+    C2 = lists:foldl(fun (Action, Acc) ->
+			     [ to_xml(action, Action) | Acc ]
+		     end, C1, occi_kind:actions(K)),
+    {kind, lists:reverse(A0), lists:reverse(C2)};
 
 to_xml(mixin, M) ->
     {Scheme, Term} = occi_mixin:id(M),
     A = [{scheme, Scheme}, {term, Term}],
     C = [],
     {mixin, lists:reverse(A), lists:reverse(C)};
+
+to_xml(action, Action) ->
+    {Scheme, Term} = occi_action:id(Action),
+    A = [{scheme, Scheme}, {term, Term}],
+    A0 = case occi_action:title(Action) of
+	     [] -> A;
+	     Title -> [{title, Title} | A]
+	 end,
+    C = lists:foldl(fun (Attr, Acc) ->
+			    [ to_xml(attribute, Attr) | Acc ]
+		    end, [], occi_action:attributes(Action)),
+    {action, lists:reverse(A0), lists:reverse(C)};
 
 to_xml(attribute, Attr) ->
     A = [{name, occi_attribute:name(Attr)}],
