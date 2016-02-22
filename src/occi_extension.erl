@@ -7,7 +7,6 @@
 
 -module(occi_extension).
 
--include_lib("mixer/include/mixer.hrl").
 -include("occi_log.hrl").
 
 -export([new/1,
@@ -21,11 +20,13 @@
 	 imports/1]).
 
 -export([load_path/1,
-	 load/2,
-	 render/2]).
+	 load/2]).
+
+-mixin([occi_type]).
 
 -type id() :: string().
--type t() :: #{}.
+-record(extension, {id :: id(), m :: #{}}).
+-type t() :: #extension{}.
 
 -export_type([id/0, t/0]).
 
@@ -43,14 +44,16 @@
 new(Scheme) when is_list(Scheme); is_binary(Scheme) ->
     try uri:from_string(Scheme) of
 	_ ->
-	    #{ 
-	  name => "",
-	  scheme => Scheme,
-	  kinds => [],
-	  mixins => [],
-	  imports => []
-	 }
-    catch 
+	    #extension{
+	       id = Scheme,
+	       m = #{ 
+		 name => "",
+		 kinds => [],
+		 mixins => [],
+		 imports => []
+		}
+	      }
+    catch
 	error:{badmatch, _} ->
 	    throw({invalid_uri, Scheme})
     end.
@@ -58,49 +61,50 @@ new(Scheme) when is_list(Scheme); is_binary(Scheme) ->
 %% @doc Get the name of the extension.
 %% @end
 -spec name(t()) -> string().
-name(E) ->
-    maps:get(name, E).
+name(#extension{m=M}) ->
+    maps:get(name, M).
 
 
 %% @doc Set (optional) name of the extension
 %% @end
 -spec name(string(), t()) -> t().
-name(Name, E) ->
-    E#{ name := Name }.
+name(Name, #extension{m=M}=E) ->
+    E#extension{ m=M#{ name := Name } }.
 
 
 %% @doc Get scheme of the extension
 %% @end
 -spec scheme(t()) -> id().
-scheme(E) ->
-    maps:get(scheme, E).
+scheme(#extension{id=Scheme}) ->
+    Scheme.
 
 
 %% @doc Add a category (kind or mixin) to the extension.
 %% Actions are contained within a kind or mixin.
 %% @end
 -spec add_category(occi_category:t(), t()) -> t().
-add_category(Category, E) ->
-    case occi_category:class(Category) of
-	kind ->
-	    E#{ kinds := [ Category | maps:get(kinds, E) ] };
-	mixin ->
-	    E#{ mixins := [ Category | maps:get(mixins, E) ] }
-    end.
+add_category(Category, #extension{m=M}=E) ->
+    M2 = case occi_category:class(Category) of
+	     kind ->
+		 M#{ kinds := [ Category | maps:get(kinds, M) ] };
+	     mixin ->
+		 M#{ mixins := [ Category | maps:get(mixins, M) ] }
+	 end,
+    E#extension{m=M2}.
 
 
 %% @doc Get the list of kinds of this extension
 %% @end
 -spec kinds(t()) -> [occi_category:t()].
-kinds(E) ->
-    maps:get(kinds, E).
+kinds(#extension{m=M}) ->
+    maps:get(kinds, M).
 
 
 %% @doc Get the list of mixins of this extension
 %% @end
 -spec mixins(t()) -> [occi_category:t()].
-mixins(E) ->
-    maps:get(mixins, E).
+mixins(#extension{m=M}) ->
+    maps:get(mixins, M).
 
 
 %% @doc Declare an extension to import
@@ -108,26 +112,23 @@ mixins(E) ->
 %% WARNING: cycles are forbidden
 %% @end
 -spec add_import(string(), t()) -> t().
-add_import(Scheme, E) ->
-    E#{ imports := [ Scheme | maps:get(imports, E) ] }.
+add_import(Scheme, #extension{m=M}=E) ->
+    M2 = M#{ imports := [ Scheme | maps:get(imports, M) ] },
+    E#extension{m=M2}.
 
 
 %% @doc Get list of imports
 %% @end
 -spec imports(t()) -> [occi_extension:id()].
-imports(E) ->
-    maps:get(imports, E).
+imports(#extension{m=M}) ->
+    maps:get(imports, M).
 
 
 %%%
-%%% Rendering stubs
+%%% rendering stubs
 %%%
-%%% @todo use parse_transform
-%%%
-load_path(Path) -> occi_rendering:load_path(?MODULE, Path).
-load(MimeType, Path) -> occi_rendering:load(?MODULE, MimeType, Path).
-render(MimeType, T) -> occi_rendering:render(?MODULE, MimeType, T).
-    
+load_path(Path) -> occi_rendering:load_path(extension, Path).
+load(Mimetype, Bin) -> occi_rendering:load(extension, Mimetype, Bin).
 
 %%%
 %%% eunit

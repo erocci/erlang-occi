@@ -8,13 +8,11 @@
 -module(occi_parser_xml).
 
 -include("occi_log.hrl").
+-include("occi_xml.hrl").
 -include_lib("annotations/include/annotations.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
 
 -export([parse/2]).
-
--define(occi_uri, "http://schemas.ogf.org/occi").
--define(xsd_uri, "http://www.w3.org/2001/XMLSchema").
 
 -type state() :: #{}.
 
@@ -24,17 +22,7 @@
 
 %% @throws {parse_error, term()}
 -spec parse(occi:t_name(), iolist()) -> occi_extension:t().
-parse(occi_extension, Xml) ->
-    parse2(extension, Xml);
-
-parse(Else, _) ->
-    throw({invalid_type, Else}).
-
-
-%%%
-%%% Priv
-%%%
-parse2(RootType, Xml) ->
+parse(RootType, Xml) ->
     case xmerl_sax_parser:stream(Xml, options(fun handle_event/3)) of
 	{ok, #{ stack := [ {RootType, Type} ] }, _Rest} -> 
 	    Type;

@@ -9,7 +9,7 @@
 
 -export([load_path/2,
 	 load/3,
-	 render/3]).
+	 render/2]).
 
 
 %% @doc Load the specified type from a file. 
@@ -18,7 +18,7 @@
 %%
 %% Supported mimetypes are: xml
 %% @throws enoent | eacces | eisdir | enotdir | enomem
--spec load_path(occi:t_name(), file:filename_all()) -> ok.
+-spec load_path(occi_type:name(), file:filename_all()) -> ok.
 load_path(Type, Filename) ->
     case file:read_file(Filename) of
 	{ok, Bin} ->
@@ -39,7 +39,7 @@ load_path(Type, Filename) ->
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load(occi:t_name(), occi_utils:mimetype(), iolist()) -> occi:t().
+-spec load(occi_type:name(), occi_utils:mimetype(), iolist()) -> occi_type:t().
 load(Type, MimeType, Bin) when is_list(Bin); is_binary(Bin) ->
     case parser(MimeType) of
 	undefined -> 
@@ -49,15 +49,14 @@ load(Type, MimeType, Bin) when is_list(Bin); is_binary(Bin) ->
     end.
 
 
--spec render(occi_t:name(), occi_utils:mimetype(), occi:t()) -> iolist().
-render(Type, MimeType, T) ->
+-spec render(occi_utils:mimetype(), occi_type:t()) -> iolist().
+render(MimeType, T) ->
     case renderer(MimeType) of
 	undefined ->
 	    throw({unknown_mimetype, MimeType});
 	Mod ->
-	    Mod:render(Type, T)
+	    Mod:render(T)
     end.
-	    
 
 %%%
 %%% Priv

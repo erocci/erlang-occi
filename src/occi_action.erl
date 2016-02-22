@@ -13,7 +13,8 @@
 
 -export([new/2]).
 
--type t() :: #{}.
+-record(action, { id :: occi_category:id(), m :: #{} }).
+-type t() :: #action{}.
 
 -export_type([t/0]).
 

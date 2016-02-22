@@ -7,7 +7,9 @@
 
 -module(occi_kind).
 
+-include("occi_category.hrl").
 -include_lib("mixer/include/mixer.hrl").
+-include_lib("annotations/include/annotations.hrl").
 
 -mixin([{occi_category, except, [new/2]}]).
 
@@ -15,25 +17,29 @@
 	 parent/1,
 	 parent/2]).
 
--type t() :: #{}.
+
+-record(kind, {id :: occi_category:id(), m :: #{} }).
+-type t() :: #kind{}.
 
 -export_type([t/0]).
 
 -spec new(Scheme :: string(), Term :: string()) -> t().
 new(Scheme, Term) ->
-    Kind = occi_category:new(Scheme, Term, kind),
-    Kind#{ parent => undefined, actions => #{} }.
+    K0 = occi_category:new(Scheme, Term, kind),
+    M = K0#kind.m,
+    M1 = M#{parent => undefined, actions => #{} },
+    K0#kind{m=M1}.
 
 
 -spec parent(t()) -> occi_category:id().
 parent(Kind) ->
-    maps:get(parent, Kind).
+    ?g(parent, Kind).
 
 
 -spec parent(string() | binary() | occi_category:id(), t()) -> t().
 parent(Parent, Kind) when is_list(Parent); is_binary(Parent) ->
     ParentId = occi_category:parse_id(Parent),
-    Kind#{ parent := ParentId };
+    ?s(parent, ParentId, Kind);
 
 parent({_Scheme, _Term}=ParentId, Kind) ->
-    Kind#{ parent := ParentId }.
+    ?s(parent, ParentId, Kind).

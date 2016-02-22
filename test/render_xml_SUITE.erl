@@ -4,9 +4,9 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 10 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
+%%% Created : 17 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
 %%%-------------------------------------------------------------------
--module(parse_xml_SUITE).
+-module(render_xml_SUITE).
 
 -compile(export_all).
 
@@ -45,16 +45,12 @@ groups() ->
 
 
 all() -> 
-    [parse_extension].
+    [render_extension].
 
 
-parse_extension(Config) -> 
+render_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
-    {ok, Xml} = file:read_file(ExtFile),
-    Ext = occi_parser_xml:parse(extension, Xml),
-    ct:log(info, "extension: ~p", [Ext]),
-    ?assertMatch("Infrastructure", occi_extension:name(Ext)),
-    ?assertMatch("http://schemas.ogf.org/occi/infrastructure#", occi_extension:scheme(Ext)),
-    ?assertEqual(5, length(occi_extension:kinds(Ext))),
-    ?assertEqual(6, length(occi_extension:mixins(Ext))),
+    E = occi_extension:load_path(ExtFile),
+    Out = occi_rendering:render(xml, E),
+    ?assertMatch(["<?xml version=\"1.0\"?>" | _], Out),
     ok.

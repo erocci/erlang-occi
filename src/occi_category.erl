@@ -7,6 +7,8 @@
 
 -module(occi_category).
 
+-include("occi_category.hrl").
+
 -export([new/2, 
 	 new/3,
 	 id/1,
@@ -27,7 +29,9 @@
 -type class() :: kind | mixin | action.
 -type id() :: {Scheme :: string(), Term :: string()}.
 
--type t() :: #{}.
+
+-record(category, {id :: id(), m :: #{}}).
+-type t() :: #category{}.
 
 -export_type([id/0, class/0, t/0]).
 
@@ -42,20 +46,18 @@ new(CatId, Cls) when is_list(CatId); is_binary(CatId) ->
     new(parse_id(CatId), Cls);
 
 new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
-    #{
-       id => {Scheme, Term},
-       title => "",
-       class => Cls,
-       attributes => #{}
-     };
+    {Cls, {Scheme, Term}, #{
+	    title => "",
+	    class => Cls,
+	    attributes => #{}
+	   }};
 
 new({"http://schemas.ogf.org/occi/core#", "entity"}=Id, kind) ->
-    #{ 
-     id => Id,
-     title => "Entity",
-     class => kind,
-     attributes => "" 
-    }.
+    {kind, Id, #{ 
+	     title => "Entity",
+	     class => kind,
+	     attributes => "" 
+	    }}.
 
 
 %% throws {invalid_cid, {term(), term()}}
@@ -69,45 +71,45 @@ new(Scheme, Term, _Cls) ->
 
 -spec class(t()) -> class().
 class(C) ->
-    maps:get(class, C).
+    element(1, C).
 
 
 -spec id(t()) -> occi_category:id().
 id(C) ->
-    maps:get(id, C).
+    element(2, C).
 
 
 -spec title(t()) -> string().
 title(C) ->
-    maps:get(title, C).
+    ?g(title, C).
 
 
 -spec title(string(), t()) -> t().
 title(Title, C) ->
-    C#{ title := Title }.
+    ?s(title, Title, C).
 
 
 -spec attribute(occi_attribute:key(), t()) -> occi_attribute:t().
 attribute(Key, C) ->
-    Attrs = maps:get(attributes, C),
+    Attrs = ?g(attributes, C),
     map:get(Key, Attrs, undefined).
 
 
 -spec add_attribute(occi_attribute:t(), t()) -> t().
 add_attribute(Attr, C) ->
-    Attrs = maps:get(attributes, C),
-    C#{ attributes := Attrs#{ occi_attribute:name(Attr) => Attr } }.
+    Attrs = ?g(attributes, C),
+    ?s(attributes, Attrs#{ occi_attribute:name(Attr) => Attr }, C).
 
 
 -spec attributes(occi_category:t()) -> map().
 attributes(C) ->
-    maps:get(attributes, C).
+    ?g(attributes, C).
 
 
 -spec add_action(occi_action:t(), t()) -> t().
-add_action(Action, #{ class := Cls}=C) when Cls =:= kind; Cls =:= mixin ->
-    Actions = maps:get(actions, C),
-    C#{ actions := Actions#{ occi_action:id(Action) => Action} }.
+add_action(Action, {Cls, _,  M}=C) when Cls =:= kind; Cls =:= mixin ->
+    Actions = maps:get(actions, M),
+    ?s(actions, Actions#{ occi_action:id(Action) => Action}, C).
 
 
 %% @throws {invalid_cid, term()}
@@ -134,24 +136,23 @@ parse_id(Id) ->
 %%% constructors
 %%%
 entity() ->
-    #{ id => {"http://schemas.ogf.org/occi/core#", "entity"},
-       title => "Entity",
-       class => kind,
-       attributes => #{} }.
+    {kind, {"http://schemas.ogf.org/occi/core#", "entity"}, #{
+	     title => "Entity",
+	     attributes => #{} 
+	    }}.
 
 
 resource() ->
-    #{ id => {"http://schemas.ogf.org/occi/core#", "resource"},
-       title => "Resource",
-       class => kind,
-       attributes => #{} }.
+    {kind, {"http://schemas.ogf.org/occi/core#", "resource"}, #{
+	     title => "Resource",
+	     attributes => #{} }}.
 
 
 link_() ->
-    #{ id => {"http://schemas.ogf.org/occi/core#", "link"},
+    {kind, {"http://schemas.ogf.org/occi/core#", "link"}, #{
        title => "Link",
-       class => kind,
-       attributes => #{} }.
+	     attributes => #{} }}.
+
 
 %%%
 %%% eunit

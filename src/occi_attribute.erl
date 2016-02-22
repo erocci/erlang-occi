@@ -20,7 +20,7 @@
 	 default/2]).
 
 -type name_t() :: string().
--type type_t() :: occi_type:t().
+-type type_t() :: occi_base_type:t().
 -type t() :: #{}.
 
 -export_type([t/0]).
@@ -77,11 +77,11 @@ mutable(Mutable, A) when is_boolean(Mutable) ->
     A#{ mutable := Mutable}.
 
 
--spec default(t()) -> occi_type:t().
+-spec default(t()) -> occi_base_type:t().
 default(A) ->
     maps:get(default, A).
 
 
--spec default(occi_type:t(), t()) -> t().
+-spec default(occi_base_type:t(), t()) -> t().
 default(Value, A) ->
     A#{ default := Value }.
