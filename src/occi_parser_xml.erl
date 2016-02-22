@@ -115,7 +115,8 @@ handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos,
 			    "true" -> false;
 			     "false" -> true
 			end,
-	     default => attr("default", A, undefined) },
+	     default => attr("default", A, undefined),
+	     description => attr("default", A, "") },
     S#{ stack := [ {attribute, Name, Type, Map}, {Cls, Category} | Stack ] };
 
 handle_event({startElement, ?xsd_uri, "restriction", _QN, A}, _Pos,
@@ -157,7 +158,8 @@ handle_event({endElement, ?occi_uri, "attribute", _QN}, _,
     A3 = occi_attribute:required(maps:get(required, Map), A2),
     A4 = occi_attribute:mutable(maps:get(mutable, Map), A3),
     A5 = occi_attribute:default(maps:get(default, Map), A4),
-    S#{ stack := [ {Cls, occi_category:add_attribute(A5, Category)} | Stack ] };
+    A6 = occi_attribute:description(maps:get(description, Map), A5),
+    S#{ stack := [ {Cls, occi_category:add_attribute(A6, Category)} | Stack ] };
 
 handle_event({endElement, ?xsd_uri, "restriction", _QN}, _, 
 	     #{ stack := [ {enum, Values}, {attribute, Name, _, Map} | Stack ] }=S) ->

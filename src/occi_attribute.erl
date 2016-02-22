@@ -17,7 +17,9 @@
 	 mutable/1,
 	 mutable/2,
 	 default/1,
-	 default/2]).
+	 default/2,
+	 description/1,
+	 description/2]).
 
 -type name_t() :: string().
 -type type_t() :: occi_base_type:t().
@@ -33,7 +35,8 @@ new(Name, Type) ->
      title => "",
      required => false,
      mutable => true,
-     default => undefined
+     default => undefined,
+     description => ""
     }.
 
 
@@ -85,3 +88,13 @@ default(A) ->
 -spec default(occi_base_type:t(), t()) -> t().
 default(Value, A) ->
     A#{ default := Value }.
+
+
+-spec description(t()) -> string().
+description(A) ->
+    maps:get(description, A).
+
+
+-spec description(string(), t()) -> t().
+description(Desc, A) when is_list(Desc) ->
+    A#{ description := Desc }.
