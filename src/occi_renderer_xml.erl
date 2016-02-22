@@ -93,7 +93,11 @@ to_xml(attribute, Attr) ->
 	     true -> [{use, "required"} | A3];
 	     false -> A3
 	 end,
-    {attribute, lists:reverse(A4), lists:reverse(C0)}.
+    A5 = case occi_attribute:description(Attr) of
+	     "" -> A4;
+	     Desc -> [{description, Desc} | A4]
+	 end,
+    {attribute, lists:reverse(A5), lists:reverse(C0)}.
 
 
 %%%
