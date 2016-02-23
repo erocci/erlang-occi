@@ -57,9 +57,9 @@ new(Id, KindId) when is_list(KindId); is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId));
 
 new(Id, {_Scheme, _Term}=CatId) ->
-    Attrs = maps:fold(fun (K, _V, Acc) ->
-			      Acc#{ K => undefined }
-		      end, #{}, occi_models:attributes(CatId)),
+    Attrs = lists:foldl(fun (Attr, Acc) ->
+				Acc#{ occi_attribute:name(Attr) => undefined }
+			end, #{}, occi_models:attributes(CatId)),
     #{id => Id,
       kind => CatId,
       mixins => [],
