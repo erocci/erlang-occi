@@ -23,6 +23,17 @@ render(T) ->
     to_document(occi_type:type(T), T).
     
 
+to_xml(categories, Categories) ->
+    Children = lists:foldl(fun (Cat, Acc) ->
+				   case occi_category:class(Cat) of
+				       kind ->
+					   [to_xml(kind, Cat) | Acc];
+				       mixin ->
+					   [to_xml(mixin, Cat) | Acc]
+				   end
+			   end, [], Categories),
+    {capabilities, [], lists:reverse(Children)};
+
 to_xml(extension, T) ->
     A0 = [{scheme, occi_extension:scheme(T)}],
     A1 = case occi_extension:name(T) of
@@ -47,6 +58,10 @@ to_xml(kind, K) ->
 	     [] -> A;
 	     Title -> [{title, Title} | A]
 	 end,
+    A1 = case occi_kind:location(K) of
+	     undefined -> A0;
+	     Location -> [{location, Location} | A0]
+	 end,
     C = [],
     C0 = case occi_kind:parent(K) of
 	     undefined -> C;
@@ -58,7 +73,7 @@ to_xml(kind, K) ->
     C2 = lists:foldl(fun (Action, Acc) ->
 			     [ to_xml(action, Action) | Acc ]
 		     end, C1, occi_kind:actions(K)),
-    {kind, lists:reverse(A0), lists:reverse(C2)};
+    {kind, lists:reverse(A1), lists:reverse(C2)};
 
 to_xml(mixin, M) ->
     {Scheme, Term} = occi_mixin:id(M),
@@ -66,6 +81,10 @@ to_xml(mixin, M) ->
     A0 = case occi_mixin:title(M) of
 	     [] -> A;
 	     Title -> [{title, Title} | A]
+	 end,
+    A1 = case occi_mixin:location(M) of
+	     undefined -> A0;
+	     Location -> [{location, Location} | A0]
 	 end,
     C = lists:foldl(fun ({DepScheme, DepTerm}, Acc) ->
 			    [ {depends, [{scheme, DepScheme}, {term, DepTerm}], []} | Acc]
@@ -79,7 +98,7 @@ to_xml(mixin, M) ->
     C2 = lists:foldl(fun (Action, Acc) ->
 			     [ to_xml(action, Action) | Acc ]
 		     end, C1, occi_mixin:actions(M)),
-    {mixin, lists:reverse(A0), lists:reverse(C2)};
+    {mixin, lists:reverse(A1), lists:reverse(C2)};
 
 to_xml(action, Action) ->
     {Scheme, Term} = occi_action:id(Action),

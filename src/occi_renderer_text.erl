@@ -36,22 +36,26 @@ render(T) ->
 %%%
 %%% Priv
 %%%
-to_headers(extension, Ext, Headers) ->
-    H0 = lists:foldl(fun (K, Acc) ->
-				   to_headers(kind, K, Acc)
-			   end, Headers, occi_extension:kinds(Ext)),
-    H1 = lists:foldl(fun (M, Acc) ->
-			     to_headers(mixin, M, Acc)
-		     end, H0, occi_extension:mixins(Ext)),
+to_headers(categories, Categories, Headers) ->
+    H0 = lists:foldl(fun (Cat, Acc) ->
+			     case occi_category:class(Cat) of
+				 kind ->
+				     to_headers(kind, Cat, Acc);
+				 mixin ->
+				     to_headers(mixin, Cat, Acc)
+			     end
+		     end, Headers, Categories),
     CatActions = fun(Cat, Acc) ->
 			  occi_category:actions(Cat) ++ Acc
 		  end,
-    Actions = lists:foldl(CatActions, 
-			  lists:foldl(CatActions, [], occi_extension:kinds(Ext)), 
-			  occi_extension:mixins(Ext)),
+    Actions = lists:foldl(CatActions, [], Categories),
     lists:foldl(fun (A, Acc) ->
 			     to_headers(action, A, Acc)
-		     end, H1, Actions);
+		     end, H0, Actions);
+
+to_headers(extension, Ext, Headers) ->
+    Categories = occi_extension:kinds(Ext) ++ occi_extension:mixins(Ext),
+    to_headers(categories, Categories, Headers);
 
 to_headers(kind, Kind, Headers) ->
     {Scheme, Term} = occi_kind:id(Kind),
@@ -102,7 +106,7 @@ to_headers(action, Action, Headers) ->
 			 
 
 attribute_list([], Acc) ->
-    string:join(lists:reverse(Acc), " ");
+    string:join(Acc, " ");
 
 attribute_list([ Attr | Tail ], Acc) ->
     Def = occi_attribute:name(Attr),

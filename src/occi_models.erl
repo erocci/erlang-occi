@@ -16,9 +16,10 @@
 
 -export([import/1,
 	 import/2,
+	 categories/0,
 	 category/1,
 	 find/1,
-	 add_category/3,
+	 add_category/2,
 	 attribute/2,
 	 attributes/1]).
 
@@ -26,14 +27,13 @@
 -define(core_scheme, "http://schemas.ogf.org/occi/core#").
 
 -record category, {id        :: occi_category:id(),
-		   extension :: occi_extension:id(),
 		   location  :: string(),
 		   value     :: occi_category:t()}.
 
+-define(default_hash, {default, "categories"}).
 -type hash_t() :: {default, Prefix :: string()}
 		| mfa().
 
--define(default_hash, {default, "categories"}).
 -export_type([hash_t/0]).
 
 -ifdef(TEST).
@@ -76,6 +76,21 @@ import(E, Hash) ->
     ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E), Hash).
 
 
+%% @doc Return the list of categories
+%%
+%% @end
+-spec categories() -> [occi_category:t()].
+categories() ->
+    Fun = fun () -> mnesia:foldl(fun (#category{value=Cat}, Acc) ->
+					 [ Cat | Acc ]
+				 end, [], category)
+	  end,
+    case mnesia:transaction(Fun) of
+	{aborted, Err} -> throw(Err);
+	{atomic, Categories} -> Categories
+    end.
+
+
 -spec category(occi_category:id()) -> occi_category:t() | undefined.
 category(Id) ->
     case mnesia:dirty_read(category, Id) of
@@ -93,10 +108,11 @@ find(Location) ->
     end.
 
 
--spec add_category(occi_extension:id(), occi_category:t(), hash_t()) -> ok.
-add_category(Scheme, Cat, Location) ->
+-spec add_category(occi_category:t(), hash_t()) -> ok.
+add_category(Cat, Hash) ->
+    Location = hash_location(occi_category:id(Cat), Hash),
     Cat0 = occi_category:location(Location, Cat),
-    C = #category{id=occi_category:id(Cat0), extension=Scheme, location=Location, value=Cat0},
+    C = #category{id=occi_category:id(Cat0), location=Location, value=Cat0},
     case mnesia:transaction(fun() -> mnesia:write(C) end) of
 	{atomic, ok} ->
 	    ok;
@@ -136,15 +152,10 @@ attributes(CatId) ->
 %%
 %% Priv
 %%
-add_category(Scheme, Cat) ->
-    Location = hash_location(occi_category:id(Cat), ?default_hash),
-    add_category(Scheme, Cat, Location).
-
-
 core_categories() ->
-    ok = add_category(?core_scheme, occi_category:entity()),
-    ok = add_category(?core_scheme, occi_category:resource()),
-    ok = add_category(?core_scheme, occi_category:link_()),
+    ok = add_category(occi_category:entity(), ?default_hash),
+    ok = add_category(occi_category:resource(), ?default_hash),
+    ok = add_category(occi_category:link_(), ?default_hash),
     ok.
 
 %% Check extension exists in the database, throw error if not
@@ -168,8 +179,7 @@ load_categories(_Scheme, [], _Hash) ->
 
 load_categories(Scheme, [ Cat | Categories ], Hash) ->
     ?debug("Add category: ~p", [occi_category:id(Cat)]),
-    Location = hash_location(occi_category:id(Cat), Hash),
-    ok = add_category(Scheme, Cat, Location),
+    ok = add_category(Cat, Hash),
     load_categories(Scheme, Categories, Hash).
 
 

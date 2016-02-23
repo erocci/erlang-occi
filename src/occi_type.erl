@@ -11,6 +11,7 @@
 	 render/2]).
 
 -type name() :: extension
+	      | categories
 	      | category
 	      | kind
 	      | mixin
@@ -35,6 +36,9 @@
 
 
 -spec type(t()) -> name().
+type(T) when is_list(T) ->
+    categories;
+
 type(T) ->
     element(1, T).
 
