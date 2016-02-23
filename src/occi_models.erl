@@ -15,11 +15,9 @@
 -on_load(init/0).
 
 -export([import/1,
-	 import/2,
 	 categories/0,
 	 category/1,
-	 find/1,
-	 add_category/2,
+	 add_category/1,
 	 attribute/2,
 	 attributes/1]).
 
@@ -27,14 +25,7 @@
 -define(core_scheme, "http://schemas.ogf.org/occi/core#").
 
 -record category, {id        :: occi_category:id(),
-		   location  :: string(),
 		   value     :: occi_category:t()}.
-
--define(default_hash, {default, "categories"}).
--type hash_t() :: {default, Prefix :: string()}
-		| mfa().
-
--export_type([hash_t/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -53,27 +44,14 @@ init() ->
     ok.
 
 
-%% @doc Equivalent import(E, {default, "categories"})
+%% @doc Import an extension into the model
+%%
 %% @end
 -spec import(occi_extension:t()) -> ok.
 import(E) ->
-    import(E, ?default_hash).
-
-
-%% @doc Import an extension into the model
-%% Hash is the method used to attribute an url to the category collection.
-%% <ul>
-%%   <li><em>'default':</em> location is of the form /categories/&lt;name&gt; where 
-%%   &lt;name&gt; is the term of the category, eventually suffix'ed with a number</li>
-%%   <li><em>mfa():</em>fun((Scheme, Term, State) -> {string(), State})
-%% </ul>
-%%
-%% @end
--spec import(occi_extension:t(), hash_t()) -> ok.
-import(E, Hash) ->
-    ok = load_imports(occi_extension:imports(E), Hash),
-    ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E), Hash),
-    ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E), Hash).
+    ok = load_imports(occi_extension:imports(E)),
+    ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
+    ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
 
 
 %% @doc Return the list of categories
@@ -99,20 +77,9 @@ category(Id) ->
     end.
 
 
-%% @doc Find a category by location
--spec find(string()) -> occi_category:t() | undefined.
-find(Location) ->
-    case mnesia:dirty_match_object(#category{location=Location, _='_'}) of
-	[] -> undefined;
-	[#category{value=C}] -> C
-    end.
-
-
--spec add_category(occi_category:t(), hash_t()) -> ok.
-add_category(Cat, Hash) ->
-    Location = hash_location(occi_category:id(Cat), Hash),
-    Cat0 = occi_category:location(Location, Cat),
-    C = #category{id=occi_category:id(Cat0), location=Location, value=Cat0},
+-spec add_category(occi_category:t()) -> ok.
+add_category(Cat) ->
+    C = #category{id=occi_category:id(Cat), value=Cat},
     case mnesia:transaction(fun() -> mnesia:write(C) end) of
 	{atomic, ok} ->
 	    ok;
@@ -153,34 +120,34 @@ attributes(CatId) ->
 %% Priv
 %%
 core_categories() ->
-    ok = add_category(occi_category:entity(), ?default_hash),
-    ok = add_category(occi_category:resource(), ?default_hash),
-    ok = add_category(occi_category:link_(), ?default_hash),
+    ok = add_category(occi_category:entity()),
+    ok = add_category(occi_category:resource()),
+    ok = add_category(occi_category:link_()),
     ok.
 
 %% Check extension exists in the database, throw error if not
-load_imports([], _) ->
+load_imports([]) ->
     ok;
 
-load_imports([ Scheme | Imports ], Hash) ->
+load_imports([ Scheme | Imports ]) ->
     ?debug("Import extension: ~s", [Scheme]),
     Urls = [{baseurl() ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
     case occi_dl:resource(Scheme, Urls) of
 	{ok, Path} ->
 	    import(occi_extension:load_path(Path)),
-	    load_imports(Imports, Hash);
+	    load_imports(Imports);
 	{error, Err} ->
 	    throw({import, Err})
     end.
 
 
-load_categories(_Scheme, [], _Hash) ->
+load_categories(_Scheme, []) ->
     ok;
 
-load_categories(Scheme, [ Cat | Categories ], Hash) ->
+load_categories(Scheme, [ Cat | Categories ]) ->
     ?debug("Add category: ~p", [occi_category:id(Cat)]),
-    ok = add_category(Cat, Hash),
-    load_categories(Scheme, Categories, Hash).
+    ok = add_category(Cat),
+    load_categories(Scheme, Categories).
 
 
 baseurl() ->
@@ -192,29 +159,6 @@ baseurl() ->
 	Dir when is_list(Dir) ->
 	    Dir
     end.
-
-
-hash_location({_Scheme, Term}, {default, Prefix}) when is_list(Prefix) ->
-    hash(Term, Prefix, 0);
-
-hash_location(Id, {M, F, [A]}) ->
-    erlang:apply(M, F, [Id, A]).
-
-
-hash(Term, Prefix, 0) ->
-    Location = filename:join([Prefix, Term]),
-    case find(Location) of
-	undefined -> Location;
-	_ -> hash(Term, Prefix, 1)
-    end;
-
-hash(Term, Prefix, I) ->
-    Location = filename:join([Prefix, lists:flatten(io_lib:format("~s.~b", [Term, I]))]),
-    case find(Location) of
-	undefined -> Location;
-	_ -> hash(Term, Prefix, I+1)
-    end.
-
 
 %%%
 %%% eunit
