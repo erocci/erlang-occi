@@ -63,8 +63,23 @@ to_xml(kind, K) ->
 to_xml(mixin, M) ->
     {Scheme, Term} = occi_mixin:id(M),
     A = [{scheme, Scheme}, {term, Term}],
-    C = [],
-    {mixin, lists:reverse(A), lists:reverse(C)};
+    A0 = case occi_mixin:title(M) of
+	     [] -> A;
+	     Title -> [{title, Title} | A]
+	 end,
+    C = lists:foldl(fun ({DepScheme, DepTerm}, Acc) ->
+			    [ {depends, [{scheme, DepScheme}, {term, DepTerm}], []} | Acc]
+		    end, [], occi_mixin:depends(M)),
+    C0 = lists:foldl(fun ({ApplyScheme, ApplyTerm}, Acc) ->
+			     [ {depends, [{scheme, ApplyScheme}, {term, ApplyTerm}], []} | Acc]
+		     end, C, occi_mixin:applies(M)),
+    C1 = lists:foldl(fun (Attr, Acc) ->
+			   [ to_xml(attribute, Attr) | Acc ]
+		   end, C0, occi_mixin:attributes(M)),
+    C2 = lists:foldl(fun (Action, Acc) ->
+			     [ to_xml(action, Action) | Acc ]
+		     end, C1, occi_mixin:actions(M)),
+    {mixin, lists:reverse(A0), lists:reverse(C2)};
 
 to_xml(action, Action) ->
     {Scheme, Term} = occi_action:id(Action),
@@ -119,8 +134,9 @@ to_xml(attribute, Attr) ->
 %%% Priv
 %%%
 to_document(Type, T) ->
+    {Name, Attrs, Children} = to_xml(Type, T),
     Ns = [{xmlns, ?occi_uri}, {'xmlns:xs', ?xsd_uri}],
-    xmerl:export_simple([to_xml(Type, T)], xmerl_xml, Ns).
+    xmerl:export_simple([{Name, Attrs ++ Ns, Children}], xmerl_xml, []).
 
 
 %%%
