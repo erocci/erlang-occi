@@ -19,7 +19,9 @@
 	 add_attribute/2,
 	 attributes/1,
 	 add_action/2,
-	 actions/1]).
+	 actions/1,
+	 location/1,
+	 location/2]).
 
 -export([entity/0,
 	 resource/0,
@@ -100,7 +102,7 @@ add_attribute(Attr, C) ->
     ?s(attributes, Attrs#{ occi_attribute:name(Attr) => Attr }, C).
 
 
--spec attributes(occi_category:t()) -> [occi_attribute:t()].
+-spec attributes(t()) -> [occi_attribute:t()].
 attributes(C) ->
     Attrs = ?g(attributes, C),
     maps:values(Attrs).
@@ -112,10 +114,20 @@ add_action(Action, {Cls, _,  M}=C) when Cls =:= kind; Cls =:= mixin ->
     ?s(actions, Actions#{ occi_action:id(Action) => Action}, C).
 
 
--spec actions(occi_category:t()) -> [occi_action:t()].
+-spec actions(t()) -> [occi_action:t()].
 actions(C) ->
     Actions = ?g(actions, C),
     maps:values(Actions).
+
+
+-spec location(t()) -> string().
+location(C) ->
+    ?g(location, C).
+
+
+-spec location(string(), t()) -> t().
+location(Location, C) when is_list(Location) ->
+    ?s(location, Location, C).
 
 
 %% @throws {invalid_cid, term()}
@@ -144,20 +156,23 @@ parse_id(Id) ->
 entity() ->
     {kind, {"http://schemas.ogf.org/occi/core#", "entity"}, #{
 	     title => "Entity",
-	     attributes => #{} 
+	     attributes => #{},
+	     location => undefined
 	    }}.
 
 
 resource() ->
     {kind, {"http://schemas.ogf.org/occi/core#", "resource"}, #{
 	     title => "Resource",
-	     attributes => #{} }}.
+	     attributes => #{},
+	     location => undefined }}.
 
 
 link_() ->
     {kind, {"http://schemas.ogf.org/occi/core#", "link"}, #{
        title => "Link",
-	     attributes => #{} }}.
+	     attributes => #{},
+	     location => undefined }}.
 
 
 %%%

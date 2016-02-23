@@ -28,7 +28,7 @@
 new(Scheme, Term) ->
     M0 = occi_category:new(Scheme, Term, mixin),
     Map = M0#mixin.m,
-    M0#mixin{m = Map#{applies => [], depends => [], actions => #{}} }.
+    M0#mixin{m = Map#{applies => [], depends => [], actions => #{}, location => undefined} }.
 
 
 -spec add_apply(string() | binary() | occi_category:id(), t()) -> t().

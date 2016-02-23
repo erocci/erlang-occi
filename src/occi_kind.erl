@@ -27,7 +27,7 @@
 new(Scheme, Term) ->
     K0 = occi_category:new(Scheme, Term, kind),
     M = K0#kind.m,
-    M1 = M#{parent => undefined, actions => #{} },
+    M1 = M#{parent => undefined, actions => #{}, location => undefined },
     K0#kind{m=M1}.
 
 
