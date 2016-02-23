@@ -18,6 +18,8 @@
 	 mutable/2,
 	 default/1,
 	 default/2,
+	 pattern/1,
+	 pattern/2,
 	 description/1,
 	 description/2]).
 
@@ -36,6 +38,7 @@ new(Name, Type) ->
      required => false,
      mutable => true,
      default => undefined,
+     pattern => "",
      description => ""
     }.
 
@@ -88,6 +91,16 @@ default(A) ->
 -spec default(occi_base_type:t(), t()) -> t().
 default(Value, A) ->
     A#{ default := Value }.
+
+
+-spec pattern(t()) -> string().
+pattern(A) ->
+    maps:get(pattern, A).
+
+
+-spec pattern(string(), t()) -> t().
+pattern(Pattern, A) ->
+    A#{ pattern := Pattern }.
 
 
 -spec description(t()) -> string().
