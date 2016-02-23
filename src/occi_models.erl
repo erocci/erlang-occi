@@ -1,6 +1,8 @@
 %%% @author Jean Parpaillon <jean.parpaillon@free.fr>
 %%% @copyright (C) 2016, Jean Parpaillon
-%%% @doc
+%%% @doc The module is used to access the full model of an OCCI endpoint, 
+%%% ie, more or less extensions with resolved imports and location associated
+%%% to each kind or mixin.
 %%%
 %%% @end
 %%% Created :  4 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
@@ -12,7 +14,7 @@
 -export([init/0]).
 -on_load(init/0).
 
--export([register/1,
+-export([import/1,
 	 category/1,
 	 add_category/2,
 	 attribute/2,
@@ -52,10 +54,10 @@ init() ->
     ok.
 
 
-%% @doc Register categories of the given extension
+%% @doc Import an extension into the model
 %% @end
--spec register(occi_extension:t()) -> ok.
-register(E) ->
+-spec import(occi_extension:t()) -> ok.
+import(E) ->
     ok = load_imports(occi_extension:imports(E)),
     ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
     ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
@@ -123,9 +125,10 @@ load_imports([]) ->
 
 load_imports([ Scheme | Imports ]) ->
     ?debug("Import extension: ~s", [Scheme]),
-    case import(Scheme) of
+    Urls = [{baseurl() ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
+    case occi_dl:resource(Scheme, Urls) of
 	{ok, Path} ->
-	    register(occi_extension:load_path(Path)),
+	    import(occi_extension:load_path(Path)),
 	    load_imports(Imports);
 	{error, Err} ->
 	    throw({import, Err})
@@ -139,12 +142,6 @@ load_categories(Scheme, [ Cat | Categories ]) ->
     ?debug("Add category: ~p", [occi_category:id(Cat)]),
     ok = add_category(Scheme, Cat),
     load_categories(Scheme, Categories).
-
-
-import(Scheme) ->
-    Base = baseurl(),
-    Urls = [{Base ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
-    occi_dl:resource(Scheme, Urls).
 
 
 baseurl() ->
