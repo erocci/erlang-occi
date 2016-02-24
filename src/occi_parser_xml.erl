@@ -20,7 +20,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
-%% @throws {parse_error, term()}
+%% @throws {parse_error, integer(), term()}
 -spec parse(occi:t_name(), iolist()) -> occi_extension:t().
 parse(RootType, Xml) ->
     case xmerl_sax_parser:stream(Xml, options(fun handle_event/3)) of
@@ -30,9 +30,9 @@ parse(RootType, Xml) ->
 	    throw({parse_error, {invalid_type, Other}});
 	{ok, Else, _Rest} ->
 	    throw({parse_error, Else});
-	{Tag, {_, _, LineNo}, Reason, _EndTags, _EventState}=Err -> 
+	{Tag, {_, _, LineNo}, Reason, _EndTags, _EventState} -> 
 	    ?error("[line ~b] parse error: {~p, ~p}", [LineNo, Tag, Reason]),
-	    throw({parse_error, Err})
+	    throw({parse_error, LineNo, {Tag, Reason}})
     end.
 
 options(Fun) ->
@@ -41,6 +41,7 @@ options(Fun) ->
 
 
 %% @throws {invalid_attribute_type, term()} | {unknown_attribute, string(), {string(), string(), integer()}}
+%%-logging(debug).
 -spec handle_event(xmerl_sax_parser:event(), term(), state()) -> state().
 handle_event(startDocument, _, S) ->
     S;
@@ -71,12 +72,26 @@ handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos, #{ stack := [ {ext
     Kind = occi_kind:title(Title, occi_kind:new(Scheme, Term)),
     S#{ stack := [ {kind, Kind}, {extension, Ext} | Stack ] };
 
+handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos, 
+	     #{ stack := [ {resource, Id, undefined, Map} | Stack] }=S) ->
+    Term = attr("term", A),
+    Scheme = attr("scheme", A),
+    S#{ stack := [ {resource, Id, {Scheme, Term}, Map} | Stack ] };
+
 handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := [ {extension, Ext} | Stack] }=S) ->
     Term = attr("term", A),
     Scheme = attr("scheme", A, occi_extension:scheme(Ext)),
     Title = attr("title", A, ""),
     Mixin = occi_mixin:title(Title, occi_mixin:new(Scheme, Term)),
     S#{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack ] };
+
+handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := Stack }=S) ->
+    Id = attr("id", A),
+    Map = #{ title => attr("title", A, "") },
+    S#{ stack := [ {resource, Id, undefined, Map} | Stack ] };
+
+handle_event({startElement, ?occi_uri, "summary", _QN, _A}, _Pos, #{ stack := [ {resource, _, _, _}=R | Stack ] }=S) ->
+    S#{ stack := [ {summary, ""}, R | Stack ] };
 
 handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
     Term = attr("term", A),
@@ -136,15 +151,27 @@ handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {kind, Kind}
     Ext2 = occi_extension:add_category(Kind, Ext),
     S#{ stack := [ {extension, Ext2} | Stack ] };
 
+handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {resource, _, _, _} | _]=Stack }=S) ->
+    S#{ stack := Stack };
+
 handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack] }=S) ->
     Ext2 = occi_extension:add_category(Mixin, Ext),
     S#{ stack := [ {extension, Ext2} | Stack ] };
+
+handle_event({endElement, ?occi_uri, "resource", _QN}, _, #{ stack := [ {resource, Id, Kind, Map} ] }=S) ->
+    R = occi_resource:new(Id, Kind),
+    R0 = occi_resource:title(maps:get(title, Map), R),
+    S#{ stack := [ {resource, R0} ] };
 
 handle_event({endElement, ?occi_uri, "depends", _QN}, _, S) ->
     S;
 
 handle_event({endElement, ?occi_uri, "applies", _QN}, _, S) ->
     S;
+
+handle_event({endElement, ?occi_uri, "summary", _QN}, _, #{ stack := [ {summary, Summary}, {resource, Id, Kind, Map} | Stack ] }=S) ->
+    Map0 = Map#{ summary => lists:flatten(Summary) },
+    S#{ stack := [ {resource, Id, Kind, Map0} | Stack ] };
 
 handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
 	     #{ stack := [ {attribute, _, undefined, _} | _] }) ->
@@ -181,8 +208,8 @@ handle_event({endElement, ?xsd_uri, "enumeration", _QN}, _, S) ->
 handle_event({endElement, ?occi_uri, "extension", _QN}, _, S) ->
     S;
 
-handle_event({characters, _C}, _, S) ->
-    S;
+handle_event({characters, C}, _, #{ stack := [ {summary, Acc} | Stack ] }=S) ->
+    S#{ stack := [ {summary, [Acc, C]} | Stack ] };
 
 handle_event({ignorableWhitespace, _WS}, _, S) ->
     S;

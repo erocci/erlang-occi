@@ -17,12 +17,21 @@ suite() ->
     [{timetrap,{seconds,30}}].
 
 init_per_suite(Config) ->
+    {ok, _} = application:ensure_all_started(occi),
     Config.
 
 
 end_per_suite(_Config) ->
+    ok = application:stop(occi),
+    ok = application:stop(mnesia),
     ok.
 
+
+init_per_group(resources, Config) ->
+    ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
+    {ok, Xml} = file:read_file(ExtFile),
+    ok = occi_models:import(occi_parser_xml:parse(extension, Xml)),
+    Config;
 
 init_per_group(_GroupName, Config) ->
     Config.
@@ -41,16 +50,25 @@ end_per_testcase(_TestCase, _Config) ->
 
 
 groups() ->
-    [].
+    [
+     {extension, [], [ parse_extension ]},
+     {resources, [], 
+      [ 
+	parse_resource1,
+	parse_resource2_bad
+      ]}
+    ].
 
 
 all() -> 
-    [parse_extension].
+    [
+     {group, extension},
+     {group, resources}
+    ].
 
 
 parse_extension(Config) -> 
-    ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
-    {ok, Xml} = file:read_file(ExtFile),
+    Xml = read_file(Config, "occi-infrastructure.xml"),
     Ext = occi_parser_xml:parse(extension, Xml),
     ct:log(info, "extension: ~p", [Ext]),
     ?assertMatch("Infrastructure", occi_extension:name(Ext)),
@@ -58,3 +76,23 @@ parse_extension(Config) ->
     ?assertEqual(5, length(occi_extension:kinds(Ext))),
     ?assertEqual(6, length(occi_extension:mixins(Ext))),
     ok.
+
+parse_resource1(Config) ->
+    Bin = read_file(Config, "resource1.xml"),
+    Res = occi_parser_xml:parse(resource, Bin),
+    ?assertMatch({"http://schemas.ogf.org/occi/core#", "resource"}, occi_resource:kind(Res)).
+
+
+parse_resource2_bad(Config) ->
+    Bin = read_file(Config, "resource2.xml"),
+    ?assertThrow({parse_error, _, {unknown_category, {"http://schemas.ogf.org/occi/core#", "unknown"}}}, 
+		 occi_parser_xml:parse(resource, Bin)).
+
+
+%%%
+%%% Internal
+%%%
+read_file(Config, Path) ->
+    Fullpath = filename:join([?config(data_dir, Config), Path]),
+    {ok, Bin} = file:read_file(Fullpath),
+    Bin.
