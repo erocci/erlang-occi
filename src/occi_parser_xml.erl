@@ -61,9 +61,15 @@ handle_event({startElement, ?occi_uri, "extension", _QN, A}, _Pos, #{ stack := S
     E2 = occi_extension:name(attr("name", A, ""), Ext),
     S#{ stack => [ {extension, E2} | Stack ] };
 
+handle_event({endElement, ?occi_uri, "extension", _QN}, _, S) ->
+    S;
+
 handle_event({startElement, ?occi_uri, "import", _QN, A}, _Pos, #{ stack := [ {extension, Ext} | Stack ] }=S) ->
     Scheme = attr("scheme", A),
     S#{ stack := [ {extension, occi_extension:add_import(Scheme, Ext)} | Stack ]};
+
+handle_event({endElement, ?occi_uri, "import", _QN}, _, S) ->
+    S;
 
 handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos, #{ stack := [ {extension, Ext} | Stack] }=S) ->
     Term = attr("term", A),
@@ -78,6 +84,13 @@ handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos,
     Scheme = attr("scheme", A),
     S#{ stack := [ {resource, Id, {Scheme, Term}, Map} | Stack ] };
 
+handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {kind, Kind}, {extension, Ext} | Stack] }=S) ->
+    Ext2 = occi_extension:add_category(Kind, Ext),
+    S#{ stack := [ {extension, Ext2} | Stack ] };
+
+handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {resource, _, _, _} | _]=Stack }=S) ->
+    S#{ stack := Stack };
+
 handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := [ {extension, Ext} | Stack] }=S) ->
     Term = attr("term", A),
     Scheme = attr("scheme", A, occi_extension:scheme(Ext)),
@@ -85,23 +98,42 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := [ {ex
     Mixin = occi_mixin:title(Title, occi_mixin:new(Scheme, Term)),
     S#{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack ] };
 
+handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack] }=S) ->
+    Ext2 = occi_extension:add_category(Mixin, Ext),
+    S#{ stack := [ {extension, Ext2} | Stack ] };
+
 handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Id = attr("id", A),
     Map = #{ title => attr("title", A, "") },
     S#{ stack := [ {resource, Id, undefined, Map} | Stack ] };
 
+handle_event({endElement, ?occi_uri, "resource", _QN}, _, #{ stack := [ {resource, Id, Kind, Map} ] }=S) ->
+    R = occi_resource:new(Id, Kind),
+    R0 = occi_resource:title(maps:get(title, Map), R),
+    S#{ stack := [ {resource, R0} ] };
+
 handle_event({startElement, ?occi_uri, "summary", _QN, _A}, _Pos, #{ stack := [ {resource, _, _, _}=R | Stack ] }=S) ->
     S#{ stack := [ {summary, ""}, R | Stack ] };
+
+handle_event({endElement, ?occi_uri, "summary", _QN}, _, #{ stack := [ {summary, Summary}, {resource, Id, Kind, Map} | Stack ] }=S) ->
+    Map0 = Map#{ summary => lists:flatten(Summary) },
+    S#{ stack := [ {resource, Id, Kind, Map0} | Stack ] };
 
 handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
     Term = attr("term", A),
     Scheme = attr("scheme", A),
     S#{ stack := [ {mixin, occi_mixin:add_depend({Scheme, Term}, Mixin)} | Stack ] };
 
+handle_event({endElement, ?occi_uri, "depends", _QN}, _, S) ->
+    S;
+
 handle_event({startElement, ?occi_uri, "applies", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
     Term = attr("term", A),
     Scheme = attr("scheme", A),
     S#{ stack := [ {mixin, occi_mixin:add_apply({Scheme, Term}, Mixin)} | Stack ] };
+
+handle_event({endElement, ?occi_uri, "applies", _QN}, _, S) ->
+    S;
 
 handle_event({startElement, ?occi_uri, "action", _QN, A}, _Pos,
 	     #{ stack := [ {Cls, Category}, {extension, Ext} | Stack] }=S) when Cls =:= kind; Cls =:= mixin ->
@@ -111,11 +143,18 @@ handle_event({startElement, ?occi_uri, "action", _QN, A}, _Pos,
     Action = occi_action:title(Title, occi_action:new(Scheme, Term)),
     S#{ stack := [ {action, Action}, {Cls, Category}, {extension, Ext} | Stack ] };
 
+handle_event({endElement, ?occi_uri, "action", _QN}, _, 
+	     #{ stack := [ {action, Action}, {Cls, Category} | Stack ] }=S) ->
+    S#{ stack := [ {Cls, occi_category:add_action(Action, Category)} | Stack ] };
+
 handle_event({startElement, ?occi_uri, "parent", _QN, A}, _Pos, #{ stack := [ {kind, Kind} | Stack] }=S) ->
     Scheme = attr("scheme", A),
     Term = attr("term", A),
     Kind2 = occi_kind:parent({Scheme, Term}, Kind),
     S#{ stack := [ {kind, Kind2} | Stack ] };
+
+handle_event({endElement, ?occi_uri, "parent", _QN}, _, S) ->
+    S;
 
 handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
 	     #{ stack := [ {Cls, Category} | Stack] }=S) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
@@ -134,45 +173,6 @@ handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos,
 	     description => attr("default", A, "") },
     S#{ stack := [ {attribute, Name, Type, Map}, {Cls, Category} | Stack ] };
 
-handle_event({startElement, ?xsd_uri, "restriction", _QN, A}, _Pos,
-	     #{ stack := [ {attribute, _, _, _}=Attribute | Stack] }=S) ->
-    Type = case attr("base", A) of
-	       "xs:string" -> {enum, []};
-	       BaseType -> throw({invalid_attribute_type, BaseType})
-	   end,
-    S#{ stack := [ Type, Attribute | Stack ] };
-
-handle_event({startElement, ?xsd_uri, "enumeration", _QN, A}, _Pos,
-	     #{ stack := [ {enum, Enum} | Stack] }=S) ->
-    Value = list_to_atom(attr("value", A)),
-    S#{ stack := [ {enum, [ Value | Enum ]} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {kind, Kind}, {extension, Ext} | Stack] }=S) ->
-    Ext2 = occi_extension:add_category(Kind, Ext),
-    S#{ stack := [ {extension, Ext2} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {resource, _, _, _} | _]=Stack }=S) ->
-    S#{ stack := Stack };
-
-handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack] }=S) ->
-    Ext2 = occi_extension:add_category(Mixin, Ext),
-    S#{ stack := [ {extension, Ext2} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "resource", _QN}, _, #{ stack := [ {resource, Id, Kind, Map} ] }=S) ->
-    R = occi_resource:new(Id, Kind),
-    R0 = occi_resource:title(maps:get(title, Map), R),
-    S#{ stack := [ {resource, R0} ] };
-
-handle_event({endElement, ?occi_uri, "depends", _QN}, _, S) ->
-    S;
-
-handle_event({endElement, ?occi_uri, "applies", _QN}, _, S) ->
-    S;
-
-handle_event({endElement, ?occi_uri, "summary", _QN}, _, #{ stack := [ {summary, Summary}, {resource, Id, Kind, Map} | Stack ] }=S) ->
-    Map0 = Map#{ summary => lists:flatten(Summary) },
-    S#{ stack := [ {resource, Id, Kind, Map0} | Stack ] };
-
 handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
 	     #{ stack := [ {attribute, _, undefined, _} | _] }) ->
     throw({invalid_attribute_type, "undefined"});
@@ -188,28 +188,31 @@ handle_event({endElement, ?occi_uri, "attribute", _QN}, _,
     A6 = occi_attribute:description(maps:get(description, Map), A5),
     S#{ stack := [ {Cls, occi_category:add_attribute(A6, Category)} | Stack ] };
 
+handle_event({startElement, ?xsd_uri, "restriction", _QN, A}, _Pos,
+	     #{ stack := [ {attribute, _, _, _}=Attribute | Stack] }=S) ->
+    Type = case attr("base", A) of
+	       "xs:string" -> {enum, []};
+	       BaseType -> throw({invalid_attribute_type, BaseType})
+	   end,
+    S#{ stack := [ Type, Attribute | Stack ] };
+
 handle_event({endElement, ?xsd_uri, "restriction", _QN}, _, 
 	     #{ stack := [ {enum, Values}, {attribute, Name, _, Map} | Stack ] }=S) ->
     S#{ stack := [ {attribute, Name, {enum, Values}, Map} | Stack ] };
 
-handle_event({endElement, ?occi_uri, "action", _QN}, _, 
-	     #{ stack := [ {action, Action}, {Cls, Category} | Stack ] }=S) ->
-    S#{ stack := [ {Cls, occi_category:add_action(Action, Category)} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "import", _QN}, _, S) ->
-    S;
-
-handle_event({endElement, ?occi_uri, "parent", _QN}, _, S) ->
-    S;
+handle_event({startElement, ?xsd_uri, "enumeration", _QN, A}, _Pos,
+	     #{ stack := [ {enum, Enum} | Stack] }=S) ->
+    Value = list_to_atom(attr("value", A)),
+    S#{ stack := [ {enum, [ Value | Enum ]} | Stack ] };
 
 handle_event({endElement, ?xsd_uri, "enumeration", _QN}, _, S) ->
     S;
 
-handle_event({endElement, ?occi_uri, "extension", _QN}, _, S) ->
-    S;
-
 handle_event({characters, C}, _, #{ stack := [ {summary, Acc} | Stack ] }=S) ->
     S#{ stack := [ {summary, [Acc, C]} | Stack ] };
+
+handle_event({characters, _C}, _, S) ->
+    S;
 
 handle_event({ignorableWhitespace, _WS}, _, S) ->
     S;
