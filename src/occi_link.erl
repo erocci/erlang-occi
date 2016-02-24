@@ -7,9 +7,10 @@
 
 -module(occi_link).
 
+-include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, new/2, category/0]}]).
+-mixin([{occi_entity, except, [new/1, new/2, new/3, category/0]}]).
 
 -export([new/3, 
 	 new/4,
@@ -34,18 +35,19 @@ new(Id, Src, Target) ->
 %% @throws {unknown_category, term()}
 -spec new(string(), occi_category:id() | string() | binary(), string(), string()) -> t().
 new(Id, KindId, Src, Target) when is_list(Id), is_list(Src), is_list(Target) ->
-    Entity = occi_entity:new(Id, KindId),
-    Entity#{ source => Src, target => Target }.
+    Entity = occi_entity:new(Id, KindId, link),
+    Attrs = element(?attributes, Entity),
+    setelement(?attributes, Entity, Attrs#{ source => Src, target => Target }).
 
 
 -spec source(t()) -> string().
 source(E) ->
-    maps:get(source, E).
+    ?g(source, E).
 
 
 -spec target(t()) -> string().
 target(E) ->
-    maps:get(target, E).
+    ?g(target, E).
 
 %%%
 %%% eunit

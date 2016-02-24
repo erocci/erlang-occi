@@ -17,6 +17,7 @@
 
 -export([new/1, 
 	 new/2,
+	 new/3,
 	 id/1,
 	 kind/1,
 	 mixins/1,
@@ -27,7 +28,16 @@
 	 get/2,
 	 set/3]).
 
--type t() :: #{}.
+-include("occi_entity.hrl").
+
+-record entity, {
+	  id            :: string(),
+	  kind          :: occi_category:id(),
+	  mixins  = []  :: [occi_category:id()],
+	  attributes = #{} :: maps:map()
+	 }.
+
+-type t() :: #entity{}.
 -export_type([t/0]).
 
 -define(category_id, {"http://schemas.ogf.org/occi/core#", "entity"}).
@@ -40,41 +50,39 @@
 %% @throws {unknown_category, term()}
 -spec new(uri:t()) -> t().
 new(Id) ->
-    new(Id, ?category_id).
+    new(Id, ?category_id, entity).
 
+new(Id, Kind) ->
+    new(Id, Kind, entity).
 
 %% @throws {unknown_category, term()}
--spec new(string(), occi_category:id() | string() | binary()) -> t().
-new(Id, KindId) when is_list(Id), is_list(KindId); is_list(Id), is_binary(KindId) ->
-    new(Id, occi_category:parse_id(KindId));
+-spec new(string(), occi_category:id() | string() | binary(), entity | resource | link) -> t().
+new(Id, KindId, Class) when is_list(Id), is_list(KindId); is_list(Id), is_binary(KindId) ->
+    new(Id, occi_category:parse_id(KindId), Class);
 
-new(Id, {_Scheme, _Term}=CatId) ->
+new(Id, {_Scheme, _Term}=CatId, Class) when Class =:= entity; Class =:= resource; Class =:= link->
     Attrs = lists:foldl(fun (Attr, Acc) ->
 				Acc#{ occi_attribute:name(Attr) => undefined }
 			end, #{}, occi_models:attributes(CatId)),
-    #{id => Id,
-      kind => CatId,
-      mixins => [],
-      title => "",
-      attributes => Attrs};
+    {Class, Id, CatId, [], Attrs#{ "title" => "" }};
 
-new(_, KindId) ->
-    throw({unknown_category, KindId}).
+new(_, _, Class) ->
+    throw({invalid_entity, Class}).
 
 
 -spec id(t()) -> uri:t().
 id(E) ->
-    maps:get(id, E).
+    element(?id, E).
 
 
 -spec kind(t()) -> occi_kind:id().
 kind(E) ->
-    maps:get(kind, E).
+    element(?kind, E).
 
 
 -spec mixins(t()) -> [occi_mixin:id()].
 mixins(E) ->
-    maps:get(mixins, E).
+    element(?mixins, E).
 
 
 -spec add_mixin(occi_category:id() | string() | binary(), t()) -> t().
@@ -82,19 +90,19 @@ add_mixin(MixinId, E) when is_list(MixinId); is_binary(MixinId) ->
     add_mixin(occi_category:parse_id(MixinId), E);
 
 add_mixin(MixinId, E) ->
-    Mixins = maps:get(mixins, E),
+    Mixins = element(?mixins, E),
     Attrs = maps:fold(fun (K, _V, Acc) ->
 			      case maps:is_key(K, Acc) of
 				  true -> Acc;
 				  false -> Acc#{ K => undefined }
 			      end
-		      end, maps:get(attributes, E), occi_models:attributes(MixinId)),
-    E#{ mixins := [ MixinId | Mixins ], attributes := Attrs }.
+		      end, element(?attributes, E), occi_models:attributes(MixinId)),
+    setelement(?mixins, setelement(?attributes, E, Attrs), [MixinId | Mixins]).
 
 
 -spec title(t()) -> string().
 title(E) ->
-    maps:get(title, E).
+    ?g("title", E).
 
 
 -spec title(string() | binary(), t()) -> t().
@@ -102,39 +110,59 @@ title(Title, E) when is_binary(Title) ->
     title(binary_to_list(Title), E);
 
 title(Title, E) when is_list(Title) ->
-    E#{ title := Title }.
+    ?s("title", Title, E).
 
 
 -spec attributes(t()) -> map().
 attributes(E) ->
-    maps:get(attributes, E).
+    element(?attributes, E).
 
 
 -spec get(occi_attribute:key(), t()) -> occi_attribute:value().
 get(Key, E) ->
-    try maps:get(Key, maps:get(attributes, E)) of
+    try ?g(Key, E) of
 	Value -> Value
     catch error:{badkey, _} ->
 	    get_default(Key, E)
     end.
 
 
-%% @throws {invalid_key, occi_attribute:key()}
+%% @throws {invalid_key, occi_attribute:key()} | {invalid_value, occi_base_type:spec(), term()}
 -spec set(occi_attribute:key(), occi_attribute:value(), t()) -> occi_attribute:value().
 set(Key, Value, E) ->
-    Attrs = maps:get(attributes, E),
-    try maps:update(Key, Value, Attrs) of
-	Attrs2 -> E#{ attributes := Attrs2 }
-    catch error:{badkey, Key} ->
+    Attrs = element(?attributes, E),
+    case maps:is_key(Key, Attrs) of
+	true ->
+	    Spec = spec(Key, E),
+	    Casted = set_or_update(Value, maps:get(Key, Attrs), Spec),
+	    setelement(?attributes, E, maps:update(Key, Casted, Attrs));
+	false ->
 	    throw({invalid_key, Key})
     end.
 
 %%%
 %%% internal
 %%%
+spec(Key, E) ->
+    Categories = element(?mixins, E) ++ [element(?kind, E)],
+    occi_models:attribute(Key, Categories).
+
 get_default(Key, E) ->
-    Categories = maps:get(mixins, E) ++ [maps:get(kind, E)],
-    occi_attribute:default(occi_models:attribute(Key, Categories)).
+    occi_attribute:default(spec(Key, E)).
+
+
+set_or_update(Value, undefined, Spec) ->
+    occi_base_type:cast(Value, occi_attribute:type(Spec));
+
+set_or_update(Value, _Else, Spec) ->
+    update(Value, occi_attribute:mutable(Spec), Spec).
+
+
+update(Value, true, Spec) ->
+    occi_base_type:cast(Value, occi_attribute:type(Spec));
+
+update(_Value, false, Spec) ->
+    throw({immutable_attribute, occi_attribute:name(Spec)}).
 
 
 %%%

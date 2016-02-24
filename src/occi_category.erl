@@ -93,7 +93,7 @@ title(Title, C) ->
 -spec attribute(occi_attribute:key(), t()) -> occi_attribute:t().
 attribute(Key, C) ->
     Attrs = ?g(attributes, C),
-    map:get(Key, Attrs, undefined).
+    maps:get(Key, Attrs, undefined).
 
 
 -spec add_attribute(occi_attribute:t(), t()) -> t().

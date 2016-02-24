@@ -7,6 +7,7 @@
 
 -module(occi_resource).
 
+-include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
 -mixin([{occi_entity, except, [new/1, new/2, category/0]}]).
@@ -35,13 +36,13 @@ new(Id) ->
 %% @throws {unknown_category, term()} | {invalid_uri, iolist()}
 -spec new(uri:t() | string() | binary(), occi_category:id() | string() | binary()) -> t().
 new(Id, KindId) ->
-    Entity = occi_entity:new(Id, KindId),
-    Entity#{ summary => ""}.
+    Entity = occi_entity:new(Id, KindId, resource),
+    setelement(?attributes, Entity, maps:put(summary, "", element(?attributes, Entity))).
 
 
 -spec summary(t()) -> string().
 summary(E) ->
-    maps:get(summary, E).
+    ?g(summary, E).
 
 
 -spec summary(string() | binary(), t()) -> t().
@@ -49,7 +50,7 @@ summary(Summary, E) when is_binary(Summary) ->
     summary(binary_to_list(Summary), E);
 
 summary(Summary, E) when is_list(Summary) ->
-    E#{ summary := Summary }.
+    ?s(summary, Summary, E).
 
 
 %%%
