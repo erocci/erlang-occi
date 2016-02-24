@@ -37,23 +37,15 @@
 -endif.
 
 
-%% @throws {unknown_category, term()} | {invalid_uri, iolilst()}
+%% @throws {unknown_category, term()}
 -spec new(uri:t()) -> t().
 new(Id) ->
     new(Id, ?category_id).
 
 
-%% @throws {unknown_category, term()} | {invalid_uri, iolist()}
--spec new(uri:t() | string() | binary(), occi_category:id() | string() | binary()) -> t().
-new(IdStr, KindId) when is_list(IdStr); is_binary(IdStr) ->
-    try uri:from_string(IdStr) of
-	Id -> new(Id, KindId)
-    catch
-	error:{badmatch, _} ->
-	    throw({invalid_uri, IdStr})
-    end;
-
-new(Id, KindId) when is_list(KindId); is_binary(KindId) ->
+%% @throws {unknown_category, term()}
+-spec new(string(), occi_category:id() | string() | binary()) -> t().
+new(Id, KindId) when is_list(Id), is_list(KindId); is_list(Id), is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId));
 
 new(Id, {_Scheme, _Term}=CatId) ->
