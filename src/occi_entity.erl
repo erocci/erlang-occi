@@ -56,7 +56,10 @@ new(Id, {_Scheme, _Term}=CatId) ->
       kind => CatId,
       mixins => [],
       title => "",
-      attributes => Attrs}.
+      attributes => Attrs};
+
+new(_, KindId) ->
+    throw({unknown_category, KindId}).
 
 
 -spec id(t()) -> uri:t().
@@ -140,9 +143,7 @@ get_default(Key, E) ->
 -ifdef(TEST).
 new_test_() ->
     [
-     ?_assertThrow({invalid_uri, ""}, new("", "")),
-     ?_assertThrow({invalid_cid, ""}, new("http://example.org:8081/myentity0", "")),
-     ?_assertMatch(#{ id := {uri, <<"http">>, <<>>, <<"example.org">>, 8081, <<"/myentity0">>, [], <<>>, <<"http://example.org:8081/myentity0">>}, kind := {"http://schemas.ogf.org/occi/core#", "entity"} }, new("http://example.org:8081/myentity0", "http://schemas.ogf.org/occi/core#entity"))
+     ?_assertThrow({invalid_cid, ""}, new("http://example.org:8081/myentity0", ""))
     ].
 
 -endif.

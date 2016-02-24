@@ -27,10 +27,13 @@ end_per_suite(_Config) ->
     ok.
 
 
-init_per_group(resources, Config) ->
+init_per_group(infrastructure, Config) ->
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Xml} = file:read_file(ExtFile),
     ok = occi_models:import(occi_parser_xml:parse(extension, Xml)),
+    Config;
+
+init_per_group(resources, Config) ->
     Config;
 
 init_per_group(_GroupName, Config) ->
@@ -54,8 +57,14 @@ groups() ->
      {extension, [], [ parse_extension ]},
      {resources, [], 
       [ 
-	parse_resource1,
-	parse_resource2_bad
+	parse_resource1
+      ,parse_resource2_bad
+      ,parse_resource_link1
+      ,parse_compute1
+      ]},
+     {infrastructure,
+      [
+       parse_compute1
       ]}
     ].
 
@@ -63,7 +72,8 @@ groups() ->
 all() -> 
     [
      {group, extension},
-     {group, resources}
+     {group, resources},
+     {group, infrastructure}
     ].
 
 
@@ -88,6 +98,20 @@ parse_resource2_bad(Config) ->
     ?assertThrow({parse_error, _, {unknown_category, {"http://schemas.ogf.org/occi/core#", "unknown"}}}, 
 		 occi_parser_xml:parse(resource, Bin)).
 
+
+parse_resource_link1(Config) ->
+    Bin = read_file(Config, "resource_link1.xml"),
+    Res = occi_parser_xml:parse(resource, Bin),
+    ?assertMatch({"http://schemas.ogf.org/occi/core#", "resource"}, occi_resource:kind(Res)).
+
+
+parse_compute1(Config) ->
+    Bin = read_file(Config, "compute1.xml"),
+    Res = occi_parser_xml:parse(resource, Bin),
+    ?assertMatch({"http://schemas.ogf.org/occi/infrastructure#", "compute"}, occi_resource:kind(Res)),
+    ?assertMatch(45, occi_resource:get("occi.compute.cores", Res)),
+    ?assertMatch("a name", occi_resource:get("occi.compute.hostname", Res)),
+    ?assertMatch(1.5, occi_resource:get("occi.compute.speed", Res)).
 
 %%%
 %%% Internal
