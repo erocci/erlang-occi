@@ -26,42 +26,24 @@
 -endif.
 
 
-%% @throws {invalid_uri, iolist()}
--spec new(uri:t() | string() | binary(),
-	  uri:t() | string() | binary(),
-	  uri:t() | string() | binary()) -> t().
+-spec new(string(), string(), string()) -> t().
 new(Id, Src, Target) ->
     new(Id, ?category_id, Src, Target).
 
 
-%% @throws {unknown_category, term()} | {invalid_uri, iolist()}
--spec new(uri:t() | string() | binary(), 
-	  occi_category:id() | string() | binary(),
-	  uri:t() | string() | binary(),
-	  uri:t() | string() | binary()) -> t().
-new(Id, KindId, Src, Target) ->
+%% @throws {unknown_category, term()}
+-spec new(string(), occi_category:id() | string() | binary(), string(), string()) -> t().
+new(Id, KindId, Src, Target) when is_list(Id), is_list(Src), is_list(Target) ->
     Entity = occi_entity:new(Id, KindId),
-    SrcUri = try uri:from_string(Src) of
-		 V0 -> V0
-	     catch
-		 error:{badmatch, _} ->
-		     throw({invalid_uri, Src})
-	     end,
-    TargetUri = try uri:from_string(Target) of
-		    V1 -> V1
-		catch
-		    error:{badmatch, _} ->
-			throw({invalid_uri, Target})
-		end,
-    Entity#{ source => SrcUri, target => TargetUri }.
+    Entity#{ source => Src, target => Target }.
 
 
--spec source(t()) -> uri:t().
+-spec source(t()) -> string().
 source(E) ->
     maps:get(source, E).
 
 
--spec target(t()) -> uri:t().
+-spec target(t()) -> string().
 target(E) ->
     maps:get(target, E).
 
@@ -72,9 +54,4 @@ target(E) ->
 core() ->
     R = new("http://example.org/mylink0", "http://example.org/resource0", "http://example.org/resource1"),
     ?assertEqual(?category_id, kind(R)).
-
-new_throw_() ->
-    [
-     ?_assertThrow({invalid_uri, ""}, new("http://example.org/mylink0", "", ""))
-    ].
 -endif.
