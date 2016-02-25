@@ -11,8 +11,7 @@
 
 -include("occi_log.hrl").
 
--export([init/0]).
--on_load(init/0).
+-export([start_link/0]).
 
 -export([import/1,
 	 categories/0,
@@ -31,17 +30,11 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
-%% @doc Called on module load. Allows unit testing.
--spec init() -> ok.
-init() ->
-    {ok, _} = application:ensure_all_started(mnesia),
-    case mnesia:create_table(category, [{ram_copies, nodes()}, {attributes, record_info(fields, category)}]) of
-	{atomic, ok} -> ok;
-	{aborted, {already_exists, category}} -> ok;
-	{aborted, _} = Err -> throw(Err)
-    end,
-    ok = core_categories(),
-    ok.
+
+-spec start_link() -> {ok, pid()}.
+start_link() ->
+    Pid = spawn_link(fun init/0),
+    {ok, Pid}.
 
 
 %% @doc Import an extension into the model
@@ -55,25 +48,27 @@ import(E) ->
 
 
 %% @doc Return the list of categories
+%% Categories references (parent, depends, etc) are not resolved
 %%
 %% @end
 -spec categories() -> [occi_category:t()].
 categories() ->
-    Fun = fun () -> mnesia:foldl(fun (#category{value=Cat}, Acc) ->
-					 [ Cat | Acc ]
-				 end, [], category)
-	  end,
-    case mnesia:transaction(Fun) of
+    case mnesia:transaction(categories_t()) of
 	{aborted, Err} -> throw(Err);
 	{atomic, Categories} -> Categories
     end.
 
 
+%% @doc Return a category
+%% Category references (parent, depend, etc) is resolved:
+%% attributes and actions from references are merged into the resulting category
+%%
+%% @end
 -spec category(occi_category:id()) -> occi_category:t() | undefined.
 category(Id) ->
-    case mnesia:dirty_read(category, Id) of
-	[] -> undefined;
-	[#category{value=C}] -> C
+    case mnesia:transaction(category_t(Id)) of
+	{aborted, Err} -> throw(Err);
+	{atomic, #category{value=C}} -> C
     end.
 
 
@@ -119,11 +114,23 @@ attributes(CatId) ->
 %%
 %% Priv
 %%
-core_categories() ->
-    ok = add_category(occi_category:entity()),
-    ok = add_category(occi_category:resource()),
-    ok = add_category(occi_category:link_()),
-    ok.
+-spec init() -> ok.
+init() ->
+    case mnesia:create_table(category, [{ram_copies, nodes()}, {attributes, record_info(fields, category)}]) of
+	{atomic, ok} -> ok;
+	{aborted, {already_exists, category}} -> ok;
+	{aborted, _} = Err -> throw(Err)
+    end,
+    ok = load_imports([?core_scheme]),
+    loop().
+
+
+loop() ->
+    receive
+	_ ->
+	    loop()
+    end.
+
 
 %% Check extension exists in the database, throw error if not
 load_imports([]) ->
@@ -131,8 +138,7 @@ load_imports([]) ->
 
 load_imports([ Scheme | Imports ]) ->
     ?debug("Import extension: ~s", [Scheme]),
-    Urls = [{baseurl() ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
-    case occi_dl:resource(Scheme, Urls) of
+    case dl_schema(Scheme) of
 	{ok, Path} ->
 	    import(occi_extension:load_path(Path)),
 	    load_imports(Imports);
@@ -150,6 +156,11 @@ load_categories(Scheme, [ Cat | Categories ]) ->
     load_categories(Scheme, Categories).
 
 
+dl_schema(Scheme) ->
+    Urls = [{baseurl() ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
+    occi_dl:resource(Scheme, Urls).    
+
+
 baseurl() ->
     case application:get_env(occi, schemas_baseurl, undefined) of
 	undefined ->
@@ -159,6 +170,59 @@ baseurl() ->
 	Dir when is_list(Dir) ->
 	    Dir
     end.
+
+%%%
+%%% Requests functions
+%%%
+categories_t() ->
+    mnesia:foldl(fun (#category{value=Cat}, Acc) ->
+			 [ Cat | Acc ]
+		 end, [], category).
+
+
+-spec category_t(occi_category:id()) -> occi_category:t() | undefined.
+category_t(Id) ->
+    case mnesia:read(Id) of
+	[] -> 
+	    undefined;
+	[#category{value=C}] -> 
+	    resolve_t(occi_category:class(C), C)
+    end.
+
+
+-spec resolve_t(occi_category:class(), occi_category:t()) -> occi_category:t().
+resolve_t(kind, C) ->
+    case occi_category:parent(C) of
+	undefined ->
+	    C;
+	ParentId ->
+	    case category_t(ParentId) of
+		undefined ->
+		    throw({invalid_parent, ParentId});
+		Parent ->
+		    C0 = occi_category:parents([ParentId | occi_category:parents(Parent) ], C),
+		    mixin_t(Parent, C0)
+	    end
+    end;
+
+resolve_t(mixin, C) ->
+    lists:foldl(fun (DepId, Acc) ->
+			case category_t(DepId) of
+			    undefined ->
+				throw({invalid_dep, DepId});
+			    Dep ->
+				mixin_t(Dep, Acc)
+			end
+		end, C, occi_mixin:depends(C)).
+
+
+mixin_t(Mixin, Cat) ->
+    Cat0 = lists:foldl(fun (Attr, Acc) ->
+			       occi_category:add_attribute(Attr, Acc)
+		       end, Cat, occi_category:attributes(Mixin)),
+    lists:foldl(fun (Action, Acc) ->
+			occi_category:add_action(Action, Acc)
+		end, Cat0, occi_category:actions(Mixin)).
 
 %%%
 %%% eunit

@@ -17,7 +17,6 @@
 
 -export([new/1, 
 	 new/2,
-	 new/3,
 	 id/1,
 	 kind/1,
 	 mixins/1,
@@ -40,7 +39,9 @@
 -type t() :: #entity{}.
 -export_type([t/0]).
 
--define(category_id, {"http://schemas.ogf.org/occi/core#", "entity"}).
+-define(entity_category_id, {"http://schemas.ogf.org/occi/core#", "entity"}).
+-define(resource_category_id, {"http://schemas.ogf.org/occi/core#", "resource"}).
+-define(link_category_id, {"http://schemas.ogf.org/occi/core#", "link"}).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -50,24 +51,25 @@
 %% @throws {unknown_category, term()}
 -spec new(uri:t()) -> t().
 new(Id) ->
-    new(Id, ?category_id, entity).
-
-new(Id, Kind) ->
-    new(Id, Kind, entity).
+    new(Id, ?entity_category_id).
 
 %% @throws {unknown_category, term()}
--spec new(string(), occi_category:id() | string() | binary(), entity | resource | link) -> t().
-new(Id, KindId, Class) when is_list(Id), is_list(KindId); is_list(Id), is_binary(KindId) ->
-    new(Id, occi_category:parse_id(KindId), Class);
+-spec new(string(), occi_category:id() | string() | binary()) -> t().
+new(Id, KindId) when is_list(Id), is_list(KindId); is_list(Id), is_binary(KindId) ->
+    new(Id, occi_category:parse_id(KindId));
 
-new(Id, {_Scheme, _Term}=CatId, Class) when Class =:= entity; Class =:= resource; Class =:= link->
+new(Id, {_Scheme, _Term}=CatId) ->
+    C = occi_models:category(CatId),
+    Class = case lists:reverse(occi_kind:parents(C)) of
+		[?entity_category_id | _] -> entity;
+		[?resource_category_id | _] -> resource;
+		[?link_category_id | _] -> link;
+		[ParentId | _] -> throw({unsupported_root_parent, ParentId})
+	    end,
     Attrs = lists:foldl(fun (Attr, Acc) ->
 				Acc#{ occi_attribute:name(Attr) => undefined }
-			end, #{}, occi_models:attributes(CatId)),
-    {Class, Id, CatId, [], Attrs#{ "title" => "" }};
-
-new(_, _, Class) ->
-    throw({invalid_entity, Class}).
+			end, #{}, occi_category:attributes(C)),
+    {Class, Id, CatId, [], Attrs}.
 
 
 -spec id(t()) -> uri:t().
@@ -102,15 +104,12 @@ add_mixin(MixinId, E) ->
 
 -spec title(t()) -> string().
 title(E) ->
-    ?g("title", E).
+    get("occi.core.title", E).
 
 
 -spec title(string() | binary(), t()) -> t().
-title(Title, E) when is_binary(Title) ->
-    title(binary_to_list(Title), E);
-
-title(Title, E) when is_list(Title) ->
-    ?s("title", Title, E).
+title(Title, E) ->
+    set("occi.core.title", Title, E).
 
 
 -spec attributes(t()) -> map().

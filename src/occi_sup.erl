@@ -19,5 +19,6 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    Models = #{ id => occi_dl, start => {occi_dl, start_link, []} },
-    {ok, {{one_for_one, 1, 5}, [Models]}}.
+    DlMgr = #{ id => occi_dl, start => {occi_dl, start_link, []} },
+    Models = #{ id => occi_models, start => {occi_models, start_link, []} },
+    {ok, {{one_for_one, 1, 5}, [DlMgr, Models]}}.

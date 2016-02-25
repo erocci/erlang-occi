@@ -169,13 +169,6 @@ handle_event({endElement, ?occi_uri, "link", _QN}, _,
     L0 = occi_link:title(maps:get(title, Map), L),
     S#{stack := [ {document, {link, L0}} ]};
 
-handle_event({startElement, ?occi_uri, "summary", _QN, _A}, _Pos, #{ stack := [ {resource, _, _, _}=R | Stack ] }=S) ->
-    S#{ stack := [ {summary, ""}, R | Stack ] };
-
-handle_event({endElement, ?occi_uri, "summary", _QN}, _, #{ stack := [ {summary, Summary}, {resource, Id, Kind, Map} | Stack ] }=S) ->
-    Map0 = Map#{ summary => lists:flatten(Summary) },
-    S#{ stack := [ {resource, Id, Kind, Map0} | Stack ] };
-
 handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
     Term = attr("term", A),
     Scheme = attr("scheme", A),
@@ -282,9 +275,6 @@ handle_event({startElement, ?xsd_uri, "enumeration", _QN, A}, _Pos,
 
 handle_event({endElement, ?xsd_uri, "enumeration", _QN}, _, S) ->
     S;
-
-handle_event({characters, C}, _, #{ stack := [ {summary, Acc} | Stack ] }=S) ->
-    S#{ stack := [ {summary, [Acc, C]} | Stack ] };
 
 handle_event({characters, _C}, _, S) ->
     S;

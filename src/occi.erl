@@ -14,7 +14,6 @@
 
 
 start(_Type, _Args) ->
-    ok = occi_models:init(),
     occi_sup:start_link().
 
 stop(_State) ->

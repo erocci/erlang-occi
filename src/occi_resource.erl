@@ -10,12 +10,12 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, new/2, category/0]}]).
+-mixin([{occi_entity, except, [get/2, set/3]}]).
 
--export([new/1, 
-	 new/2,
-	 summary/1,
-	 summary/2]).
+-export([summary/1,
+	 summary/2,
+	 get/2,
+	 set/3]).
 
 -type t() :: occi_entity:t().
 -export_type([t/0]).
@@ -26,23 +26,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
-
-%% @throws {invalid_uri, iolist()}
--spec new(uri:t()) -> t().
-new(Id) ->
-    new(Id, ?category_id).
-
-
-%% @throws {unknown_category, term()} | {invalid_uri, iolist()}
--spec new(uri:t() | string() | binary(), occi_category:id() | string() | binary()) -> t().
-new(Id, KindId) ->
-    Entity = occi_entity:new(Id, KindId, resource),
-    setelement(?attributes, Entity, maps:put(summary, "", element(?attributes, Entity))).
-
-
 -spec summary(t()) -> string().
 summary(E) ->
-    ?g(summary, E).
+    ?g("occi.core.summary", E).
 
 
 -spec summary(string() | binary(), t()) -> t().
@@ -50,19 +36,35 @@ summary(Summary, E) when is_binary(Summary) ->
     summary(binary_to_list(Summary), E);
 
 summary(Summary, E) when is_list(Summary) ->
-    ?s(summary, Summary, E).
+    ?s("occi.core.summary", Summary, E).
+
+
+get("summary", E) ->
+    get("occi.core.summary", E);
+
+get(Key, Value) ->
+    occi_entity:get(Key, Value).
+
+
+set("summary", Value, E) ->
+    set("occi.core.summary", Value, E);
+
+set(Key, Value, E) ->
+    occi_entity:set(Key, Value, E).
 
 
 %%%
 %%% eunit
 %%%
 -ifdef(TEST).
-core() ->
-    R = new("http://example.org/myresource0"),
-    ?assertEqual(?category_id, kind(R)).
+%% To transform into common test, needs initialisation
 
-summary_test() ->
-    R = new("http://example.org:8081/myresource", "http://schemas.ogf.org/occi/core#resource"),
-    R0 = summary(<<"my summary">>, R),
-    ?assertMatch("my summary", summary(R0)).
+%% core() ->
+%%     R = new("http://example.org/myresource0"),
+%%     ?assertEqual(?category_id, kind(R)).
+
+%% summary_test() ->
+%%     R = new("http://example.org:8081/myresource", "http://schemas.ogf.org/occi/core#resource"),
+%%     R0 = summary(<<"my summary">>, R),
+%%     ?assertMatch("my summary", summary(R0)).
 -endif.

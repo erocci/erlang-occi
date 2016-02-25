@@ -23,10 +23,6 @@
 	 location/1,
 	 location/2]).
 
--export([entity/0,
-	 resource/0,
-	 link_/0]).
-
 -export([parse_id/1]).
 
 -type class() :: kind | mixin | action.
@@ -149,30 +145,6 @@ parse_id(Id) when is_list(Id); is_binary(Id) ->
 
 parse_id(Id) ->
     throw({invalid_cid, Id}).
-
-%%%
-%%% constructors
-%%%
-entity() ->
-    {kind, {"http://schemas.ogf.org/occi/core#", "entity"}, #{
-	     title => "Entity",
-	     attributes => #{},
-	     location => undefined
-	    }}.
-
-
-resource() ->
-    {kind, {"http://schemas.ogf.org/occi/core#", "resource"}, #{
-	     title => "Resource",
-	     attributes => #{},
-	     location => undefined }}.
-
-
-link_() ->
-    {kind, {"http://schemas.ogf.org/occi/core#", "link"}, #{
-       title => "Link",
-	     attributes => #{},
-	     location => undefined }}.
 
 
 %%%

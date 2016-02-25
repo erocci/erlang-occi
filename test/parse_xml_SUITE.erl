@@ -60,7 +60,6 @@ groups() ->
 	parse_resource1
       ,parse_resource2_bad
       ,parse_resource_link1
-      ,parse_compute1
       ]},
      {infrastructure,
       [
