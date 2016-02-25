@@ -53,7 +53,7 @@ import(E) ->
 %% @end
 -spec categories() -> [occi_category:t()].
 categories() ->
-    case mnesia:transaction(categories_t()) of
+    case mnesia:transaction(fun categories_t/0) of
 	{aborted, Err} -> throw(Err);
 	{atomic, Categories} -> Categories
     end.
@@ -66,9 +66,9 @@ categories() ->
 %% @end
 -spec category(occi_category:id()) -> occi_category:t() | undefined.
 category(Id) ->
-    case mnesia:transaction(category_t(Id)) of
+    case mnesia:transaction(fun () -> category_t(Id) end) of
 	{aborted, Err} -> throw(Err);
-	{atomic, #category{value=C}} -> C
+	{atomic, C} -> C
     end.
 
 
@@ -102,7 +102,7 @@ attribute(Key, [ CatId | Others ]) ->
     end.
 
 %% @throws {unknown_category, occi_category:id()}
--spec attributes(occi_category:id()) -> map().
+-spec attributes(occi_category:id()) -> [occi_attribute:t()].
 attributes(CatId) ->
     case category(CatId) of
 	undefined ->
@@ -182,7 +182,7 @@ categories_t() ->
 
 -spec category_t(occi_category:id()) -> occi_category:t() | undefined.
 category_t(Id) ->
-    case mnesia:read(Id) of
+    case mnesia:read(category, Id, read) of
 	[] -> 
 	    undefined;
 	[#category{value=C}] -> 
@@ -192,15 +192,15 @@ category_t(Id) ->
 
 -spec resolve_t(occi_category:class(), occi_category:t()) -> occi_category:t().
 resolve_t(kind, C) ->
-    case occi_category:parent(C) of
+    case occi_kind:parent(C) of
 	undefined ->
 	    C;
 	ParentId ->
 	    case category_t(ParentId) of
 		undefined ->
-		    throw({invalid_parent, ParentId});
+		    mnesia:abort({invalid_parent, ParentId});
 		Parent ->
-		    C0 = occi_category:parents([ParentId | occi_category:parents(Parent) ], C),
+		    C0 = occi_kind:parents([ParentId | occi_kind:parents(Parent) ], C),
 		    mixin_t(Parent, C0)
 	    end
     end;
@@ -208,10 +208,8 @@ resolve_t(kind, C) ->
 resolve_t(mixin, C) ->
     lists:foldl(fun (DepId, Acc) ->
 			case category_t(DepId) of
-			    undefined ->
-				throw({invalid_dep, DepId});
-			    Dep ->
-				mixin_t(Dep, Acc)
+			    undefined -> mnesia:abort({invalid_dep, DepId});
+			    Dep -> mixin_t(Dep, Acc)
 			end
 		end, C, occi_mixin:depends(C)).
 

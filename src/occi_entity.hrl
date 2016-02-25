@@ -6,8 +6,9 @@
 -define(kind,       3).
 -define(mixins,     4).
 -define(attributes, 5).
+-define(values,     6).
 
--define(g(Key, C), maps:get(Key, element(?attributes, C))).
--define(s(Key, Value, C), setelement(?attributes, C, maps:update(Key, Value, element(?attributes, C)))).
+-define(g(Key, C), maps:get(Key, element(?values, C))).
+-define(s(Key, Value, C), setelement(?attributes, C, maps:update(Key, Value, element(?values, C)))).
 
 -endif.

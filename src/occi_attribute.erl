@@ -7,8 +7,9 @@
 
 -module(occi_attribute).
 
--export([new/2,
+-export([new/3,
 	 name/1,
+	 category/1,
 	 type/1,
 	 title/1,
 	 title/2,
@@ -29,10 +30,11 @@
 
 -export_type([t/0]).
 
--spec new(Name :: string(), Type :: type_t()) -> t().
-new(Name, Type) ->
+-spec new(Category :: occi_category:id(), Name :: string(), Type :: type_t()) -> t().
+new(Category, Name, Type) ->
     #{ 
      name => Name,
+     category => Category,
      type => Type,
      title => "",
      required => false,
@@ -46,6 +48,11 @@ new(Name, Type) ->
 -spec name(t()) -> name_t().
 name(A) ->
     maps:get(name, A).
+
+
+-spec category(t()) -> occi_category:id().
+category(A) ->
+    maps:get(category, A).
 
 
 -spec type(t()) -> type_t().

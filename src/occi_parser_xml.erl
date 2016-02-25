@@ -243,7 +243,7 @@ handle_event({endElement, ?occi_uri, "attribute", _QN}, _,
 handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
 	     #{ stack := [ {attribute, Name, Type, Map}, {Cls, Category} | Stack ] }=S) 
   when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
-    A = occi_attribute:new(Name, Type),
+    A = occi_attribute:new(occi_category:id(Category), Name, Type),
     A2 = occi_attribute:title(maps:get(title, Map), A),
     A3 = occi_attribute:required(maps:get(required, Map), A2),
     A4 = occi_attribute:mutable(maps:get(mutable, Map), A3),
