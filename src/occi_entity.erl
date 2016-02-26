@@ -29,6 +29,7 @@
 	 set/3]).
 
 -include("occi_entity.hrl").
+-include_lib("annotations/include/annotations.hrl").
 
 -record entity, {
 	  id               :: string(),
@@ -51,7 +52,7 @@
 
 
 %% @throws {unknown_category, term()}
--spec new(uri:t()) -> t().
+-spec new(string()) -> t().
 new(Id) ->
     new(Id, ?entity_category_id).
 
@@ -65,9 +66,9 @@ new(Id, {_Scheme, _Term}=CatId) ->
 	undefined ->
 	    throw({unknown_category, CatId});
 	C ->
-	    Class = known_class(occi_kind:parents(C)),
+	    Class = known_class([CatId | occi_kind:parents(C)]),
 	    E = {Class, Id, CatId, [], #{}, #{}},
-	    merge_category(C, E)
+	    merge_parents(C, E)
     end.
 
 
@@ -90,14 +91,19 @@ mixins(E) ->
 %% If an attribute is already defined, this mixin's definition take precedence over 
 %% the previous one.
 %%
+%% @throws {invalid_category, occi_category:id()}
 %% @end
 -spec add_mixin(occi_category:id() | string() | binary(), t()) -> t().
 add_mixin(MixinId, E) when is_list(MixinId); is_binary(MixinId) ->
     add_mixin(occi_category:parse_id(MixinId), E);
 
 add_mixin(MixinId, E) ->
-    Mixin = occi_models:category(MixinId),
-    merge_category(Mixin, setelement(?mixins, E, [ MixinId | element(?mixins, E) ])).
+    case occi_models:category(MixinId) of
+	undefined ->
+	    throw({invalid_category, MixinId});
+	Mixin ->
+	    merge_mixin(Mixin, setelement(?mixins, E, [ MixinId | element(?mixins, E) ]))
+    end.
 
 
 %% @doc Unassociate mixin from this entity
@@ -143,12 +149,14 @@ attributes(E) ->
     element(?values, E).
 
 
--spec get(occi_attribute:key(), t()) -> occi_attribute:value().
+%% @throws {invalid_key, occi_attribute:key()}
+-spec get(occi_attribute:key(), t()) -> occi_attribute:value() | undefined.
 get(Key, E) ->
     try ?g(Key, E) of
+	undefined -> get_default(Key, E);
 	Value -> Value
     catch error:{badkey, _} ->
-	    get_default(Key, E)
+	    throw({invalid_key, Key})
     end.
 
 
@@ -172,6 +180,7 @@ spec(Key, E) ->
     Categories = maps:get(Key, element(?attributes, E)),
     occi_models:attribute(Key, Categories).
 
+-logging(debug).
 get_default(Key, E) ->
     occi_attribute:default(spec(Key, E)).
 
@@ -189,26 +198,71 @@ update(Value, true, Spec) ->
 update(_Value, false, Spec) ->
     throw({immutable_attribute, occi_attribute:name(Spec)}).
 
-merge_category(C, E) ->
-    Attrs0 = element(?attributes, E),
-    Values0 = element(?values, E),
-    {Attrs, Values} = lists:foldl(fun (Attr, {AccAttrs, AccValues}) ->
-					  Name = occi_attribute:name(Attr),
-					  Category = occi_attribute:category(Attr),
-					  {
-					    maps:put(Name, [ Category | maps:get(Name, AccAttrs, []) ], AccAttrs),
-					    maps:merge(#{ Name => undefined }, AccValues)
-					  }
-				  end, {Attrs0, Values0}, occi_category:attributes(C)),
-    E1 = setelement(?attributes, E, Attrs),
-    setelement(?values, E1, Values).
+
+merge_parents(Kind, E) ->
+    Attrs0 = lists:foldl(fun (ParentId, Acc) ->
+				 case occi_models:category(ParentId) of
+				     undefined ->
+					 throw({invalid_category, ParentId});
+				     Parent ->
+					 occi_kind:attributes(Parent) ++ Acc
+				 end
+			 end, occi_kind:attributes(Kind), occi_kind:parents(Kind)),
+    merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E).
+
+
+merge_mixin(Mixin, E) ->
+    Depends = merge_depends(occi_mixin:depends(Mixin), orddict:from_list([{ 0, Mixin }])),
+    Attrs0 = orddict:fold(fun (_Idx, Dep, Acc) ->
+				  occi_mixin:attributes(Dep) ++ Acc
+			  end, [], Depends),
+    merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E).
+
+
+merge_depends(Depends, Acc) ->
+    {_Idx, Acc1} = merge_depends(Depends, 1, Acc),
+    lists:reverse(Acc1).
+
+
+-logging(debug).
+merge_depends([], Idx, Acc) ->
+    {Idx, Acc};
+
+merge_depends([ DepId | Tail ], Idx, Acc) ->
+    case occi_models:category(DepId) of
+	undefined ->
+	    throw({invalid_category, DepId});
+	Dep ->
+	    case occi_category:class(Dep) of
+		mixin ->
+		    Acc1 = orddict:store(Idx, Dep, Acc),
+		    {Idx2, Acc2} = merge_depends(occi_mixin:depends(Dep), Idx+1, Acc1),
+		    merge_depends(Tail, Idx2, Acc2);
+		_ ->
+		    throw({invalid_mixin, DepId})
+	    end
+    end.
+
+
+-logging(debug).
+merge_attributes([], AttrsAcc, ValuesAcc, E) ->
+    E1 = setelement(?attributes, E, AttrsAcc),
+    setelement(?values, E1, ValuesAcc);
+
+merge_attributes([ Spec | Tail ], AttrsAcc, ValuesAcc, E) ->
+    Name = occi_attribute:name(Spec),
+    Category = occi_attribute:category(Spec),
+    AttrsAcc1 = maps:put(Name, [ Category | maps:get(Name, AttrsAcc, []) ], AttrsAcc),
+    ValuesAcc1 = maps:merge(#{ Name => undefined }, ValuesAcc),
+    merge_attributes(Tail, AttrsAcc1, ValuesAcc1, E).
 
 
 %% Use the module of the closest known ancestor
+%% Clauses order is important !
 known_class([]) ->                          entity;
-known_class([?entity_category_id | _]) ->   entity;
 known_class([?resource_category_id | _]) -> resource;
 known_class([?link_category_id | _]) ->     link;
+known_class([?entity_category_id | _]) ->   entity;
 known_class([_ | Tail]) ->                  Tail.
 
 %%%

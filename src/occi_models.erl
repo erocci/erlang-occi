@@ -200,31 +200,15 @@ resolve_t(kind, C) ->
 		undefined ->
 		    mnesia:abort({invalid_parent, ParentId});
 		Parent ->
-		    C0 = occi_kind:parents([ParentId | occi_kind:parents(Parent) ], C),
-		    mixin_t(Parent, C0)
+		    occi_kind:parents([ParentId | occi_kind:parents(Parent) ], C)
 	    end
     end;
 
 resolve_t(mixin, C) ->
-    lists:foldl(fun (DepId, Acc) ->
-			case category_t(DepId) of
-			    undefined -> mnesia:abort({invalid_dep, DepId});
-			    Dep -> mixin_t(Dep, Acc)
-			end
-		end, C, occi_mixin:depends(C)).
-
-
-mixin_t(Mixin, Cat) ->
-    Cat0 = lists:foldl(fun (Attr, Acc) ->
-			       occi_category:add_attribute(Attr, Acc)
-		       end, Cat, occi_category:attributes(Mixin)),
-    lists:foldl(fun (Action, Acc) ->
-			occi_category:add_action(Action, Acc)
-		end, Cat0, occi_category:actions(Mixin)).
+    C.
 
 %%%
 %%% eunit
 %%%
 -ifdef(TEST).
-
 -endif.

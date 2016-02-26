@@ -10,9 +10,10 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [get/2, set/3]}]).
+-mixin([{occi_entity, except, [new/1, get/2, set/3]}]).
 
--export([summary/1,
+-export([new/1,
+	 summary/1,
 	 summary/2,
 	 get/2,
 	 set/3]).
@@ -25,6 +26,11 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
+
+
+-spec new(string()) -> t().
+new(Id) ->
+    occi_entity:new(Id, ?category_id).
 
 -spec summary(t()) -> string().
 summary(E) ->
@@ -57,14 +63,4 @@ set(Key, Value, E) ->
 %%% eunit
 %%%
 -ifdef(TEST).
-%% To transform into common test, needs initialisation
-
-%% core() ->
-%%     R = new("http://example.org/myresource0"),
-%%     ?assertEqual(?category_id, kind(R)).
-
-%% summary_test() ->
-%%     R = new("http://example.org:8081/myresource", "http://schemas.ogf.org/occi/core#resource"),
-%%     R0 = summary(<<"my summary">>, R),
-%%     ?assertMatch("my summary", summary(R0)).
 -endif.

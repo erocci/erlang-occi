@@ -119,9 +119,21 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := [ {ex
     Mixin = occi_mixin:title(Title, occi_mixin:new(Scheme, Term)),
     S#{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack ] };
 
+%% mixin is a root node
+handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack }=S) ->
+    Term = attr("term", A),
+    Scheme = attr("scheme", A),
+    Title = attr("title", A, ""),
+    Mixin = occi_mixin:title(Title, occi_mixin:new(Scheme, Term)),
+    S#{ stack := [ {mixin, Mixin} | Stack ] };
+
 handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack] }=S) ->
     Ext2 = occi_extension:add_category(Mixin, Ext),
     S#{ stack := [ {extension, Ext2} | Stack ] };
+
+%% mixin is a root ndoe
+handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {document, undefined} ] }=S) ->
+    S#{ stack := [ {document, {mixin, Mixin} } ] };
 
 handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Id = attr("id", A),
