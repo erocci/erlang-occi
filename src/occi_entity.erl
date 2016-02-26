@@ -224,7 +224,7 @@ merge_depends(Depends, Acc) ->
     lists:reverse(Acc1).
 
 
--logging(debug).
+%%-logging(debug).
 merge_depends([], Idx, Acc) ->
     {Idx, Acc};
 
@@ -244,7 +244,7 @@ merge_depends([ DepId | Tail ], Idx, Acc) ->
     end.
 
 
--logging(debug).
+%%-logging(debug).
 merge_attributes([], AttrsAcc, ValuesAcc, E) ->
     E1 = setelement(?attributes, E, AttrsAcc),
     setelement(?values, E1, ValuesAcc);

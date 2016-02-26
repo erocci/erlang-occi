@@ -52,6 +52,8 @@ groups() ->
       ,mixin_resource
       ,mixin_depend_resource
       ,mixin_override_resource
+      ,mixin_delete_resource1
+      ,mixin_delete_resource2
       ]}
     ].
 
@@ -130,3 +132,30 @@ mixin_override_resource(_Config) ->
     ?assertMatch(undefined, occi_resource:get("occi.core.summary", R1)),
     ?assertMatch(undefined, occi_resource:get("occi.mixin.attr0", R1)),
     ?assertMatch("Default value 1", occi_resource:get("occi.mixin.attr1", R1)).
+
+
+%% @doc Test default value of an attribute when removing a mixin who defined
+%% an already defined attribute, but with different default value
+%% @end
+mixin_delete_resource1(_Config) ->
+    M = occi_parser_xml:parse(mixin, ?mixin2_xml),
+    ok = occi_models:add_category(M),
+    R = occi_resource:new(?entity_id),
+    R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
+    ?assertMatch("Default value 1", occi_resource:get("occi.mixin.attr1", R1)),
+    R2 = occi_resource:rm_mixin({"http://schemas.example.org/occi#", "mixin2"}, R1),
+    ?assertMatch("Default value 0", occi_resource:get("occi.mixin.attr1", R2)).
+
+
+%% @doc Test value of an attribute when removing a mixin 
+%% @end
+mixin_delete_resource2(_Config) ->
+    M = occi_parser_xml:parse(mixin, ?mixin2_xml),
+    ok = occi_models:add_category(M),
+    R = occi_resource:new(?entity_id),
+    R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
+    ?assertMatch("Default value 1", occi_resource:get("occi.mixin.attr1", R1)),
+    R2 = occi_resource:set("occi.mixin.attr1", "custom value", R1),
+    R3 = occi_resource:rm_mixin({"http://schemas.example.org/occi#", "mixin2"}, R2),
+    ?assertMatch("custom value", occi_resource:get("occi.mixin.attr1", R3)).
+    
