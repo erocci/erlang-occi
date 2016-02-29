@@ -43,7 +43,7 @@ t() = #{}
 
 
 <pre><code>
-type_t() = <a href="occi_type.md#type-t">occi_type:t()</a>
+type_t() = <a href="occi_base_type.md#type-t">occi_base_type:t()</a>
 </code></pre>
 
 <a name="index"></a>
@@ -51,19 +51,28 @@ type_t() = <a href="occi_type.md#type-t">occi_type:t()</a>
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#default-1">default/1</a></td><td></td></tr><tr><td valign="top"><a href="#default-2">default/2</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-1">mutable/1</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-2">mutable/2</a></td><td></td></tr><tr><td valign="top"><a href="#name-1">name/1</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#required-1">required/1</a></td><td></td></tr><tr><td valign="top"><a href="#required-2">required/2</a></td><td></td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr><tr><td valign="top"><a href="#type-1">type/1</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#category-1">category/1</a></td><td></td></tr><tr><td valign="top"><a href="#default-1">default/1</a></td><td></td></tr><tr><td valign="top"><a href="#default-2">default/2</a></td><td></td></tr><tr><td valign="top"><a href="#description-1">description/1</a></td><td></td></tr><tr><td valign="top"><a href="#description-2">description/2</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-1">mutable/1</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-2">mutable/2</a></td><td></td></tr><tr><td valign="top"><a href="#name-1">name/1</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#pattern-1">pattern/1</a></td><td></td></tr><tr><td valign="top"><a href="#pattern-2">pattern/2</a></td><td></td></tr><tr><td valign="top"><a href="#required-1">required/1</a></td><td></td></tr><tr><td valign="top"><a href="#required-2">required/2</a></td><td></td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr><tr><td valign="top"><a href="#type-1">type/1</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
 
+<a name="category-1"></a>
+
+### category/1 ###
+
+<pre><code>
+category(A::<a href="#type-t">t()</a>) -&gt; <a href="occi_category.md#type-id">occi_category:id()</a>
+</code></pre>
+<br />
+
 <a name="default-1"></a>
 
 ### default/1 ###
 
 <pre><code>
-default(A::<a href="#type-t">t()</a>) -&gt; <a href="occi_type.md#type-t">occi_type:t()</a>
+default(A::<a href="#type-t">t()</a>) -&gt; <a href="occi_base_type.md#type-t">occi_base_type:t()</a>
 </code></pre>
 <br />
 
@@ -72,7 +81,25 @@ default(A::<a href="#type-t">t()</a>) -&gt; <a href="occi_type.md#type-t">occi_t
 ### default/2 ###
 
 <pre><code>
-default(Value::<a href="occi_type.md#type-t">occi_type:t()</a>, A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+default(Value::<a href="occi_base_type.md#type-t">occi_base_type:t()</a>, A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+<a name="description-1"></a>
+
+### description/1 ###
+
+<pre><code>
+description(A::<a href="#type-t">t()</a>) -&gt; string()
+</code></pre>
+<br />
+
+<a name="description-2"></a>
+
+### description/2 ###
+
+<pre><code>
+description(Desc::string(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -103,12 +130,30 @@ name(A::<a href="#type-t">t()</a>) -&gt; <a href="#type-name_t">name_t()</a>
 </code></pre>
 <br />
 
-<a name="new-2"></a>
+<a name="new-3"></a>
 
-### new/2 ###
+### new/3 ###
 
 <pre><code>
-new(Name::string(), Type::<a href="#type-type_t">type_t()</a>) -&gt; <a href="#type-t">t()</a>
+new(Category::<a href="occi_category.md#type-id">occi_category:id()</a>, Name::string(), Type::<a href="#type-type_t">type_t()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+<a name="pattern-1"></a>
+
+### pattern/1 ###
+
+<pre><code>
+pattern(A::<a href="#type-t">t()</a>) -&gt; string()
+</code></pre>
+<br />
+
+<a name="pattern-2"></a>
+
+### pattern/2 ###
+
+<pre><code>
+pattern(Pattern::string(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 

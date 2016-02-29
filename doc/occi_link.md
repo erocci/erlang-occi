@@ -43,29 +43,27 @@ t() = <a href="occi_entity.md#type-t">occi_entity:t()</a>
 ### new/3 ###
 
 <pre><code>
-new(Id::<a href="uri.md#type-t">uri:t()</a> | string() | binary(), Src::<a href="uri.md#type-t">uri:t()</a> | string() | binary(), Target::<a href="uri.md#type-t">uri:t()</a> | string() | binary()) -&gt; <a href="#type-t">t()</a>
+new(Id::string(), Src::string(), Target::string()) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
-
-throws `{invalid_uri, iolist()}`
 
 <a name="new-4"></a>
 
 ### new/4 ###
 
 <pre><code>
-new(Id::<a href="uri.md#type-t">uri:t()</a> | string() | binary(), KindId::<a href="occi_category.md#type-id">occi_category:id()</a> | string() | binary(), Src::<a href="uri.md#type-t">uri:t()</a> | string() | binary(), Target::<a href="uri.md#type-t">uri:t()</a> | string() | binary()) -&gt; <a href="#type-t">t()</a>
+new(Id::string(), KindId::<a href="occi_category.md#type-id">occi_category:id()</a> | string() | binary(), Src::string(), Target::string()) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
-throws `{unknown_category, term()} | {invalid_uri, iolist()}`
+throws `{unknown_category, term()}`
 
 <a name="source-1"></a>
 
 ### source/1 ###
 
 <pre><code>
-source(E::<a href="#type-t">t()</a>) -&gt; <a href="uri.md#type-t">uri:t()</a>
+source(E::<a href="#type-t">t()</a>) -&gt; string()
 </code></pre>
 <br />
 
@@ -74,7 +72,7 @@ source(E::<a href="#type-t">t()</a>) -&gt; <a href="uri.md#type-t">uri:t()</a>
 ### target/1 ###
 
 <pre><code>
-target(E::<a href="#type-t">t()</a>) -&gt; <a href="uri.md#type-t">uri:t()</a>
+target(E::<a href="#type-t">t()</a>) -&gt; string()
 </code></pre>
 <br />
 

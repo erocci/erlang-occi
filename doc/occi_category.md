@@ -43,7 +43,7 @@ id() = {Scheme::string(), Term::string()}
 
 
 <pre><code>
-t() = #{}
+t() = #category{}
 </code></pre>
 
 <a name="index"></a>
@@ -51,12 +51,21 @@ t() = #{}
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_action-2">add_action/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_attribute-2">add_attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attribute-2">attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td></td></tr><tr><td valign="top"><a href="#class-1">class/1</a></td><td></td></tr><tr><td valign="top"><a href="#entity-0">entity/0</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td></td></tr><tr><td valign="top"><a href="#link_-0">link_/0</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#parse_id-1">parse_id/1</a></td><td></td></tr><tr><td valign="top"><a href="#resource-0">resource/0</a></td><td></td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#actions-1">actions/1</a></td><td></td></tr><tr><td valign="top"><a href="#add_action-2">add_action/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_attribute-2">add_attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attribute-2">attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td></td></tr><tr><td valign="top"><a href="#class-1">class/1</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-1">location/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-2">location/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#parse_id-1">parse_id/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
+
+<a name="actions-1"></a>
+
+### actions/1 ###
+
+<pre><code>
+actions(C::<a href="#type-t">t()</a>) -&gt; [<a href="occi_action.md#type-t">occi_action:t()</a>]
+</code></pre>
+<br />
 
 <a name="add_action-2"></a>
 
@@ -90,7 +99,7 @@ attribute(Key::<a href="occi_attribute.md#type-key">occi_attribute:key()</a>, C:
 ### attributes/1 ###
 
 <pre><code>
-attributes(C::<a href="occi_category.md#type-t">occi_category:t()</a>) -&gt; #{}
+attributes(C::<a href="#type-t">t()</a>) -&gt; [<a href="occi_attribute.md#type-t">occi_attribute:t()</a>]
 </code></pre>
 <br />
 
@@ -103,12 +112,6 @@ class(C::<a href="#type-t">t()</a>) -&gt; <a href="#type-class">class()</a>
 </code></pre>
 <br />
 
-<a name="entity-0"></a>
-
-### entity/0 ###
-
-`entity() -> any()`
-
 <a name="id-1"></a>
 
 ### id/1 ###
@@ -118,11 +121,23 @@ id(C::<a href="#type-t">t()</a>) -&gt; <a href="occi_category.md#type-id">occi_c
 </code></pre>
 <br />
 
-<a name="link_-0"></a>
+<a name="location-1"></a>
 
-### link_/0 ###
+### location/1 ###
 
-`link_() -> any()`
+<pre><code>
+location(C::<a href="#type-t">t()</a>) -&gt; string()
+</code></pre>
+<br />
+
+<a name="location-2"></a>
+
+### location/2 ###
+
+<pre><code>
+location(Location::string(), C::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
 
 <a name="new-2"></a>
 
@@ -154,12 +169,6 @@ parse_id(Id::string() | binary()) -&gt; <a href="#type-id">id()</a>
 <br />
 
 throws `{invalid_cid, term()}`
-
-<a name="resource-0"></a>
-
-### resource/0 ###
-
-`resource() -> any()`
 
 <a name="title-1"></a>
 

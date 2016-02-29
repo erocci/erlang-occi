@@ -23,7 +23,7 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 
 
 <pre><code>
-t() = #{}
+t() = #mixin{}
 </code></pre>
 
 <a name="index"></a>

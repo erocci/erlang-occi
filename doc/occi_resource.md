@@ -31,34 +31,33 @@ t() = <a href="occi_entity.md#type-t">occi_entity:t()</a>
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#new-1">new/1</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#summary-1">summary/1</a></td><td></td></tr><tr><td valign="top"><a href="#summary-2">summary/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#get-2">get/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-1">new/1</a></td><td></td></tr><tr><td valign="top"><a href="#set-3">set/3</a></td><td></td></tr><tr><td valign="top"><a href="#summary-1">summary/1</a></td><td></td></tr><tr><td valign="top"><a href="#summary-2">summary/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
 
+<a name="get-2"></a>
+
+### get/2 ###
+
+`get(Key, E) -> any()`
+
 <a name="new-1"></a>
 
 ### new/1 ###
 
 <pre><code>
-new(Id::<a href="uri.md#type-t">uri:t()</a>) -&gt; <a href="#type-t">t()</a>
+new(Id::string()) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
-throws `{invalid_uri, iolist()}`
+<a name="set-3"></a>
 
-<a name="new-2"></a>
+### set/3 ###
 
-### new/2 ###
-
-<pre><code>
-new(Id::<a href="uri.md#type-t">uri:t()</a> | string() | binary(), KindId::<a href="occi_category.md#type-id">occi_category:id()</a> | string() | binary()) -&gt; <a href="#type-t">t()</a>
-</code></pre>
-<br />
-
-throws `{unknown_category, term()} | {invalid_uri, iolist()}`
+`set(Key, Value, E) -> any()`
 
 <a name="summary-1"></a>
 

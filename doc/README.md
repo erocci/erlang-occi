@@ -20,6 +20,7 @@ renderings.
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi.md" class="module">occi</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_action.md" class="module">occi_action</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_attribute.md" class="module">occi_attribute</a></td></tr>
+<tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_base_type.md" class="module">occi_base_type</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_category.md" class="module">occi_category</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_dl.md" class="module">occi_dl</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_entity.md" class="module">occi_entity</a></td></tr>
@@ -29,8 +30,12 @@ renderings.
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_mixin.md" class="module">occi_mixin</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_models.md" class="module">occi_models</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_parser_xml.md" class="module">occi_parser_xml</a></td></tr>
+<tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_renderer_text.md" class="module">occi_renderer_text</a></td></tr>
+<tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_renderer_xml.md" class="module">occi_renderer_xml</a></td></tr>
+<tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_rendering.md" class="module">occi_rendering</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_resource.md" class="module">occi_resource</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_sup.md" class="module">occi_sup</a></td></tr>
+<tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_test.md" class="module">occi_test</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_type.md" class="module">occi_type</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_utils.md" class="module">occi_utils</a></td></tr></table>
 
