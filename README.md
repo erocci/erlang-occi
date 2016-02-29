@@ -5,3 +5,7 @@ OCCI Core Model implementation
 
 This application implements the OCCI Core meta-model and its
 renderings.
+
+# Documentation
+
+* [Full API Documentation](https://github.com/erocci/erlang-occi/blob/master/doc/README.md)
