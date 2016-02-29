@@ -48,12 +48,3 @@ source(E) ->
 -spec target(t()) -> string().
 target(E) ->
     ?g(target, E).
-
-%%%
-%%% eunit
-%%%
--ifdef(TEST).
-core() ->
-    R = new("http://example.org/mylink0", "http://example.org/resource0", "http://example.org/resource1"),
-    ?assertEqual(?category_id, kind(R)).
--endif.

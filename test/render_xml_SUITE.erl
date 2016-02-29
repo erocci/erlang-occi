@@ -13,6 +13,8 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
 
+-define(ctx, uri:new(<<"http">>, <<"">>, <<"example.org">>, 8080, <<"/">>, [], <<"">>)).
+
 suite() ->
     [{timetrap,{seconds,30}}].
 
@@ -51,6 +53,6 @@ all() ->
 render_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     E = occi_extension:load_path(ExtFile),
-    Out = occi_rendering:render(xml, E),
+    Out = occi_rendering:render(xml, E, ?ctx),
     ?assertMatch(["<?xml version=\"1.0\"?>" | _], Out),
     ok.

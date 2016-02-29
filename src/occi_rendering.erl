@@ -9,7 +9,7 @@
 
 -export([load_path/2,
 	 load/3,
-	 render/2]).
+	 render/3]).
 
 
 %% @doc Load the specified type from a file. 
@@ -49,13 +49,13 @@ load(Type, MimeType, Bin) when is_list(Bin); is_binary(Bin) ->
     end.
 
 
--spec render(occi_utils:mimetype(), occi_type:t()) -> iolist().
-render(MimeType, T) ->
+-spec render(occi_utils:mimetype(), occi_type:t(), uri:t()) -> iolist().
+render(MimeType, T, Ctx) ->
     case renderer(MimeType) of
 	undefined ->
 	    throw({unknown_mimetype, MimeType});
 	Mod ->
-	    Mod:render(T)
+	    Mod:render(T, Ctx)
     end.
 
 %%%

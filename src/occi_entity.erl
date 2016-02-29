@@ -264,14 +264,3 @@ known_class([?resource_category_id | _]) -> resource;
 known_class([?link_category_id | _]) ->     link;
 known_class([?entity_category_id | _]) ->   entity;
 known_class([_ | Tail]) ->                  Tail.
-
-%%%
-%%% eunit
-%%%
--ifdef(TEST).
-new_test_() ->
-    [
-     ?_assertThrow({invalid_cid, ""}, new("http://example.org:8081/myentity0", ""))
-    ].
-
--endif.
