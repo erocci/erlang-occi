@@ -48,6 +48,7 @@ options(Fun) ->
 
 
 %% @throws {invalid_attribute_type, term()} | {unknown_attribute, string(), {string(), string(), integer()}}
+%% @end
 %%-logging(debug).
 -spec handle_event(xmerl_sax_parser:event(), term(), state()) -> state().
 handle_event(startDocument, _, S) ->
