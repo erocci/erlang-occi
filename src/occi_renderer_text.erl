@@ -16,7 +16,7 @@
 -module(occi_renderer_text).
 
 %% API
--export([render/1]).
+-export([render/2]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -25,9 +25,9 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
--spec render(T :: occi:t()) -> iolist().
-render(T) ->
-    Headers = to_headers(occi_type:type(T), T, #{}),
+-spec render(T :: occi:t(), Ctx :: uri:t()) -> iolist().
+render(T, Ctx) ->
+    Headers = to_headers(occi_type:type(T), T, #{}, Ctx),
     maps:fold(fun (K, Values, Acc) ->
 		      [K, ":", string:join(Values, ", "), "\n" | Acc]
 	      end, [], Headers).
@@ -36,13 +36,13 @@ render(T) ->
 %%%
 %%% Priv
 %%%
-to_headers(categories, Categories, Headers) ->
+to_headers(categories, Categories, Headers, Ctx) ->
     H0 = lists:foldl(fun (Cat, Acc) ->
 			     case occi_category:class(Cat) of
 				 kind ->
-				     to_headers(kind, Cat, Acc);
+				     to_headers(kind, Cat, Acc, Ctx);
 				 mixin ->
-				     to_headers(mixin, Cat, Acc)
+				     to_headers(mixin, Cat, Acc, Ctx)
 			     end
 		     end, Headers, Categories),
     CatActions = fun(Cat, Acc) ->
@@ -50,14 +50,14 @@ to_headers(categories, Categories, Headers) ->
 		  end,
     Actions = lists:foldl(CatActions, [], Categories),
     lists:foldl(fun (A, Acc) ->
-			     to_headers(action, A, Acc)
+			     to_headers(action, A, Acc, Ctx)
 		     end, H0, Actions);
 
-to_headers(extension, Ext, Headers) ->
+to_headers(extension, Ext, Headers, Ctx) ->
     Categories = occi_extension:kinds(Ext) ++ occi_extension:mixins(Ext),
-    to_headers(categories, Categories, Headers);
+    to_headers(categories, Categories, Headers, Ctx);
 
-to_headers(kind, Kind, Headers) ->
+to_headers(kind, Kind, Headers, Ctx) ->
     {Scheme, Term} = occi_kind:id(Kind),
     Cat = [Term, "; scheme=\"", Scheme, "\"; class=kind"],
     C0 = case occi_kind:title(Kind) of
@@ -68,13 +68,17 @@ to_headers(kind, Kind, Headers) ->
 	     undefined -> C0;
 	     {ParentScheme, ParentTerm} -> [C0, "; rel=\"", ParentScheme, ParentTerm, "\""]
 	 end,
-    C2 = case attribute_list(occi_kind:attributes(Kind), []) of
-	     [] -> C1;
-	     Attributes -> [C1, "; attributes=\"", Attributes, "\""]
+    C2 = case occi_kind:location(Kind) of
+	     undefined -> C1;
+	     Location -> [C1, "; location=\"", occi_utils:ctx(Location, Ctx), "\""]
 	 end,
-    append_header("category", lists:flatten(C2), Headers);
+    C3 = case attribute_list(occi_kind:attributes(Kind), []) of
+	     [] -> C2;
+	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
+	 end,
+    append_header("category", lists:flatten(C3), Headers);
 
-to_headers(mixin, Mixin, Headers) ->
+to_headers(mixin, Mixin, Headers, Ctx) ->
     {Scheme, Term} = occi_mixin:id(Mixin),
     Cat = [Term, "; scheme=\"", Scheme, "\"; class=mixin"],
     C0 = case occi_mixin:title(Mixin) of
@@ -85,13 +89,17 @@ to_headers(mixin, Mixin, Headers) ->
 	     [] -> C0;
 	     [ {RelScheme, RelTerm} | _ ]-> [C0, "; rel=\"", RelScheme, RelTerm, "\""]
 	 end,
-    C2 = case attribute_list(occi_mixin:attributes(Mixin), []) of
-	     [] -> C1;
-	     Attributes -> [C1, "; attributes=\"", Attributes, "\""]
+    C2 = case occi_mixin:location(Mixin) of
+	     undefined -> C1;
+	     Location -> [C1, "; location=\"", occi_utils:ctx(Location, Ctx), "\""]
 	 end,
-    append_header("category", lists:flatten(C2), Headers);
+    C3 = case attribute_list(occi_mixin:attributes(Mixin), []) of
+	     [] -> C2;
+	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
+	 end,
+    append_header("category", lists:flatten(C3), Headers);
 
-to_headers(action, Action, Headers) ->
+to_headers(action, Action, Headers, _Ctx) ->
     {Scheme, Term} = occi_action:id(Action),
     Cat = [Term, "; scheme=\"", Scheme, "\"; class=action"],
     C0 = case occi_action:title(Action) of
