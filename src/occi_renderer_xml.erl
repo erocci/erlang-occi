@@ -61,12 +61,11 @@ to_xml(kind, K, Ctx) ->
 	 end,
     A1 = case occi_kind:location(K) of
 	     undefined -> A0;
-	     Location -> [{location, ctx(Location, Ctx)} | A0]
+	     Location -> [{location, occi_utils:ctx(Location, Ctx)} | A0]
 	 end,
-    C = [],
     C0 = case occi_kind:parent(K) of
-	     undefined -> C;
-	     {ParentScheme, ParentTerm} -> [{parent, [{scheme, ParentScheme}, {term, ParentTerm}], []}]
+	     undefined -> [];
+	     ParentId -> [category_id(parent, ParentId)]
 	 end,
     C1 = lists:foldl(fun (Attr, Acc) ->
 			   [ to_xml(attribute, Attr, Ctx) | Acc ]
@@ -85,13 +84,13 @@ to_xml(mixin, M, Ctx) ->
 	 end,
     A1 = case occi_mixin:location(M) of
 	     undefined -> A0;
-	     Location -> [{location, ctx(Location, Ctx)} | A0]
+	     Location -> [{location, occi_utils:ctx(Location, Ctx)} | A0]
 	 end,
-    C = lists:foldl(fun ({DepScheme, DepTerm}, Acc) ->
-			    [ {depends, [{scheme, DepScheme}, {term, DepTerm}], []} | Acc]
+    C = lists:foldl(fun (DepId, Acc) ->
+			    [ category_id(depends, DepId) | Acc ]
 		    end, [], occi_mixin:depends(M)),
-    C0 = lists:foldl(fun ({ApplyScheme, ApplyTerm}, Acc) ->
-			     [ {depends, [{scheme, ApplyScheme}, {term, ApplyTerm}], []} | Acc]
+    C0 = lists:foldl(fun (ApplyId, Acc) ->
+			     [ category_id(applies, ApplyId) | Acc ]
 		     end, C, occi_mixin:applies(M)),
     C1 = lists:foldl(fun (Attr, Acc) ->
 			   [ to_xml(attribute, Attr, Ctx) | Acc ]
@@ -147,7 +146,27 @@ to_xml(attribute, Attr, _Ctx) ->
 	     "" -> A4;
 	     Desc -> [{description, Desc} | A4]
 	 end,
-    {attribute, lists:reverse(A5), lists:reverse(C0)}.
+    {attribute, lists:reverse(A5), lists:reverse(C0)};
+
+to_xml(resource, R, Ctx) ->
+    Id = occi_resource:id(R),
+    A = [{href, occi_utils:ctx(Id, Ctx)}, {id, Id}],
+    A1 = case occi_resource:get("occi.core.title", R) of
+	     undefined -> A;
+	     Title -> [{title, Title} | A]
+	 end,
+    C = [ category_id(kind, occi_resource:kind(R)) ],
+    C0 = lists:foldl(fun (MixinId, Acc) ->
+			     [ category_id(mixin, MixinId) | Acc ]
+		     end, C, occi_resource:mixins(R)),
+    C1 = maps:fold(fun ("occi.core.title", _V, Acc) ->
+			   Acc;
+		       (_K, undefined, Acc) ->
+			   Acc;
+		       (K, V, Acc) ->
+			   [ {attribute, [{name, K}, {value, attr_value(V)}], []} | Acc ]
+		   end, C0, occi_resource:attributes(R)),
+    {resource, lists:reverse(A1), lists:reverse(C1)}.
 
 
 %%%
@@ -159,5 +178,12 @@ to_document(Type, T, Ctx) ->
     xmerl:export_simple([{Name, Attrs ++ Ns, Children}], xmerl_xml, []).
 
 
-ctx(Path, Ctx) ->
-    uri:to_string(uri:path(Ctx, filename:join([uri:path(Ctx), Path]))).
+category_id(Name, {Scheme, Term}) ->
+    {Name, [{scheme, Scheme}, {term, Term}], []}.
+
+
+attr_value(V) when is_float(V) ->
+    io_lib:format("~p", [V]);
+
+attr_value(V) -> 
+    V.

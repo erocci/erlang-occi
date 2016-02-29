@@ -72,7 +72,7 @@ new(Id, {_Scheme, _Term}=CatId) ->
     end.
 
 
--spec id(t()) -> uri:t().
+-spec id(t()) -> string().
 id(E) ->
     element(?id, E).
 
@@ -263,4 +263,4 @@ known_class([]) ->                          entity;
 known_class([?resource_category_id | _]) -> resource;
 known_class([?link_category_id | _]) ->     link;
 known_class([?entity_category_id | _]) ->   entity;
-known_class([_ | Tail]) ->                  Tail.
+known_class([_ | Tail]) ->                  known_class(Tail).

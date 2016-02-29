@@ -12,7 +12,8 @@
 -export([mkdir/1,
 	 priv_dir/0,
 	 resources_dir/0,
-	 mimetype/1]).
+	 mimetype/1,
+	 ctx/2]).
 
 -type mimetype() :: {Type :: binary(), SubType :: binary(), Options :: list()}
 		  | undefined.
@@ -61,3 +62,11 @@ mimetype(Path) ->
 	".json" ->
 	    {<<"application">>, <<"json">>, []}
     end.
+
+
+-spec ctx(string() | binary(), uri:t()) -> string() | binary().
+ctx(Path, Ctx) when is_list(Path) ->
+    binary_to_list(ctx(list_to_binary(Path), Ctx));
+
+ctx(Path, Ctx) ->
+    uri:to_string(uri:path(Ctx, filename:join([uri:path(Ctx), Path]))).
