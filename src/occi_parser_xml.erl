@@ -166,7 +166,10 @@ handle_event({endElement, ?occi_uri, "resource", _QN}, _,
 	     #{ stack := [ {resource, Id, Kind, Map}, {document, undefined}], check := Check }=S) ->
     R = occi_resource:new(Id, Kind),
     R1 = occi_resource:set(maps:get(attributes, Map), Check, R),
-    S#{ stack := [ {document, {resource, R1}} ] };
+    R2 = lists:foldl(fun (Link, Acc) ->
+			     occi_resource:add_link(Link, Acc)
+		     end, R1, maps:get(links, Map)),
+    S#{ stack := [ {document, {resource, R2}} ] };
 
 handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Id = attr("id", A),
@@ -181,17 +184,17 @@ handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack 
 %% link is child of resource
 handle_event({endElement, ?occi_uri, "link", _QN}, _,
 	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {resource, ResId, ResKind, ResMap} | Stack ], check := Check }=S) ->
-    L = occi_link:new(Id, Kind, Source, Target),
+    L = occi_link:new(Id, Kind, Source, ResKind, Target, undefined),
     L0 = occi_link:set(maps:get(attributes, Map), Check, L),
     ResMap0 = ResMap#{ links := [ L0 | maps:get(links, ResMap) ]},
     S#{stack := [ {resource, ResId, ResKind, ResMap0} | Stack ]};
 
-%% link is root node
-handle_event({endElement, ?occi_uri, "link", _QN}, _,
-	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {document, undefined} ], check := Check }=S) ->
-    L = occi_link:new(Id, Kind, Source, Target),
-    L0 = occi_link:set(maps:get(attributes, Map), Check, L),
-    S#{stack := [ {document, {link, L0}} ]};
+%% %% link is root node
+%% handle_event({endElement, ?occi_uri, "link", _QN}, _,
+%% 	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {document, undefined} ], check := Check }=S) ->
+%%     L = occi_link:new(Id, Kind, Source, Target),
+%%     L0 = occi_link:set(maps:get(attributes, Map), Check, L),
+%%     S#{stack := [ {document, {link, L0}} ]};
 
 handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
     Term = attr("term", A),

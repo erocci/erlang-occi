@@ -85,7 +85,7 @@ add_category(Cat) ->
 
 
 %% @throws {unknown_category, term()}
--logging(debug).
+%%-logging(debug).
 -spec attribute(occi_attribute:key(), [occi_category:id()]) -> occi_attribute:t() | undefined.
 attribute(_Key, []) ->
     undefined;

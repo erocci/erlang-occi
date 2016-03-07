@@ -25,7 +25,7 @@
 -export_type([t/0, spec/0]).
 
 
-%% @doc Return a list or binary casted as the specified OCCI base type.
+%% @doc Return value casted as the specified OCCI base type.
 %% Throw error if value can not be casted. Do only syntactic checking.
 %%
 %% @todo Better check of uri
@@ -55,6 +55,9 @@ cast(V, float) ->
 
 cast(V, uri) ->
     cast(V, string);
+
+cast({Scheme, Term}=V, kind) when is_list(Scheme), is_list(Term) ->
+    V;
 
 cast(V, kind) ->
     try occi_category:parse_id(V) of

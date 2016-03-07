@@ -172,7 +172,7 @@ get(Key, E) ->
 %%       | {immutable, [occi_attribute:key()]}
 %%       | {required, [occi_attribute:key()]}
 %% @end
--logging(debug).
+%%-logging(debug).
 -spec set(map(), validation(), t()) -> t().
 set(Attrs, Validation, E) when is_map(Attrs) ->
     set_or_update(Attrs, Validation, E).
@@ -218,7 +218,7 @@ set_or_update(Attrs, Validation, E) ->
 				     undefined ->
 					 %% Check attribute exists
 					 InvalidKeys = maps:get(invalid_keys, Acc, []),
-					 maps:put(invalid_keys, [ K | InvalidKeys ]);
+					 maps:put(invalid_keys, [ K | InvalidKeys ], Acc);
 				     Spec ->
 					 %% If client validation, check attribute is mutable
 					 is_allowed(K, Spec, Validation, Acc)

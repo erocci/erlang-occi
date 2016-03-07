@@ -13,8 +13,8 @@
 -mixin([{occi_entity, except, [new/1, new/2]},
 	occi_type]).
 
--export([new/3, 
-	 new/4,
+-export([new/4,
+	 new/6,
 	 source/1,
 	 target/1]).
 
@@ -30,16 +30,36 @@
 -endif.
 
 
--spec new(string(), string(), string()) -> t().
-new(Id, Src, Target) ->
-    new(Id, ?category_id, Src, Target).
+%% @equiv new(Id, KindId, Src, Target, occi_resource:kind(Target) | undefined)
+%% @end
+-spec new(string(), occi_category:id() | string() | binary(), 
+	  string() | occi_resource:t(), 
+	  string() | occi_resource:t()) -> t().
+new(Id, KindId, Src, Target) when is_list(Id), 
+				  element(?class, Src) =:= resource, 
+				  element(?class, Target) =:= resource ->
+    TargetKind = case is_list(Target) of
+		     true -> undefined;
+		     false -> occi_resource:kind(Target)
+		 end,
+    new(Id, KindId, Src, occi_resource:kind(Src), Target, TargetKind).
 
 
-%% @throws {unknown_category, term()}
--spec new(string(), occi_category:id() | string() | binary(), string(), string()) -> t().
-new(Id, KindId, Src, Target) when is_list(Id), is_list(Src), is_list(Target) ->
+%% @doc Creates a new link
+%% @end
+-spec new(string(), occi_category:id() | string() | binary(), 
+	  string(), 
+	  occi_category:id(),
+	  string(),
+	  occi_category:id() | undefined) -> t().
+new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_list(Id), 
+						       is_list(Src),
+						       is_list(Target) ->
     Link = occi_entity:new(Id, KindId),
-    set(#{ "occi.core.source" => Src, "occi.core.target" => Target }, internal, Link).
+    set(#{ "occi.core.source" => Src, 
+	   "occi.core.source.kind" => SrcKind,
+	   "occi.core.target" => Target,
+	   "occi.core.target.kind" => TargetKind }, internal, Link).
 
 
 -spec source(t()) -> string().
