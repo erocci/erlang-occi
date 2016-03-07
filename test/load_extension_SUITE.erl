@@ -54,7 +54,8 @@ all() ->
 
 load_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
-    Ext = occi_extension:load_path(ExtFile),
+    {ok, Bin} = file:read_file(ExtFile),
+    Ext = occi_extension:load(xml, Bin),
     occi_models:import(Ext),
     ?assertMatch(kind,
 		 occi_category:class(occi_models:category({"http://schemas.ogf.org/occi/infrastructure#", "compute"}))),

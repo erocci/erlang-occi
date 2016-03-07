@@ -4,9 +4,9 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 17 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
+%%% Created : 29 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
 %%%-------------------------------------------------------------------
--module(render_xml_SUITE).
+-module(render_text_SUITE).
 
 -compile(export_all).
 
@@ -57,7 +57,7 @@ groups() ->
      {extension, [], [render_extension]}
     ,{entities, [], 
       [
-       render_resource
+       render_compute1
       ]}
     ].
 
@@ -75,12 +75,12 @@ render_extension(Config) ->
     ok.
 
 
-render_resource(_Config) ->
+render_compute1(_Config) ->
     R = occi_resource:new("ns1/mycompute0", {"http://schemas.ogf.org/occi/infrastructure#", "compute"}),
     R0 = occi_resource:add_mixin({"http://occi.example.org/occi/infrastructure/os_tpl#", "debian6"}, R),
     R1 = occi_resource:set(#{ "occi.core.title" => "My super compute",
 			      "occi.compute.cores" => 4,
-			      "occi.compute.hostname" => "mycompute",
+			      "occi.compute.hostname" => "mycompute", 
 			      "occi.compute.speed" => 4.5,
 			      "occi.compute.memory" => 2.5 }, client, R0),
     ?assertMatch(<<"<?xml version=\"1.0\"?>"

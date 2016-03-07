@@ -26,11 +26,12 @@
 
 -type name_t() :: string().
 -type type_t() :: occi_base_type:t().
+-type key() :: string().
 -type t() :: #{}.
 
--export_type([t/0]).
+-export_type([t/0, key/0]).
 
--spec new(Category :: occi_category:id(), Name :: string(), Type :: type_t()) -> t().
+-spec new(Category :: occi_category:id(), Name :: key(), Type :: type_t()) -> t().
 new(Category, Name, Type) ->
     #{ 
      name => Name,

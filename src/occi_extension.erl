@@ -19,7 +19,7 @@
 	 add_import/2,
 	 imports/1]).
 
--export([load_path/1,
+-export([render/3,
 	 load/2]).
 
 -mixin([occi_type]).
@@ -124,11 +124,18 @@ imports(#extension{m=M}) ->
     maps:get(imports, M).
 
 
-%%%
-%%% rendering stubs
-%%%
-load_path(Path) -> occi_rendering:load_path(extension, Path).
-load(Mimetype, Bin) -> occi_rendering:load(extension, Mimetype, Bin).
+%% @doc Load extension from iolist 
+%% @end
+-spec load(occi_utils:mimetype(), iolist()) -> t().
+load(Mimetype, Bin) -> 
+    occi_rendering:load_model(extension, Mimetype, Bin).
+
+
+%% @doc Render extension into given mimetype
+%% @end
+-spec render(occi_utils:mimetype(), t(), uri:t()) -> iolist().
+render(Mimetype, E, Ctx) ->
+    occi_rendering:render(Mimetype, E, Ctx).
 
 %%%
 %%% eunit

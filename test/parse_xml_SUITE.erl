@@ -30,7 +30,7 @@ end_per_suite(_Config) ->
 init_per_group(infrastructure, Config) ->
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Xml} = file:read_file(ExtFile),
-    ok = occi_models:import(occi_parser_xml:parse(extension, Xml)),
+    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml)),
     Config;
 
 init_per_group(resources, Config) ->
@@ -78,7 +78,7 @@ all() ->
 
 parse_extension(Config) -> 
     Xml = read_file(Config, "occi-infrastructure.xml"),
-    Ext = occi_parser_xml:parse(extension, Xml),
+    Ext = occi_extension:load(xml, Xml),
     ct:log(info, "extension: ~p", [Ext]),
     ?assertMatch("Infrastructure", occi_extension:name(Ext)),
     ?assertMatch("http://schemas.ogf.org/occi/infrastructure#", occi_extension:scheme(Ext)),
@@ -88,25 +88,25 @@ parse_extension(Config) ->
 
 parse_resource1(Config) ->
     Bin = read_file(Config, "resource1.xml"),
-    Res = occi_parser_xml:parse(resource, Bin),
+    Res = occi_resource:load(xml, Bin, client),
     ?assertMatch({"http://schemas.ogf.org/occi/core#", "resource"}, occi_resource:kind(Res)).
 
 
 parse_resource2_bad(Config) ->
     Bin = read_file(Config, "resource2.xml"),
     ?assertThrow({parse_error, _, {unknown_category, {"http://schemas.ogf.org/occi/core#", "unknown"}}}, 
-		 occi_parser_xml:parse(resource, Bin)).
+		 occi_resource:load(xml, Bin, client)).
 
 
 parse_resource_link1(Config) ->
     Bin = read_file(Config, "resource_link1.xml"),
-    Res = occi_parser_xml:parse(resource, Bin),
+    Res = occi_resource:load(xml, Bin, client),
     ?assertMatch({"http://schemas.ogf.org/occi/core#", "resource"}, occi_resource:kind(Res)).
 
 
 parse_compute1(Config) ->
     Bin = read_file(Config, "compute1.xml"),
-    Res = occi_parser_xml:parse(resource, Bin),
+    Res = occi_resource:load(xml, Bin, client),
     ?assertMatch({"http://schemas.ogf.org/occi/infrastructure#", "compute"}, occi_resource:kind(Res)),
     ?assertMatch(45, occi_resource:get("occi.compute.cores", Res)),
     ?assertMatch("a name", occi_resource:get("occi.compute.hostname", Res)),

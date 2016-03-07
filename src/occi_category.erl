@@ -23,6 +23,8 @@
 	 location/1,
 	 location/2]).
 
+-export([render/3]).
+
 -export([parse_id/1]).
 
 -type class() :: kind | mixin | action.
@@ -145,6 +147,13 @@ parse_id(Id) when is_list(Id); is_binary(Id) ->
 
 parse_id(Id) ->
     throw({invalid_cid, Id}).
+
+
+%% @doc Render category into given mimetype
+%% @end
+-spec render(occi_utils:mimetype(), t(), uri:t()) -> iolist().
+render(Mimetype, E, Ctx) ->
+    occi_rendering:render(Mimetype, E, Ctx).
 
 
 %%%

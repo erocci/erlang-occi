@@ -10,13 +10,12 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, get/2, set/3]}]).
+-mixin([{occi_entity, except, [new/1]},
+	occi_type]).
 
--export([new/1,
-	 summary/1,
-	 summary/2,
-	 get/2,
-	 set/3]).
+-export([new/1]).
+
+-export([load/3]).
 
 -type t() :: occi_entity:t().
 -export_type([t/0]).
@@ -32,32 +31,12 @@
 new(Id) ->
     occi_entity:new(Id, ?category_id).
 
--spec summary(t()) -> string().
-summary(E) ->
-    ?g("occi.core.summary", E).
 
-
--spec summary(string() | binary(), t()) -> t().
-summary(Summary, E) when is_binary(Summary) ->
-    summary(binary_to_list(Summary), E);
-
-summary(Summary, E) when is_list(Summary) ->
-    ?s("occi.core.summary", Summary, E).
-
-
-get("summary", E) ->
-    get("occi.core.summary", E);
-
-get(Key, Value) ->
-    occi_entity:get(Key, Value).
-
-
-set("summary", Value, E) ->
-    set("occi.core.summary", Value, E);
-
-set(Key, Value, E) ->
-    occi_entity:set(Key, Value, E).
-
+%% @doc Load resource from iolist 
+%% @end
+-spec load(occi_utils:mimetype(), iolist(), occi_entity:validation()) -> t().
+load(Mimetype, Bin, V) -> 
+    occi_rendering:load_entity(resource, Mimetype, Bin, V).
 
 %%%
 %%% eunit

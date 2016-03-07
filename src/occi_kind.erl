@@ -19,6 +19,10 @@
 	 parents/1,
 	 parents/2]).
 
+-export([load/2]).
+
+-mixin([occi_type]).
+
 
 -record(kind, {id :: occi_category:id(), m :: #{} }).
 -type t() :: #kind{}.
@@ -65,3 +69,10 @@ parents(Kind) ->
 -spec parents([occi_category:id()], t()) -> t().
 parents(Parents, Kind) ->
     ?s(parents, Parents, Kind).
+
+
+%% @doc Load kind from iolist 
+%% @end
+-spec load(occi_utils:mimetype(), iolist()) -> t().
+load(Mimetype, Bin) -> 
+    occi_rendering:load_model(kind, Mimetype, Bin).

@@ -12,7 +12,8 @@
 -include_lib("annotations/include/annotations.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
 
--export([parse/2]).
+-export([parse_model/2,
+	 parse_entity/3]).
 
 -type state() :: #{}.
 
@@ -20,10 +21,28 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
+
+-spec parse_model(extension | kind | mixin | action, iolist()) -> occi_type:t().
+parse_model(RootType, Xml) when RootType =:= extension;
+				RootType =:= kind;
+				RootType =:= mixin;
+				RootType =:= actin ->
+    parse(RootType, Xml, model).
+
+
+-spec parse_entity(resource | link, iolist(), occi_entity:validation()) -> occi_type:t().
+parse_entity(RootType, Xml, Valid) when RootType =:= resource;
+					RootType =:= link ->
+    parse(RootType, Xml, Valid).
+
+%%%
+%%% Internal
+%%%
+
 %% @throws {parse_error, integer(), term()}
--spec parse(occi:t_name(), iolist()) -> occi_extension:t().
-parse(RootType, Xml) ->
-    case xmerl_sax_parser:stream(Xml, options(fun handle_event/3)) of
+-spec parse(occi:t_name(), iolist(), occi_entity:validation() | model) -> occi_type:t().
+parse(RootType, Xml, V) ->
+    case xmerl_sax_parser:stream(Xml, options(fun handle_event/3, V)) of
 	{ok, {RootType, Type}, _Rest} -> 
 	    Type;
 	{ok, {Other, _}, _Rest} ->
@@ -33,18 +52,18 @@ parse(RootType, Xml) ->
 	{Tag, {_, _, LineNo}, Reason, _EndTags, _EventState} -> 
 	    case Reason of
 		R when is_list(R) ->
-		    ?error("[line ~b] parse error: {~s, ~s}", [LineNo, Tag, Reason]);
+		    ?error("[line ~b] parse error: {~s, ~p}", [LineNo, Tag, Reason]);
 		{Scheme, Term} ->
 		    ?error("[line ~b] parse error: {~s, {~s, ~s}}", [LineNo, Tag, Scheme, Term]);
 		_ ->
-		    ?error("[line ~b] parse error: {~s, ~s}", [LineNo, Tag, Reason])
+		    ?error("[line ~b] parse error: {~s, ~p}", [LineNo, Tag, Reason])
 	    end,
 	    throw({parse_error, LineNo, {Tag, Reason}})
     end.
 
-options(Fun) ->
+options(Fun, Check) ->
     [{event_fun, Fun},
-     {event_state, #{ stack => [], ns => #{} }}].
+     {event_state, #{ stack => [], ns => #{}, check => Check }}].
 
 
 %% @throws {invalid_attribute_type, term()} | {unknown_attribute, string(), {string(), string(), integer()}}
@@ -138,19 +157,15 @@ handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mix
 
 handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Id = attr("id", A),
-    Map = #{ title => attr("title", A, ""),
-	     links => [],
-	     attributes => [] },
+    Map = #{ links => [],
+	     attributes => #{ "occi.core.title" => attr("title", A, undefined) } },
     S#{ stack := [ {resource, Id, undefined, Map} | Stack ] };
 
 %% resource can only be a root node
 handle_event({endElement, ?occi_uri, "resource", _QN}, _,
-	     #{ stack := [ {resource, Id, Kind, Map}, {document, undefined}] }=S) ->
+	     #{ stack := [ {resource, Id, Kind, Map}, {document, undefined}], check := Check }=S) ->
     R = occi_resource:new(Id, Kind),
-    R0 = occi_resource:title(maps:get(title, Map), R),
-    R1 = lists:foldl(fun ({K, V}, Acc) ->
-			     occi_resource:set(K, V, Acc)
-		     end, R0, maps:get(attributes, Map)),
+    R1 = occi_resource:set(maps:get(attributes, Map), Check, R),
     S#{ stack := [ {document, {resource, R1}} ] };
 
 handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack }=S) ->
@@ -160,26 +175,22 @@ handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack 
 		 [ {resource, ResId, _, _} | _ ] -> ResId;
 		 _ -> attr("source", A)
 	     end,
-    Map = #{ title => attr("title", A, ""),
-	     attributes => [] },
+    Map = #{ attributes => #{ "occi.core.title" => attr("title", A, undefined) } },
     S#{ stack := [ {link, Id, undefined, Source, Target, Map} | Stack ] };
 
 %% link is child of resource
 handle_event({endElement, ?occi_uri, "link", _QN}, _,
-	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {resource, ResId, ResKind, ResMap} | Stack ] }=S) ->
+	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {resource, ResId, ResKind, ResMap} | Stack ], check := Check }=S) ->
     L = occi_link:new(Id, Kind, Source, Target),
-    L0 = occi_link:title(maps:get(title, Map), L),
-    L1 =  lists:foldl(fun ({K, V}, Acc) ->
-			      occi_link:set(K, V, Acc)
-		      end, L0, maps:get(attributes, Map)),
-    ResMap0 = ResMap#{ links := [ L1 | maps:get(links, ResMap) ]},
+    L0 = occi_link:set(maps:get(attributes, Map), Check, L),
+    ResMap0 = ResMap#{ links := [ L0 | maps:get(links, ResMap) ]},
     S#{stack := [ {resource, ResId, ResKind, ResMap0} | Stack ]};
 
 %% link is root node
 handle_event({endElement, ?occi_uri, "link", _QN}, _,
-	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {document, undefined} ] }=S) ->
+	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {document, undefined} ], check := Check }=S) ->
     L = occi_link:new(Id, Kind, Source, Target),
-    L0 = occi_link:title(maps:get(title, Map), L),
+    L0 = occi_link:set(maps:get(attributes, Map), Check, L),
     S#{stack := [ {document, {link, L0}} ]};
 
 handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
@@ -240,13 +251,15 @@ handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos,
 %% resource attribute instance
 handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
 	     #{ stack := [ {resource, Id, Kind, Map} | Stack] }=S) ->
-    Map0 = Map#{ attributes := [ {attr("name", A), attr("value", A)} | maps:get(attributes, Map) ]},
+    Attrs0 = maps:put(attr("name", A), attr("value", A), maps:get(attributes, Map)),
+    Map0 = Map#{ attributes := Attrs0 },
     S#{ stack := [ {resource, Id, Kind, Map0} | Stack ] };
 
 %% link attribute instance
 handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
 	     #{ stack := [ {link, Id, Kind, Source, Target, Map} | Stack] }=S) ->
-    Map0 = Map#{ attributes := [ {attr("name", A), attr("value", A)} | maps:get(attributes, Map) ]},
+    Attrs0 = maps:put(attr("name", A), attr("value", A), maps:get(attributes, Map)),
+    Map0 = Map#{ attributes := Attrs0 },
     S#{ stack := [ {link, Id, Kind, Source, Target, Map0} | Stack ] };
 
 handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
@@ -361,16 +374,22 @@ attr(Name, Attributes) ->
 type_(undefined, _NS) ->
     undefined;
 type_(QN, NS) ->
-    from_xsd_type(string:tokens(QN, ":"), NS).
+    from_xml_type(string:tokens(QN, ":"), NS).
 
 
-from_xsd_type([Prefix, "string"], #{ ?xsd_uri := Prefix }) ->
+from_xml_type([Prefix, "string"], #{ ?xsd_uri := Prefix }) ->
     string;
-from_xsd_type([Prefix, "integer"], #{ ?xsd_uri := Prefix }) ->
+from_xml_type([Prefix, "integer"], #{ ?xsd_uri := Prefix }) ->
     integer;
-from_xsd_type([Prefix, "float"], #{ ?xsd_uri := Prefix }) ->
+from_xml_type([Prefix, "float"], #{ ?xsd_uri := Prefix }) ->
     float;
-from_xsd_type(Else, _) ->
+from_xml_type([Prefix, "anyURI"], #{ ?xsd_uri := Prefix }) ->
+    uri;
+from_xml_type([Prefix, "kind"], #{ ?occi_uri := Prefix }) ->
+    kind;
+from_xml_type([Prefix, "resource"], #{ ?occi_uri := Prefix }) ->
+    resource;
+from_xml_type(Else, _) ->
     throw({invalid_type, Else}).
 
 

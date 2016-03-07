@@ -104,7 +104,7 @@ simple_resource(_Config) ->
     ?assertThrow({invalid_key, "bad"}, occi_resource:get("bad", R)).
 
 mixin_resource(_Config) ->
-    M = occi_parser_xml:parse(mixin, ?mixin0_xml),
+    M = occi_mixin:load(xml, ?mixin0_xml),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin0"}, R),
@@ -113,7 +113,7 @@ mixin_resource(_Config) ->
     ?assertMatch(undefined, occi_resource:get("occi.mixin.attr0", R1)).
 
 mixin_depend_resource(_Config) ->
-    M = occi_parser_xml:parse(mixin, ?mixin1_xml),
+    M = occi_mixin:load(xml, ?mixin1_xml),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin1"}, R),
@@ -124,7 +124,7 @@ mixin_depend_resource(_Config) ->
 
 
 mixin_override_resource(_Config) ->
-    M = occi_parser_xml:parse(mixin, ?mixin2_xml),
+    M = occi_mixin:load(xml, ?mixin2_xml),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
@@ -138,7 +138,7 @@ mixin_override_resource(_Config) ->
 %% an already defined attribute, but with different default value
 %% @end
 mixin_delete_resource1(_Config) ->
-    M = occi_parser_xml:parse(mixin, ?mixin2_xml),
+    M = occi_mixin:load(xml, ?mixin2_xml),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
@@ -150,12 +150,11 @@ mixin_delete_resource1(_Config) ->
 %% @doc Test value of an attribute when removing a mixin 
 %% @end
 mixin_delete_resource2(_Config) ->
-    M = occi_parser_xml:parse(mixin, ?mixin2_xml),
+    M = occi_mixin:load(xml, ?mixin2_xml),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
     ?assertMatch("Default value 1", occi_resource:get("occi.mixin.attr1", R1)),
-    R2 = occi_resource:set("occi.mixin.attr1", "custom value", R1),
+    R2 = occi_resource:set(#{ "occi.mixin.attr1" => "custom value" }, client, R1),
     R3 = occi_resource:rm_mixin({"http://schemas.example.org/occi#", "mixin2"}, R2),
     ?assertMatch("custom value", occi_resource:get("occi.mixin.attr1", R3)).
-    

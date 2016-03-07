@@ -64,7 +64,7 @@ mimetype(Path) ->
     end.
 
 
--spec ctx(string() | binary(), uri:t()) -> string() | binary().
+-spec ctx(string() | binary(), occi_rendering:ctx()) -> string() | binary().
 ctx(Path, Ctx) when is_list(Path) ->
     binary_to_list(ctx(list_to_binary(Path), Ctx));
 

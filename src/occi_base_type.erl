@@ -12,7 +12,10 @@
 -type spec() :: {enum, [atom()]}
 	      | string
 	      | integer
-	      | float.
+	      | float
+	      | uri
+	      | kind
+	      | resource.
 
 -type t() :: atom()
 	   | string()
@@ -21,7 +24,14 @@
 
 -export_type([t/0, spec/0]).
 
--spec cast(term(), spec()) -> {ok, t()} | {error, term()}.
+
+%% @doc Return a list or binary casted as the specified OCCI base type.
+%% Throw error if value can not be casted. Do only syntactic checking.
+%%
+%% @todo Better check of uri
+%% @throws {invalid_value, spec(), any()}
+%% @end
+-spec cast(term(), spec()) -> t() | {error, term()}.
 cast(V, {enum, Enum}) ->
     case cast_enum(V, Enum) of
 	{ok, Atom} -> Atom;
@@ -41,7 +51,21 @@ cast(V, integer) ->
     cast_integer(V);
 
 cast(V, float) ->
-    cast_float(V).
+    cast_float(V);
+
+cast(V, uri) ->
+    cast(V, string);
+
+cast(V, kind) ->
+    try occi_category:parse_id(V) of
+	Id -> Id
+    catch throw:_ ->
+	    throw({invalid_value, kind, V})
+    end;
+
+cast(V, resource) ->
+    cast(V, uri).
+
 
 %%%
 %%% Internal

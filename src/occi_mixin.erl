@@ -19,6 +19,10 @@
 	 add_depend/2,
 	 depends/1]).
 
+-export([load/2]).
+
+-mixin([occi_type]).
+
 -record(mixin, {id :: occi_category:id(), m :: #{}}).
 -type t() :: #mixin{}.
 
@@ -60,3 +64,10 @@ add_depend({_Scheme, _Term}=Depend, Mixin) ->
 -spec depends(t()) -> [occi_category:id()].
 depends(M) ->
     ?g(depends, M).
+
+
+%% @doc Load mixin from iolist 
+%% @end
+-spec load(occi_utils:mimetype(), iolist()) -> t().
+load(Mimetype, Bin) -> 
+    occi_rendering:load_model(mixin, Mimetype, Bin).

@@ -10,6 +10,7 @@
 -module(occi_models).
 
 -include("occi_log.hrl").
+-include_lib("annotations/include/annotations.hrl").
 
 -export([start_link/0]).
 
@@ -84,6 +85,7 @@ add_category(Cat) ->
 
 
 %% @throws {unknown_category, term()}
+-logging(debug).
 -spec attribute(occi_attribute:key(), [occi_category:id()]) -> occi_attribute:t() | undefined.
 attribute(_Key, []) ->
     undefined;
@@ -140,7 +142,12 @@ load_imports([ Scheme | Imports ]) ->
     ?debug("Import extension: ~s", [Scheme]),
     case dl_schema(Scheme) of
 	{ok, Path} ->
-	    import(occi_extension:load_path(Path)),
+	    case file:read_file(Path) of
+		{ok, Bin} ->
+		    import(occi_extension:load(occi_utils:mimetype(Path), Bin));
+		{error, Err} ->
+		    throw({import, Err})
+	    end,
 	    load_imports(Imports);
 	{error, Err} ->
 	    throw({import, Err})

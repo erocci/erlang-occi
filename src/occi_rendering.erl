@@ -7,27 +7,15 @@
 
 -module(occi_rendering).
 
--export([load_path/2,
-	 load/3,
+-export([load_model/3,
+	 load_entity/4,
 	 render/3]).
 
+-type ctx() :: uri:t().
 
-%% @doc Load the specified type from a file. 
-%%
-%% Mimetype is detected from file extension.
-%%
-%% Supported mimetypes are: xml
-%% @throws enoent | eacces | eisdir | enotdir | enomem
--spec load_path(occi_type:name(), file:filename_all()) -> ok.
-load_path(Type, Filename) ->
-    case file:read_file(Filename) of
-	{ok, Bin} ->
-	    load(Type, occi_utils:mimetype(Filename), Bin);
-	{error, Reason} ->
-	    throw(Reason)
-    end.
+-export_type([ctx/0]).
 
-%% @doc Load the specified OCCI type from an iolist()
+%% @doc Load the specified OCCI category or extension from an iolist()
 %% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
 %%
 %% Supported mimetypes are:
@@ -39,17 +27,39 @@ load_path(Type, Filename) ->
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load(occi_type:name(), occi_utils:mimetype(), iolist()) -> occi_type:t().
-load(Type, MimeType, Bin) when is_list(Bin); is_binary(Bin) ->
+-spec load_model(occi_type:name(), occi_utils:mimetype(), iolist()) -> occi_type:t().
+load_model(Type, MimeType, Bin) ->
     case parser(MimeType) of
 	undefined -> 
 	    throw({unknown_mimetype, MimeType});
 	Mod -> 
-	    Mod:parse(Type, Bin)
+	    Mod:parse_model(Type, Bin)
     end.
 
 
--spec render(occi_utils:mimetype(), occi_type:t(), uri:t()) -> iolist().
+%% @doc Load the specified OCCI entity (or sub-type thereof from an iolist()
+%% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
+%%
+%% Supported mimetypes are:
+%% <ul>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"xml"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
+%% </ul>
+%% @end
+%% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
+-spec load_entity(occi_type:name(), occi_utils:mimetype(), iolist(), occi_entity:validation()) -> occi_type:t().
+load_entity(Type, MimeType, Bin, V) ->
+    case parser(MimeType) of
+	undefined -> 
+	    throw({unknown_mimetype, MimeType});
+	Mod -> 
+	    Mod:parse_entity(Type, Bin, V)
+    end.
+
+
+-spec render(occi_utils:mimetype(), occi_type:t(), ctx()) -> iolist().
 render(MimeType, T, Ctx) ->
     case renderer(MimeType) of
 	undefined ->

@@ -10,12 +10,15 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, new/2]}]).
+-mixin([{occi_entity, except, [new/1, new/2]},
+	occi_type]).
 
 -export([new/3, 
 	 new/4,
 	 source/1,
 	 target/1]).
+
+-export([load/3]).
 
 -type t() :: occi_entity:t().
 -export_type([t/0]).
@@ -35,16 +38,22 @@ new(Id, Src, Target) ->
 %% @throws {unknown_category, term()}
 -spec new(string(), occi_category:id() | string() | binary(), string(), string()) -> t().
 new(Id, KindId, Src, Target) when is_list(Id), is_list(Src), is_list(Target) ->
-    Entity = occi_entity:new(Id, KindId),
-    Attrs = element(?attributes, Entity),
-    setelement(?attributes, Entity, Attrs#{ source => Src, target => Target }).
+    Link = occi_entity:new(Id, KindId),
+    set(#{ "occi.core.source" => Src, "occi.core.target" => Target }, internal, Link).
 
 
 -spec source(t()) -> string().
 source(E) ->
-    ?g(source, E).
+    get("occi.core.source", E).
 
 
 -spec target(t()) -> string().
 target(E) ->
-    ?g(target, E).
+    get("occi.core.target", E).
+
+
+%% @doc Load link from iolist 
+%% @end
+-spec load(occi_utils:mimetype(), iolist(), occi_entity:validation()) -> t().
+load(Mimetype, Bin, V) -> 
+    occi_rendering:load_entity(link, Mimetype, Bin, V).

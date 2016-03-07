@@ -7,8 +7,7 @@
 
 -module(occi_type).
 
--export([type/1,
-	 render/2]).
+-export([type/1]).
 
 -type name() :: extension
 	      | categories
@@ -41,6 +40,3 @@ type(T) when is_list(T) ->
 
 type(T) ->
     element(1, T).
-
-
-render(Mimetype, T) -> occi_rendering:render(Mimetype, T).

@@ -15,32 +15,46 @@
 
 -module(occi_entity).
 
--export([new/1, 
+-export([new/1,
 	 new/2,
 	 id/1,
 	 kind/1,
 	 mixins/1,
 	 add_mixin/2,
 	 rm_mixin/2,
-	 title/1,
-	 title/2,
 	 attributes/1,
 	 get/2,
-	 set/3]).
+	 set/3,
+	 update/3]).
+
+-export([render/3]).
 
 -include("occi_entity.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
--record entity, {
-	  id               :: string(),
-	  kind             :: occi_category:id(),
-	  mixins     = []  :: [occi_category:id()],
-	  attributes = #{} :: maps:map(),
-	  values     = #{} :: maps:map()
-	 }.
+-type entity() :: {
+	      Class      :: occi_type:name(),
+	      Id         :: string(),
+	      Kind       :: occi_category:id(),
+	      Mixins     :: [occi_category:id()],
+	      Attributes :: maps:map(),
+	      Values     :: maps:map()
+	     }.
 
--type t() :: #entity{}.
--export_type([t/0]).
+
+%% @doc Check type:
+%% <ul>
+%%   <li>server: immutable attributes can be changed, required ones must be set</li>
+%%   <li>client: immutable attributes can not be set</li>
+%%   <li>internal: for entity sub-types. Do not check if all required attributes are set (for instance in link constructor)</li>
+%% </ul>
+%% @end
+-type validation() :: server | client | internal.
+
+%% @doc opaque type representing an entity
+%% @end
+-type t() :: entity().
+-export_type([t/0, validation/0]).
 
 -define(entity_category_id, {"http://schemas.ogf.org/occi/core#", "entity"}).
 -define(resource_category_id, {"http://schemas.ogf.org/occi/core#", "resource"}).
@@ -51,10 +65,10 @@
 -endif.
 
 
-%% @throws {unknown_category, term()}
 -spec new(string()) -> t().
 new(Id) ->
     new(Id, ?entity_category_id).
+
 
 %% @throws {unknown_category, term()}
 -spec new(string(), occi_category:id() | string() | binary()) -> t().
@@ -131,16 +145,6 @@ rm_mixin(MixinId, E) ->
     E0 = setelement(?attributes, E, Attrs),
     E1 = setelement(?values, E0, Values),
     setelement(?mixins, E1, Mixins).
-		     
-						      
--spec title(t()) -> string().
-title(E) ->
-    get("occi.core.title", E).
-
-
--spec title(string() | binary(), t()) -> t().
-title(Title, E) ->
-    set("occi.core.title", Title, E).
 
 
 %% @doc Return key-value attributes map
@@ -160,18 +164,38 @@ get(Key, E) ->
     end.
 
 
-%% @throws {invalid_key, occi_attribute:key()} | {invalid_value, occi_base_type:spec(), term()}
--spec set(occi_attribute:key(), occi_attribute:value(), t()) -> occi_attribute:value().
-set(Key, Value, E) ->
-    Attrs = element(?values, E),
-    case maps:is_key(Key, Attrs) of
-	true ->
-	    Spec = spec(Key, E),
-	    Casted = set_or_update(Value, maps:get(Key, Attrs), Spec),
-	    setelement(?values, E, maps:update(Key, Casted, Attrs));
-	false ->
-	    throw({invalid_key, Key})
-    end.
+%% @doc Set the full list of attributes for this resource
+%% 
+%% All required attributes must be set.
+%% @throws {invalid_keys, [occi_attribute:key()]} 
+%%       | {invalid_value, [occi_attribute:key(), occi_base_type:t()]}
+%%       | {immutable, [occi_attribute:key()]}
+%%       | {required, [occi_attribute:key()]}
+%% @end
+-logging(debug).
+-spec set(map(), validation(), t()) -> t().
+set(Attrs, Validation, E) when is_map(Attrs) ->
+    set_or_update(Attrs, Validation, E).
+
+
+%% @doc Update attributes values.
+%% 
+%% @throws {invalid_keys, [occi_attribute:key()]} 
+%%       | {invalid_value, [occi_attribute:key(), occi_base_type:t()]}
+%%       | {required, [occi_attribute:key()]}
+%% @end
+%%-logging(debug).
+-spec update(map(), validation(), t()) -> t().
+update(Attrs, Validation, E) when is_map(Attrs) ->
+    set_or_update(Attrs, Validation, E).
+
+
+%% @doc Render entity into given mimetype
+%% @end
+-spec render(occi_utils:mimetype(), t(), uri:t()) -> iolist().
+render(Mimetype, E, Ctx) ->
+    occi_rendering:render(Mimetype, E, Ctx).
+
 
 %%%
 %%% internal
@@ -180,23 +204,95 @@ spec(Key, E) ->
     Categories = maps:get(Key, element(?attributes, E)),
     occi_models:attribute(Key, Categories).
 
--logging(debug).
+
+specs(E) ->
+    maps:fold(fun (K, Categories, Acc) ->
+		      Acc#{ K => occi_models:attribute(K, Categories) }
+	      end, #{}, element(?attributes, E)).
+
+
+set_or_update(Attrs, Validation, E) ->
+    Specs = specs(E),
+    Errors = lists:foldl(fun (K, Acc) ->
+				 case maps:get(K, Specs, undefined) of
+				     undefined ->
+					 %% Check attribute exists
+					 InvalidKeys = maps:get(invalid_keys, Acc, []),
+					 maps:put(invalid_keys, [ K | InvalidKeys ]);
+				     Spec ->
+					 %% If client validation, check attribute is mutable
+					 is_allowed(K, Spec, Validation, Acc)
+				 end
+			 end, #{}, maps:keys(Attrs)),
+    {Values, Errors2} =
+	maps:fold(fun (K, V, {ValuesAcc, ErrorsAcc}) ->
+			  set_value(K, V, maps:get(K, Specs), ValuesAcc, ErrorsAcc)
+		  end, {element(?values, E), Errors}, Attrs),
+    case Validation of 
+	internal ->
+	    return_or_errors(Values, Errors2, E);
+	_ ->
+	    check_required(Values, Errors2, Specs, E)
+    end.
+
+
+check_required(Values, Errors, Specs, E) ->
+    Errors2 = 
+	maps:fold(fun (K, undefined, Acc) ->
+			  case occi_attribute:required(maps:get(K, Specs)) of
+			      true -> 
+				  RequiredKeys = maps:get(required, Acc, []),
+				  maps:put(required, [ K | RequiredKeys ], Acc);
+			      false ->
+				  Acc
+			  end;
+		      (_, _, Acc) ->
+			  Acc
+		  end, Errors, element(?attributes, E)),
+    return_or_errors(Values, Errors2, E).
+
+
+return_or_errors(Values, Errors, E) ->
+    case maps:size(Errors) of
+	0 ->
+	    setelement(?values, E, Values);
+	_ ->
+	    throw(maps:to_list(Errors))
+    end.
+
+
+is_allowed(_K, _Spec, internal, Errors) ->
+    Errors;
+
+is_allowed(_K, _Spec, server, Errors) ->
+    Errors;
+
+is_allowed(K, Spec, client, Errors) ->
+    case occi_attribute:mutable(Spec) of
+	true ->
+	    Errors;
+	false ->
+	    Immutables = maps:get(immutables, Errors, []),
+	    maps:put(immutables, [ K | Immutables ], Errors)
+    end.
+
+
+%%-logging(debug).
 get_default(Key, E) ->
     occi_attribute:default(spec(Key, E)).
 
 
-set_or_update(Value, undefined, Spec) ->
-    occi_base_type:cast(Value, occi_attribute:type(Spec));
+set_value(Key, undefined, _Spec, Values, Errors) ->
+    {maps:put(Key, undefined, Values), Errors};
 
-set_or_update(Value, _Else, Spec) ->
-    update(Value, occi_attribute:mutable(Spec), Spec).
-
-
-update(Value, true, Spec) ->
-    occi_base_type:cast(Value, occi_attribute:type(Spec));
-
-update(_Value, false, Spec) ->
-    throw({immutable_attribute, occi_attribute:name(Spec)}).
+set_value(Key, Value, Spec, Values, Errors) ->
+    try occi_base_type:cast(Value, occi_attribute:type(Spec)) of
+	Casted ->
+	    {maps:put(Key, Casted, Values), Errors}
+    catch throw:_Err ->
+	    InvalidValues = maps:get(invalid_values, Errors, []),
+	    {Values, maps:put(invalid_values, [ {Key, Value} | InvalidValues ], Errors)}
+    end.
 
 
 merge_parents(Kind, E) ->
