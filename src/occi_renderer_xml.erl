@@ -166,7 +166,35 @@ to_xml(resource, R, Ctx) ->
 		       (K, V, Acc) ->
 			   [ {attribute, [{name, K}, {value, attr_value(V)}], []} | Acc ]
 		   end, C0, occi_resource:attributes(R)),
-    {resource, lists:reverse(A1), lists:reverse(C1)}.
+    C2 = lists:foldl(fun (L, Acc) ->
+			     [ to_xml(link, L, Ctx) | Acc ]
+		     end, C1, occi_resource:links(R)),
+    {resource, lists:reverse(A1), lists:reverse(C2)};
+
+to_xml(link, L, Ctx) ->
+    Id = occi_link:id(L),
+    A = [
+	 {target, occi_utils:ctx(occi_link:get("occi.core.target", L), Ctx)},
+	 {source, occi_utils:ctx(occi_link:get("occi.core.source", L), Ctx)},
+	 {href, occi_utils:ctx(Id, Ctx)}, 
+	 {id, Id}
+	],
+    A1 = case occi_link:get("occi.core.title", L) of
+	     undefined -> A;
+	     Title -> [{title, Title} | A]
+	 end,
+    C = [ category_id(kind, occi_link:kind(L)) ],
+    C0 = lists:foldl(fun (MixinId, Acc) ->
+			     [ category_id(mixin, MixinId) | Acc ]
+		     end, C, occi_link:mixins(L)),
+    C1 = maps:fold(fun ("occi.core.title", _V, Acc) -> Acc;
+		       ("occi.core.source", _V, Acc) -> Acc;
+		       ("occi.core.target", _V, Acc) -> Acc;
+		       (_K, undefined, Acc) -> Acc;
+		       (K, V, Acc) ->
+			   [ {attribute, [{name, K}, {value, attr_value(V)}], []} | Acc ]
+		   end, C0, occi_resource:attributes(L)),
+    {link, lists:reverse(A1), lists:reverse(C1)}.
 
 
 %%%
@@ -184,6 +212,9 @@ category_id(Name, {Scheme, Term}) ->
 
 attr_value(V) when is_float(V) ->
     io_lib:format("~p", [V]);
+
+attr_value({Scheme, Term}) when is_list(Scheme), is_list(Term) ->
+    [Scheme ++ Term];
 
 attr_value(V) -> 
     V.

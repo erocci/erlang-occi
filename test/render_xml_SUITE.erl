@@ -57,7 +57,8 @@ groups() ->
      {extension, [], [render_extension]}
     ,{entities, [], 
       [
-       render_resource
+       render_resource,
+       render_inline_link
       ]}
     ].
 
@@ -98,15 +99,21 @@ render_resource(_Config) ->
 
 
 render_inline_link(_Config) ->
-    R = occi_resource:new("ns1/mycompute0", {"http://schemas.ogf.org/occi/infrastructure#", "compute"}),
-    L = occi_link:new("myif0", {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}, R, "network0"),
+    RId = "ns1/mycompute0",
+    RKind = {"http://schemas.ogf.org/occi/infrastructure#", "compute"},
+    R = occi_resource:new(RId, RKind),
+    L = occi_link:new("myif0", {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}, 
+		      RId, RKind, 
+		      "network0", undefined),
     R1 = occi_resource:add_link(L, R),
     ?assertMatch(<<"<?xml version=\"1.0\"?>"
 		   "<resource id=\"ns1/mycompute0\" href=\"http://example.org:8080/ns1/mycompute0\" "
 		   "xmlns=\"http://schemas.ogf.org/occi\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">"
 		   "<kind scheme=\"http://schemas.ogf.org/occi/infrastructure#\" term=\"compute\"/>"
-		   "<link id=\"myif0\" >" 
+		   "<link id=\"myif0\" href=\"http://example.org:8080/myif0\" "
+		   "source=\"http://example.org:8080/ns1/mycompute0\" target=\"http://example.org:8080/network0\">"
 		   "<kind scheme=\"http://schemas.ogf.org/occi/infrastructure#\" term=\"networkinterface\"/>"
-		   "</link>"
-		   "</resource>">>, 
+		   "<attribute name=\"occi.core.source.kind\" "
+		   "value=\"http://schemas.ogf.org/occi/infrastructure#compute\"/>"
+		   "</link></resource>">>, 
 		 iolist_to_binary(occi_renderer_xml:render(R1, ?ctx))).

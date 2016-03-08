@@ -55,14 +55,14 @@ new(Id) ->
 new(Id, KindId) ->
     RList = tuple_to_list(occi_entity:new(Id, KindId)),
     list_to_tuple(RList ++ [ [] ]).
-    
+
 
 %% @doc Add the given link to the resource
 %% @end
 -spec add_link(occi_link:t(), occi_resource:t()) -> t().
 add_link(Link, R) when element(?class, Link) =:= link ->
     L0 = element(?links, R),
-    setelement(?links, R, [ Link, L0 ]).
+    setelement(?links, R, [ Link | L0 ]).
 
 
 %% @doc Get list of links associated to this resource
