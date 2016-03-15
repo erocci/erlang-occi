@@ -25,7 +25,8 @@
 	 attributes/1,
 	 get/2,
 	 set/3,
-	 update/3]).
+	 update/3,
+	 is_subtype/2]).
 
 -export([render/3]).
 
@@ -189,6 +190,18 @@ set(Attrs, Validation, E) when is_map(Attrs) ->
 update(Attrs, Validation, E) when is_map(Attrs) ->
     set_or_update(Attrs, Validation, E).
 
+
+%% @doc Returns true if the entity is of type Type or subtype of
+%% @end
+-spec is_subtype(entity | resource | link, t()) -> boolean().
+is_subtype(resource, E) when element(?class, E) =:= resource -> true;
+
+is_subtype(link, E) when element(?class, E) =:= link -> true;
+
+is_subtype(entity, _) -> true;
+
+is_subtype(_, _) -> false.
+    
 
 %% @doc Render entity into given mimetype
 %% @end

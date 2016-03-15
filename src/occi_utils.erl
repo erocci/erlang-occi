@@ -13,6 +13,7 @@
 	 priv_dir/0,
 	 resources_dir/0,
 	 mimetype/1,
+	 urn/1,
 	 ctx/2]).
 
 -type mimetype() :: {Type :: binary(), SubType :: binary(), Options :: list()}
@@ -62,6 +63,11 @@ mimetype(Path) ->
 	".json" ->
 	    {<<"application">>, <<"json">>, []}
     end.
+
+
+-spec urn(binary()) -> binary().
+urn(Seed) ->
+    <<"urn:occi:", (uuid:uuid_to_string(uuid:get_v3(oid, Seed), standard)) >>.
 
 
 -spec ctx(string() | binary(), occi_rendering:ctx()) -> string() | binary().
