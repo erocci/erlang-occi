@@ -30,7 +30,7 @@ end_per_suite(_Config) ->
     ok.
 
 
-init_per_group(core, Config) ->
+init_per_group(core_resource, Config) ->
     Basename = filename:join([?config(data_dir, Config), "core_resource"]),
     Fun = fun(R)  ->
 		  ?assertMatch("http://example.org:8080/resource1", occi_resource:id(R)),
@@ -57,16 +57,13 @@ end_per_testcase(_TestCase, _Config) ->
 
 groups() ->
     [
-     {core, [], [
-		 parse_xml
-		,parse_text
-		]}
+     {core_resource, [], [parse_xml, parse_text, parse_json]}
     ].
 
 
 all() -> 
     [
-     {group, core}
+     {group, core_resource}
     ].
 
 
