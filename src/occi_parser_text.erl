@@ -402,7 +402,7 @@ p_value2(<< C, Rest/binary >>, Key) when ?is_alpha(C) ->
 	      (_) ->
 		  false
 	  end,
-    {alnum, Value, Rest2} = p_alnum2(Rest, End, << C >>),
+    {alnum, Value, Rest2} = p_alnum(Rest, End, << C >>),
     {kv, {Key, {alnum, Value}}, Rest2};
 
 p_value2(<< C, _Rest/binary >>, _Key) ->
@@ -533,63 +533,70 @@ p_attributes_def(<<>>) ->
     [];
 
 p_attributes_def(<< $", Rest/binary >>) ->
-    p_attributes_def(Rest, []);
+    p_attributes_def2(Rest, []);
 
 p_attributes_def(<< C, _Bin/binary >>) ->
     throw({parse_error, {attributes, C}}).
 
 
-p_attributes_def(<<>>, _Acc) ->
+p_attributes_def2(<<>>, _Acc) ->
     throw({parse_error, {attributes, <<>>}});
 
-p_attributes_def(<< $", Rest/binary >>, Acc) ->
-    {attributes, lists:reverse(Acc), Rest};
+p_attributes_def2(<< $", Rest/binary >>, Acc) ->
+    p_attributes_def3(eat_ws(Rest), lists:reverse(Acc));
 
-p_attributes_def(<< $\s, Rest/binary >>, Acc) ->
-    p_attributes_def(Rest, Acc);
+p_attributes_def2(<< $\s, Rest/binary >>, Acc) ->
+    p_attributes_def2(Rest, Acc);
 
-p_attributes_def(Bin, Acc) ->
-    End = fun (X) when X =:= ${;
-		       X =:= $\s ->
-		  true;
-	      (_) -> 
-		  false
-	  end,
-    {attribute, Def, Rest} = p_attribute_def(p_alnum(Bin, End)),
-    p_attributes_def(Rest, [ Def | Acc]).
+p_attributes_def2(<< C, Rest/binary >>, AttrList) when ?is_alpha(C);
+						       ?is_digit(C) ->
+    p_attribute_def(Rest, << C >>, #{ required => false, mutable => true }, AttrList);
+
+p_attributes_def2(<< C, _Rest/binary >>, _AttrList) ->
+    throw({parse_error, {attribute, C}}).
 
 
-p_attribute_def({alnum, <<>>, _Rest}) ->
-    throw({parse_error, {attribute_name, <<>>}});
+p_attributes_def3(<<>>, Acc) ->
+    {attributes, Acc, <<>>};
 
-p_attribute_def({alnum, Name, Rest}) ->
-    p_attribute_def(Rest, #{ name => Name, required => false, mutable => true }).
+p_attributes_def3(<< $;, Rest/binary >>, Acc) ->
+    {attributes, Acc, eat_ws(Rest)};
 
-
-p_attribute_def(<<>>, A) ->
-    {attribute, A, <<>>};
-
-p_attribute_def(<< ${, Rest/binary >>, A) ->
-    p_attribute_prop(Rest, false, A);
-
-p_attribute_def(<<  C, _Rest/binary >>, _A) ->
-    throw({parse_error, {attribute_def, C}}).
+p_attributes_def3(<< C, _Rest/binary >>, _Acc) ->
+    throw({parse_error, {attributes, C}}).
 
 
-p_attribute_prop(<< "immutable", Rest/binary >>, _Sp, A) ->
-    p_attribute_prop(Rest, true, A#{ mutable => false });
+p_attribute_def(<< $", Rest/binary >>, Acc, Attr, AttrList) ->
+    {attributes, lists:reverse([ Attr#{ name => binary_to_list(Acc) } | AttrList ]), Rest};
 
-p_attribute_prop(<< "required", Rest/binary >>, _Sp, A) ->
-    p_attribute_prop(Rest, true, A#{ required => true });
+p_attribute_def(<< $\s, Rest/binary >>, Acc, Attr, AttrList) ->
+    p_attributes_def2(eat_ws(Rest), [ Attr#{ name => binary_to_list(Acc) } | AttrList ]);
 
-p_attribute_prop(<< $}, Rest/binary >>, _Sp, A) ->
-    {attribute, A, Rest};
+p_attribute_def(<< ${, Rest/binary >>, Acc, Attr, AttrList) ->
+    p_attribute_prop(eat_ws(Rest), Attr#{ name => binary_to_list(Acc) }, AttrList);
 
-p_attribute_prop(<< $\s, _Rest/binary >>, false, _A) ->
-    throw({parse_error, {attribute, " "}});
+p_attribute_def(<< C, Rest/binary >>, Acc, Attr, AttrList) when ?is_alpha(C);
+								?is_digit(C);
+								C =:= $.;
+								C =:= $-;
+								C =:= $_ ->
+    p_attribute_def(Rest, << Acc/binary, C >>, Attr, AttrList);
 
-p_attribute_prop(<< $\s, Rest/binary >>, true, A) ->
-    p_attribute_prop(Rest, true, A).
+p_attribute_def(<< C, _Rest/binary >>, _Acc, _Attr, _AttrList) ->
+    throw({parse_error, {attribute_name, C}}).
+
+
+p_attribute_prop(<< "immutable", Rest/binary >>, Attr, AttrList) ->
+    p_attribute_prop(eat_ws(Rest), Attr#{ mutable => false }, AttrList);
+
+p_attribute_prop(<< "required", Rest/binary >>, Attr, AttrList) ->
+    p_attribute_prop(eat_ws(Rest), Attr#{ required => true }, AttrList);
+
+p_attribute_prop(<< $}, Rest/binary >>, Attr, AttrList) ->
+    p_attributes_def2(eat_ws(Rest), [ Attr | AttrList ]);
+
+p_attribute_prop(<< C, _Rest/binary >>, _Attr, _AttrList) ->
+    throw({parse_error, {attribute_prop, C}}).
 
 
 p_actions(<<>>) ->
@@ -619,27 +626,10 @@ p_actions(Bin, Acc) ->
 %%%
 %%% Lex functions
 %%%
-p_alnum(<<>>, _) ->
-    throw({parse_error, {alnum, <<>>}});
-
-p_alnum(<< C, Rest/binary >>, End) ->
-    case End(C) of
-	true -> 
-	    {alnum, <<>>, Rest};
-	false ->
-	    if ?is_alpha(C); 
-	       ?is_digit(C) ->
-		    p_alnum2(Rest, End, << C >>);
-	       true ->
-		    throw({parse_error, {alnum, C}})
-	    end
-    end.
-
-
-p_alnum2(<<>>, _End, Acc) ->
+p_alnum(<<>>, _End, Acc) ->
     {alnum, Acc, <<>>};
 
-p_alnum2(<< C, Rest/binary >>, End, Acc) ->
+p_alnum(<< C, Rest/binary >>, End, Acc) ->
     case End(C) of
 	true ->
 	    {alnum, Acc, eat_ws(Rest)};
@@ -649,7 +639,7 @@ p_alnum2(<< C, Rest/binary >>, End, Acc) ->
 	       C =:= $-;
 	       C =:= $_;
 	       C =:= $. ->
-		    p_alnum2(Rest, End, << Acc/binary, C >>);
+		    p_alnum(Rest, End, << Acc/binary, C >>);
 	       true ->
 		    throw({parse_error, {alnum, C}})
 	    end
@@ -702,34 +692,42 @@ p_string(<< C, Rest/binary >>, Acc) ->
     p_string(Rest, << Acc/binary, C >>).    
     
 
-p_class(<< $", Rest/binary >>) ->
-    End = fun ($") ->  true; 
-	      (_) -> false 
-	  end,
-    p_class2(Rest, End);
+p_class(<<>>) ->
+    throw({parse_error, {class, <<>>}});
 
-p_class(<< C, Rest/binary >>) when ?is_alpha(C);
-				   ?is_digit(C) ->
-    End = fun (X) when X =:= $;;
-		       X =:= $\s -> true;
-	      (_) -> false 
-	  end,
-    p_class2(<< C, Rest/binary >>, End).
+p_class(<< "action", Rest/binary >>) ->
+    p_class2(Rest, action);
+
+p_class(<< "\"action\"", Rest/binary >>) ->
+    p_class2(Rest, action);
+
+p_class(<< "mixin", Rest/binary >>) ->
+    p_class2(Rest, mixin);
+
+p_class(<< "\"mixin\"", Rest/binary >>) ->
+    p_class2(Rest, mixin);
+
+p_class(<< "kind", Rest/binary >>) ->
+    p_class2(Rest, kind);
+
+p_class(<< "\"kind\"", Rest/binary >>) ->
+    p_class2(Rest, kind);
+
+p_class(<< C, _Rest/binary >>) ->
+    throw({parse_error, {class, C}}).
 
 
-p_class2(Bin, End) ->
-    try p_alnum(Bin, End) of
-	{alnum, <<"action">>, Rest} ->
-	    {class, action, Rest};
-	{alnum, <<"mixin">>, Rest} ->
-	    {class, mixin, Rest};
-	{alnum, <<"kind">>, Rest} ->
-	    {class, kind, Rest};
-	{alnum, Else, _Rest} ->
-	    throw({parse_error, {class, Else}})
-    catch throw:{parse_error, {alnum, Err}} ->
-	    throw({parse_error, {class, Err}})
-    end.
+p_class2(<<>>, Class) ->
+    {class, Class, <<>>};
+
+p_class2(<< $\s, Rest/binary >>, Class) ->
+    p_class2(Rest, Class);
+
+p_class2(<< $;, Rest/binary >>, Class) ->
+    {class, Class, eat_ws(Rest)};
+
+p_class2(<< C, _Rest/binary >>, _Class) ->
+    throw({parse_error, {class, C}}).
 
 
 eat_ws(<< $\s, Rest/binary >>) ->
@@ -871,31 +869,43 @@ add_header_values(Name, Values, Acc) ->
 
 attribute_test_() ->
     [
-     ?_assertMatch({attribute, #{ name := "occi.example.attr", mutable := true, required := false }},
-		   <<"occi.example.attr">>),
-     ?_assertMatch({attribute, #{ name := "occi.example.attr", mutable := false, required := false }},
-		   <<"occi.example.attr{immutable}">>),
-     ?_assertMatch({attribute, #{ name := "occi.example.attr", mutable := false, required := true }},
-		   <<"occi.example.attr{immutable required}">>),
-     ?_assertMatch({attribute, #{ name := "occi.example.attr", mutable := false, required := true }},
-		   <<"occi.example.attr{required immutable}">>),
-     ?_assertThrow({parse_error, {attribute, " "}},
-		   <<"occi.example.attr{required   immutable}">>)
+     ?_assertMatch({attributes, [
+				 #{ name := "occi.example.attr1", mutable := true, required := false },
+				 #{ name := "occi.example.attr2", mutable := true, required := false }
+				], <<"etc">>},
+		   p_attributes_def(<<"\"occi.example.attr1  occi.example.attr2 \"  ;   etc">>)),
+     ?_assertMatch({attributes, [
+				 #{ name := "occi.example.attr", mutable := true, required := false }
+				], <<>>},
+		   p_attributes_def(<<"\"occi.example.attr\"">>)),
+     ?_assertMatch({attributes, [
+				 #{ name := "occi.example.attr1", mutable := false, required := false },
+				 #{ name := "occi.example.attr2", mutable := true, required := false }
+				], <<>>},
+		   p_attributes_def(<<"\"occi.example.attr1{immutable} occi.example.attr2\"">>)),
+     ?_assertMatch({attributes, [
+				 #{ name := "occi.example.attr", mutable := false, required := true }
+				], <<>>},
+		   p_attributes_def(<<"\"occi.example.attr{immutable required}\"">>)),
+     ?_assertMatch({attributes, [
+				 #{ name := "occi.example.attr", mutable := false, required := true }
+				], <<>>},
+		   p_attributes_def(<<"\"occi.example.attr{  required   immutable  }\"">>))
     ].
 
 class_test_() ->
     [
-     ?_assertMatch({class, action, <<"else">>}, p_class(<<"action  else">>)),
-     ?_assertMatch({class, action, <<"  else">>}, p_class(<<"\"action\"  ;  else">>)),
+     ?_assertThrow({parse_error, {class, $e}}, p_class(<<"action  else">>)),
+     ?_assertMatch({class, action, <<"else">>}, p_class(<<"\"action\"  ;  else">>)),
      ?_assertMatch({class, mixin, <<"">>}, p_class(<<"\"mixin\"">>)),
      ?_assertMatch({class, kind, <<"">>}, p_class(<<"\"kind\"">>)),
-     ?_assertThrow({parse_error, {class, <<"resource">>}}, p_class(<<"resource">>))
+     ?_assertThrow({parse_error, {class, $r}}, p_class(<<"resource">>))
     ].
 
 eat_test_() ->
     [
-     ?assertMatch(<<>>, eat_ws(<<"       ">>)),
-     ?assertMatch(<<>>, eat_ws(<<"    ;">>)),
-     ?assertMatch(<<"   else">>, eat_ws(<<"    ;   else">>))
+     ?_assertMatch(<<>>, eat_ws(<<"       ">>)),
+     ?_assertMatch(<<";">>, eat_ws(<<"    ;">>)),
+     ?_assertMatch(<<";   else">>, eat_ws(<<"    ;   else">>))
     ].
 -endif.
