@@ -27,7 +27,8 @@ parse_model(_Type, _Bin) when _Type =:= extension;
 
 
 -spec parse_entity(entity | resource | link, binary(), occi_entity:validation()) -> occi_type:t().
-parse_entity(Type, Bin, Valid) when Type =:= resource;
+parse_entity(Type, Bin, Valid) when Type =:= entity;
+				    Type =:= resource;
 				    Type =:= link ->
     Entity = parse_entity2(parse_headers(Bin), Valid),
     case occi_entity:is_subtype(Type, Entity) of
@@ -55,7 +56,6 @@ parse_entity2(H, Valid) ->
     {Kind, Mixins} = lists:foldl(Filter, {undefined, []}, p_categories(orddict:find('category', H))),
     Links = p_links(orddict:find('link', H)),
     Attributes = p_attributes(orddict:find('x-occi-attribute', H)),
-    ?debug("Attributes: ~p", [orddict:find('x-occi-attribute', H)]),
     case lists:keytake(<<"occi.core.id">>, 2, Attributes) of
 	{value, {attribute, _, {string, Id}}, Attributes2} ->
 	    parse_entity3(binary_to_list(Id), Kind, Mixins, Links, Attributes2, Valid);
@@ -75,7 +75,7 @@ parse_entity3(Id, Kind, Mixins, Links, Attributes, Valid) ->
 			     occi_resource:add_link(build_link(Id, Kind, Link, Valid), Acc)
 		     end, E2, Links),
     occi_entity:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
-					Acc#{ Key => Value }
+					Acc#{ binary_to_list(Key) => Value }
 				end, #{}, Attributes), Valid, E3).
 
 
@@ -94,7 +94,7 @@ build_link(Source, SourceKind, Link, Valid) ->
 			     occi_link:add_mixin(Mixin, Acc)
 		     end, L, Mixins),
     occi_link:set(lists:foldl(fun ({Key, Value}, Acc) ->
-				      Acc#{ Key => Value }
+				      Acc#{ binary_to_list(Key) => Value }
 			      end, #{}, maps:get(attributes, Link)), Valid, L2).
 
 

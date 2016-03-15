@@ -28,7 +28,8 @@ parse_model(_Type, _Bin) when _Type =:= extension;
 
 
 -spec parse_entity(entity | resource | link, binary(), occi_entity:validation()) -> occi_type:t().
-parse_entity(Type, Bin, Valid) when Type =:= resource;
+parse_entity(Type, Bin, Valid) when Type =:= entity;
+				    Type =:= resource;
 				    Type =:= link ->
     Entity = p_entity(jsx:decode(Bin, [return_maps]), Valid),
     case occi_entity:is_subtype(Type, Entity) of

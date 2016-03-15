@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 8 Mar 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
 %%%-------------------------------------------------------------------
--module(parse_resource_SUITE).
+-module(parsers_SUITE).
 
 -compile(export_all).
 
@@ -39,6 +39,17 @@ init_per_group(core_resource, Config) ->
 	  end,
     [ {basename, Basename}, {check, Fun} | Config ];
 
+init_per_group(core_link, Config) ->
+    Basename = filename:join([?config(data_dir, Config), "core_link"]),
+    Fun = fun(L)  ->
+		  ?assertMatch("http://example.org:8080/link1", occi_link:id(L)),
+		  ?assertMatch({"http://schemas.ogf.org/occi/core#", "link"}, occi_link:kind(L)),
+		  ?assertMatch("/myresource0", occi_link:source(L)),
+		  ?assertMatch("/myresource1", occi_link:target(L)),
+		  ?assertMatch(#{}, occi_link:attributes(L))
+	  end,
+    [ {basename, Basename}, {check, Fun} | Config ];
+
 init_per_group(_, Config) ->
     Config.
 
@@ -58,12 +69,14 @@ end_per_testcase(_TestCase, _Config) ->
 groups() ->
     [
      {core_resource, [], [parse_xml, parse_text, parse_json]}
+    ,{core_link,     [], [parse_xml, parse_text, parse_json]}
     ].
 
 
 all() -> 
     [
      {group, core_resource}
+    ,{group, core_link}
     ].
 
 
@@ -89,6 +102,6 @@ parse_tests(Type, Ext, Config) ->
 parse_test(Type, Filename, Config) ->
     ct:log(info, ?STD_IMPORTANCE, "=== Parsing ~s", [filename:basename(Filename)]),
     {ok, Bin} = file:read_file(Filename),
-    R = occi_resource:load(Type, Bin, client),
+    R = occi_entity:load(Type, Bin, client),
     Fun = ?config(check, Config),
     Fun(R).

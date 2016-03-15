@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<link xmlns="http://schemas.ogf.org/occi"
+      id="http://example.org:8080/link1"
+      source="/myresource0"
+      target="/myresource1" >
+  <kind scheme="http://schemas.ogf.org/occi/core#" term="link" />
+</link>

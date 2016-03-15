@@ -28,7 +28,8 @@
 	 update/3,
 	 is_subtype/2]).
 
--export([render/3]).
+-export([load/3, 
+	 render/3]).
 
 -include("occi_entity.hrl").
 -include_lib("annotations/include/annotations.hrl").
@@ -201,7 +202,14 @@ is_subtype(link, E) when element(?class, E) =:= link -> true;
 is_subtype(entity, _) -> true;
 
 is_subtype(_, _) -> false.
-    
+
+
+%% @doc Load entity from iolist 
+%% @end
+-spec load(occi_utils:mimetype(), iolist(), occi_entity:validation()) -> t().
+load(Mimetype, Bin, V) -> 
+    occi_rendering:load_entity(entity, Mimetype, Bin, V).
+
 
 %% @doc Render entity into given mimetype
 %% @end

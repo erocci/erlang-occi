@@ -1,0 +1,3 @@
+category: link; scheme="http://schemas.ogf.org/occi/core#"; class="kind"
+x-occi-attribute: occi.core.id="http://example.org:8080/link1"
+x-occi-attribute: occi.core.source="/myresource0", occi.core.target="/myresource1"

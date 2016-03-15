@@ -1,0 +1,10 @@
+{
+    "kind": "http://schemas.ogf.org/occi/core#link",
+    "id": "http://example.org:8080/link1",
+    "source": {
+	"location": "/myresource0"
+    },
+    "target": {
+	"location": "/myresource1"
+    }
+}
