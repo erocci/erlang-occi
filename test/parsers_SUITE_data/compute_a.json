@@ -1,0 +1,10 @@
+{
+    "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
+    "id": "http://example.org:8080/compute1",
+    "summary": "A super computer",
+    "attributes": {
+	"occi.compute.cores": 45,
+	"occi.compute.hostname": "a name",
+	"occi.compute.speed": 1.5
+    }
+}

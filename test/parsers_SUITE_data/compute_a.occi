@@ -1,0 +1,2 @@
+category: compute; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind
+x-occi-attribute: occi.core.id="http://example.org:8080/compute1", occi.core.summary="A super computer", occi.compute.cores=45, occi.compute.hostname="a name", occi.compute.speed=1.5

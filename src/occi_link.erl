@@ -10,7 +10,7 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, new/2]},
+-mixin([{occi_entity, except, [new/1, new/2, load/3]},
 	occi_type]).
 
 -export([new/4,

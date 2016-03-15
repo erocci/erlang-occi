@@ -50,6 +50,20 @@ init_per_group(core_link, Config) ->
 	  end,
     [ {basename, Basename}, {check, Fun} | Config ];
 
+init_per_group('compute_a', Config) ->
+    Basename = filename:join([?config(data_dir, Config), "compute_a"]),
+    Fun = fun(R)  ->
+		  ?assertMatch("http://example.org:8080/compute1", occi_resource:id(R)),
+		  ?assertMatch({"http://schemas.ogf.org/occi/infrastructure#", "compute"}, occi_resource:kind(R)),
+		  ?assertMatch(#{ "occi.core.summary" := "A super computer",
+				  "occi.compute.cores" := 45,
+				  "occi.compute.hostname" := "a name",
+				  "occi.compute.speed" := 1.5}, 
+			       occi_resource:attributes(R)),
+		  ?assertMatch(#{}, occi_resource:attributes(R))
+	  end,
+    [ {basename, Basename}, {check, Fun} | Config ];
+
 init_per_group(_, Config) ->
     Config.
 
@@ -70,6 +84,7 @@ groups() ->
     [
      {core_resource, [], [parse_xml, parse_text, parse_json]}
     ,{core_link,     [], [parse_xml, parse_text, parse_json]}
+    ,{'compute_a',   [], [parse_xml, parse_text, parse_json]}
     ].
 
 
@@ -77,6 +92,7 @@ all() ->
     [
      {group, core_resource}
     ,{group, core_link}
+    ,{group, 'compute_a'}
     ].
 
 
