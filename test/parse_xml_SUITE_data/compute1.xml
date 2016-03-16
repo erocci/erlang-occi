@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<resource xmlns="http://schemas.ogf.org/occi"
-	  id="http://example.org:8080/compute1">
-  <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="compute" />
-  <attribute name="occi.core.summary" value="A super computer" />
-  <attribute name="occi.compute.cores" value="45" />
-  <attribute name="occi.compute.hostname" value="a name" />
-  <attribute name="occi.compute.speed" value="1.5" />
-</resource>
