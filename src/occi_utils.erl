@@ -67,7 +67,7 @@ mimetype(Path) ->
 
 -spec urn(binary()) -> binary().
 urn(Seed) ->
-    <<"urn:uuid:", (uuid:uuid_to_string(uuid:get_v3(oid, Seed), standard)) >>.
+    <<"urn:uuid:", (uuid:uuid_to_string(uuid:get_v3(oid, Seed), binary_standard))/binary >>.
 
 
 -spec ctx(string() | binary(), occi_rendering:ctx()) -> string() | binary().
