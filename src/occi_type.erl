@@ -38,5 +38,8 @@
 type(T) when is_list(T) ->
     categories;
 
-type(T) ->
-    element(1, T).
+type(T) when is_tuple(T) ->
+    element(1, T);
+
+type(_) ->
+    undefined.
