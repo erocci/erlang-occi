@@ -15,6 +15,10 @@
 
 -module(occi_entity).
 
+-include("occi.hrl").
+-include("occi_entity.hrl").
+-include_lib("annotations/include/annotations.hrl").
+
 -export([new/1,
 	 new/2,
 	 id/1,
@@ -30,9 +34,6 @@
 
 -export([load/3, 
 	 render/3]).
-
--include("occi_entity.hrl").
--include_lib("annotations/include/annotations.hrl").
 
 -type entity() :: {
 	      Class      :: occi_type:name(),
@@ -58,10 +59,6 @@
 -type t() :: entity().
 -export_type([t/0, validation/0]).
 
--define(entity_category_id, {"http://schemas.ogf.org/occi/core#", "entity"}).
--define(resource_category_id, {"http://schemas.ogf.org/occi/core#", "resource"}).
--define(link_category_id, {"http://schemas.ogf.org/occi/core#", "link"}).
-
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
@@ -69,7 +66,7 @@
 
 -spec new(string()) -> t().
 new(Id) ->
-    new(Id, ?entity_category_id).
+    new(Id, ?entity_kind_id).
 
 
 %% @throws {unknown_category, term()}
@@ -82,8 +79,14 @@ new(Id, {_Scheme, _Term}=CatId) ->
 	undefined ->
 	    throw({unknown_category, CatId});
 	C ->
-	    Class = known_class([CatId | occi_kind:parents(C)]),
-	    E = {Class, Id, CatId, [], #{}, #{}},
+	    E = case known_class([CatId | occi_kind:parents(C)]) of
+		    entity ->
+			{entity, Id, CatId, [], #{}, #{}};
+		    resource ->
+			{resource, Id, CatId, [], #{}, #{}, []};
+		    link ->
+			{link, Id, CatId, [], #{}, #{}}
+		end,
 	    merge_parents(C, E)
     end.
 
@@ -376,8 +379,8 @@ merge_attributes([ Spec | Tail ], AttrsAcc, ValuesAcc, E) ->
 
 %% Use the module of the closest known ancestor
 %% Clauses order is important !
-known_class([]) ->                          entity;
-known_class([?resource_category_id | _]) -> resource;
-known_class([?link_category_id | _]) ->     link;
-known_class([?entity_category_id | _]) ->   entity;
-known_class([_ | Tail]) ->                  known_class(Tail).
+known_class([]) ->                      entity;
+known_class([?resource_kind_id | _]) -> resource;
+known_class([?link_kind_id | _]) ->     link;
+known_class([?entity_kind_id | _]) ->   entity;
+known_class([_ | Tail]) ->              known_class(Tail).

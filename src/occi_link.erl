@@ -7,6 +7,7 @@
 
 -module(occi_link).
 
+-include("occi.hrl").
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
@@ -22,8 +23,6 @@
 
 -type t() :: occi_entity:t().
 -export_type([t/0]).
-
--define(category_id, {"http://schemas.ogf.org/occi/core#", "link"}).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").

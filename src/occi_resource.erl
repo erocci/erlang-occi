@@ -7,14 +7,14 @@
 
 -module(occi_resource).
 
+-include("occi.hrl").
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, new/2, load/3]},
+-mixin([{occi_entity, except, [new/1, load/3]},
 	occi_type]).
 
 -export([new/1,
-	 new/2,
 	 add_link/2,
 	 links/1]).
 
@@ -35,8 +35,6 @@
 -type t() :: resource().
 -export_type([t/0]).
 
--define(category_id, {"http://schemas.ogf.org/occi/core#", "resource"}).
-
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
@@ -46,15 +44,7 @@
 %% @end
 -spec new(string()) -> t().
 new(Id) ->
-    occi_entity:new(Id, ?category_id).
-
-
-%% @doc Creates a resource
-%% @end
--spec new(string(), occi_category:id()) -> t().
-new(Id, KindId) ->
-    RList = tuple_to_list(occi_entity:new(Id, KindId)),
-    list_to_tuple(RList ++ [ [] ]).
+    occi_entity:new(Id, ?resource_kind_id).
 
 
 %% @doc Add the given link to the resource
@@ -67,7 +57,7 @@ add_link(Link, R) when element(?class, Link) =:= link ->
 
 %% @doc Get list of links associated to this resource
 %% @end
--spec links(occi_resource:t()) -> [occi_entity:id()].
+-spec links(occi_resource:t()) -> [occi_link:t()].
 links(R) ->
     element(?links, R).
 
