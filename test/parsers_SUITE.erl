@@ -50,6 +50,19 @@ init_per_group(core_link, Config) ->
 	  end,
     [ {basename, Basename}, {check, Fun} | Config ];
 
+init_per_group('resource_link', Config) ->
+    Basename = filename:join([?config(data_dir, Config), "resource_link"]),
+    Fun = fun(R)  ->
+		  ?assertMatch("http://example.org:8080/resource1", occi_resource:id(R)),
+		  ?assertMatch({"http://schemas.ogf.org/occi/core#", "resource"}, occi_resource:kind(R)),
+		  [Link] = occi_resource:links(R),
+ 		  ?assertMatch("mylink1", occi_link:id(Link)),
+ 		  ?assertMatch({"http://schemas.ogf.org/occi/core#", "link"}, occi_link:kind(Link)),
+ 		  ?assertMatch("http://example.org/another_resource1", occi_link:target(Link)),
+		  ?assertMatch(#{}, occi_resource:attributes(R))
+	  end,
+    [ {basename, Basename}, {check, Fun} | Config ];
+
 init_per_group('compute_a', Config) ->
     Basename = filename:join([?config(data_dir, Config), "compute_a"]),
     Fun = fun(R)  ->
@@ -82,9 +95,10 @@ end_per_testcase(_TestCase, _Config) ->
 
 groups() ->
     [
-     {core_resource, [], [parse_xml, parse_text, parse_json]}
-    ,{core_link,     [], [parse_xml, parse_text, parse_json]}
-    ,{'compute_a',   [], [parse_xml, parse_text, parse_json]}
+     {core_resource,       [], [parse_xml, parse_text, parse_json]}
+    ,{core_link,           [], [parse_xml, parse_text, parse_json]}
+    ,{'resource_link',     [], [parse_xml, parse_text, parse_json]}
+    ,{'compute_a',         [], [parse_xml, parse_text, parse_json]}
     ].
 
 
@@ -92,6 +106,7 @@ all() ->
     [
      {group, core_resource}
     ,{group, core_link}
+    ,{group, 'resource_link'}
     ,{group, 'compute_a'}
     ].
 

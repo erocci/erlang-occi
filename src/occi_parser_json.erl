@@ -50,31 +50,30 @@ p_entity(_Map, _Valid) ->
 
 p_entity2(Id, #{ <<"kind">> := KindId }=Map, Valid) ->
     Mixins = maps:get(<<"mixins">>, Map, []),
-    E = occi_entity:new(Id, KindId),
-    E1 = lists:foldl(fun (MixinId, Acc) ->
-			     occi_entity:add_mixin(MixinId, Acc)
-		     end, E, Mixins),
-    p_entity3(E1, Map, Valid);
+    Kind = occi_models:category(KindId),
+    case occi_kind:has_parent(resource, Kind) of
+	true ->
+	    p_resource(Id, Kind, Mixins, Map, Valid);
+	false ->
+	    p_link(Id, Kind, Mixins, Map, Valid)
+    end;
 
 p_entity2(_Id, _Map, _Valid) ->
     throw({parse_error, missing_kind}).
 
 
-p_entity3(E, Map, Valid) when element(?class, E) =:= resource ->
-    p_resource(Map, Valid, E);
-
-p_entity3(E, Map, Valid) when element(?class, E) =:= link ->
-    p_link(Map, Valid, E).
-
-
-p_resource(Map, Valid, R) ->
+p_resource(Id, Kind, Mixins, Map, Valid) ->
+    R = occi_resource:new(Id, Kind),
+    R1 = lists:foldl(fun (MixinId, Acc) ->
+			     occi_resource:add_mixin(MixinId, Acc)
+		     end, R, Mixins),
     Attributes = maps:merge(
 		   maps:fold(fun (K, V, Acc) ->
 				     Acc#{ binary_to_list(K) => V }
 			     end, #{}, maps:get(<<"attributes">>, Map, #{})),
 		   #{ "occi.core.summary" => maps:get(<<"summary">>, Map, <<>>),
 		      "occi.core.title" => maps:get(<<"title">>, Map, <<>>) }),
-    R2 = occi_entity:set(Attributes, Valid, R),
+    R2 = occi_entity:set(Attributes, Valid, R1),
     p_resource_links(maps:get(<<"links">>, Map, []), Valid, R2).
 
 
@@ -84,40 +83,53 @@ p_resource_links([], _Valid, R) ->
 p_resource_links([ Link | Tail ], Valid, R) ->
     Source = #{ <<"location">> => occi_resource:id(R), 
 		<<"kind">> => occi_resource:kind(R) },
-    L = p_link(Link#{ <<"source">> => Source }, Valid, R),
+    L = p_resource_link(Link#{ <<"source">> => Source }, Valid),
     p_resource_links(Tail, Valid, occi_resource:add_link(L, R)).
 
 
-p_link(#{ <<"source">> := #{ <<"location">> := SourceLocation }=Source }=Map, Valid, E) ->
-    p_link2(SourceLocation, Source, Map, Valid, E);
+p_resource_link(#{ <<"id">> := Id }=Link, Valid) ->
+    p_resource_link2(binary_to_list(Id), Link, Valid);
 
-p_link(_Map, _Valid, _E) ->
+p_resource_link(_, _) ->
+    throw({parse_error, missing_id}).
+
+
+p_resource_link2(Id, #{ <<"kind">> := Kind }=Link, Valid) ->
+    p_link(Id, Kind, maps:get(<<"mixins">>, Link, []), Link, Valid);
+
+p_resource_link2(_, _, _) ->
+    throw({parse_error, missing_kind}).
+
+
+p_link(Id, Kind, Mixins,
+       #{ <<"source">> := #{ <<"location">> := SourceLocation }=Source }=Map, Valid) ->
+    p_link2(Id, Kind, Mixins, SourceLocation, Source, Map, Valid);
+
+p_link(_Id, _Kind, _Mixins, _Map, _Valid) ->
     throw({parse_error, {link, missing_source}}).
 
 
-p_link2(SourceLocation, Source, #{ <<"target">> := #{ <<"location">> := TargetLocation }=Target }=Map, Valid, E) ->
-    A0 = maps:merge(
-	   maps:fold(fun (K, V, Acc) ->
-			     Acc#{ binary_to_list(K) => V }
-		     end, #{}, maps:get(<<"attributes">>, Map, #{})),
-	   #{ "occi.core.title" => maps:get(<<"title">>, Map, <<>>) }),
-    A1 = case maps:get(<<"kind">>, Source, <<>>) of
-	     <<>> ->
-		 A0#{ "occi.core.source" => SourceLocation };
-	     SourceKind ->
-		 A0#{ "occi.core.source" => SourceLocation,
-		      "occi.core.source.kind" => SourceKind }
-	 end,
-    A2 = case maps:get(<<"kind">>, Target, <<>>) of
-	     <<>> ->
-		 A1#{ "occi.core.target" => TargetLocation };
-	     TargetKind ->
-		 A1#{ "occi.core.target" => TargetLocation,
-		      "occi.core.target.kind" => TargetKind }
-	 end,
-    occi_link:set(A2, Valid, E);
+p_link2(Id, Kind, Mixins, SourceLocation, Source, Map, Valid) when is_binary(SourceLocation) ->
+    p_link2(Id, Kind, Mixins, binary_to_list(SourceLocation), Source, Map, Valid);
 
-p_link2(_, _, _, _, _) ->
+p_link2(Id, Kind, Mixins, SourceLocation, Source, 
+	#{ <<"target">> := #{ <<"location">> := TargetLocation }=Target }=Map, Valid) ->
+    SourceKind = maps:get(<<"kind">>, Source, undefined),
+    TargetKind = maps:get(<<"kind">>, Target, undefined),
+    Link = occi_link:new(Id, Kind,
+			 SourceLocation, SourceKind, 
+			 binary_to_list(TargetLocation), TargetKind),
+    Link1 = lists:foldl(fun (MixinId, Acc) ->
+				occi_resource:add_mixin(MixinId, Acc)
+			end, Link, Mixins),
+    Attributes = maps:merge(
+		   maps:fold(fun (K, V, Acc) ->
+				     Acc#{ binary_to_list(K) => V }
+			     end, #{}, maps:get(<<"attributes">>, Map, #{})),
+		   #{ "occi.core.title" => maps:get(<<"title">>, Map, <<>>) }),
+    occi_link:set(Attributes, Valid, Link1);
+
+p_link2(_, _, _, _, _, _, _) ->
     throw({parse_error, {link, missing_target}}).
 
 

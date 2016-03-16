@@ -50,16 +50,13 @@ new(Id) ->
 
 %% @throws {unknown_category, term()}
 -spec new(string(), occi_category:t() | occi_category:id() | string() | binary()) -> t().
-new(Id, Category) when is_list(Category); is_binary(Category) ->
-    new(Id, occi_category:parse_id(Category));
+new(Id, KindId) when is_list(KindId); is_binary(KindId) ->
+    new(Id, occi_category:parse_id(KindId));
 
-new(Id, Category) ->
-    Kind = case occi_type:type(Category) of
-	       category ->
-		   Category;
-	       _ ->
-		   occi_models:kind(resource, Category)
-	   end,
+new(Id, {_Scheme, _Term}=KindId) ->
+    new(Id, occi_models:kind(resource, KindId));
+
+new(Id, Kind) ->
     occi_entity:merge_parents(Kind, {resource, Id, occi_kind:id(Kind), [], #{}, #{}, []}).
 
 

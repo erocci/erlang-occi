@@ -54,15 +54,12 @@ new(Id, KindId, Src, Target) when is_list(Id),
 new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_list(KindId); is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId), Src, SrcKind, Target, TargetKind);
 
-new(Id, Category, Src, SrcKind, Target, TargetKind) when is_list(Id), 
-						       is_list(Src),
-						       is_list(Target) ->
-    Kind = case occi_type:type(Category) of
-	       category ->
-		   Category;
-	       _ ->
-		   occi_models:kind(link, Category)
-	   end,
+new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
+    new(Id, occi_models:kind(link, KindId), Src, SrcKind, Target, TargetKind);
+
+new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_list(Id), 
+						     is_list(Src),
+						     is_list(Target) ->
     Link = occi_entity:merge_parents(Kind, {link, Id, occi_kind:id(Kind), [], #{}, #{}}),
     set(#{ "occi.core.source" => Src, 
 	   "occi.core.source.kind" => SrcKind,

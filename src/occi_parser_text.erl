@@ -7,6 +7,7 @@
 
 -module(occi_parser_text).
 
+-include("occi.hrl").
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
@@ -53,50 +54,100 @@ parse_entity2(H, Valid) ->
 		     %% ignore ??
 		     Acc
 	     end,
-    {Kind, Mixins} = lists:foldl(Filter, {undefined, []}, p_categories(orddict:find('category', H))),
-    Links = p_links(orddict:find('link', H)),
+    {KindId, MixinIds} = lists:foldl(Filter, {undefined, []}, p_categories(orddict:find('category', H))),
     Attributes = p_attributes(orddict:find('x-occi-attribute', H)),
-    case lists:keytake(<<"occi.core.id">>, 2, Attributes) of
-	{value, {attribute, _, {string, Id}}, Attributes2} ->
-	    parse_entity3(binary_to_list(Id), Kind, Mixins, Links, Attributes2, Valid);
-	{value, {attribute, _, {Type, _}}, _} ->
-	    throw({parse_error, {entity, {<<"occi.core.id">>, Type}}});
+    {Id, Attributes2} = case lists:keytake(<<"occi.core.id">>, 2, Attributes) of
+			    {value, {attribute, _, {string, SId}}, Rest} ->
+				{binary_to_list(SId), Rest};
+			    {value, {attribute, _, {Type, _}}, _} ->
+				throw({parse_error, {entity, {<<"occi.core.id">>, Type}}});
+			    false ->
+				throw({parse_error, {entity, {<<"occi.core.id">>, <<>>}}})
+			end,
+    Kind = occi_models:category(KindId),
+    case occi_kind:has_parent(resource, Kind) of
+	true ->
+	    Links = p_links(orddict:find('link', H)),
+	    p_resource(Id, Kind, MixinIds, Attributes2, Links, Valid);
 	false ->
-	    throw({parse_error, {entity, {<<"occi.core.id">>, <<>>}}})
+	    p_link(Id, Kind, MixinIds, Attributes2, Valid)
     end.
 
 
-parse_entity3(Id, Kind, Mixins, Links, Attributes, Valid) ->
-    E = occi_entity:new(Id, Kind),
-    E2 = lists:foldl(fun (Mixin, Acc) ->
+p_resource(Id, Kind, MixinIds, Attributes, Links, Valid) ->
+    R = occi_resource:new(Id, Kind),
+    R1 = lists:foldl(fun (Mixin, Acc) ->
 			     occi_entity:add_mixin(Mixin, Acc)
-		     end, E, Mixins),
-    E3 = lists:foldl(fun ({link, Link}, Acc) ->
-			     occi_resource:add_link(build_link(Id, Kind, Link, Valid), Acc)
-		     end, E2, Links),
+		     end, R, MixinIds),
+    R2 = lists:foldl(fun ({link, Link}, Acc) ->
+			     occi_resource:add_link(p_resource_link(Id, Kind, Link, Valid), Acc)
+		     end, R1, Links),
     occi_entity:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
 					Acc#{ binary_to_list(Key) => Value }
-				end, #{}, Attributes), Valid, E3).
+				end, #{}, Attributes), Valid, R2).
 
 
-build_link(Source, SourceKind, Link, Valid) ->
-    Target = maps:get(target, Link),
-    [ TargetKind | _ ] = maps:get(rel, Link),
+p_resource_link(Source, SourceKind, Link, Valid) ->
     Id = case maps:get(self, Link, undefined) of
 	     undefined ->
 		 occi_utils:urn(Source);
 	     Self ->
 		 Self
 	 end,
-    [Kind | Mixins] = maps:get(category, Link, [{"http://schemas.ogf.org/occi/core#", "link"}]),
-    L = occi_link:new(binary_to_list(Id), Kind, Source, SourceKind, Target, TargetKind),
-    L2 = lists:foldl(fun (Mixin, Acc) ->
-			     occi_link:add_mixin(Mixin, Acc)
-		     end, L, Mixins),
+    Categories = maps:get(categories, Link, [?link_kind_id]),
+    {Kind, MixinIds} = filter_categories(Categories, undefined, []),
+    Target = maps:get(target, Link),
+    [ TargetKind | _ ] = maps:get(rel, Link),
+    Attributes = maps:get(attributes, Link),
+    p_link2(binary_to_list(Id), Kind, MixinIds, Source, occi_kind:id(SourceKind), 
+	    binary_to_list(Target), binary_to_list(TargetKind), Attributes, Valid).
+
+
+p_link(Id, Kind, MixinIds, Attributes, Valid) ->
+    {Source, Attrs2} = case lists:keytake(<<"occi.core.source">>, 2, Attributes) of
+			   {value, {attribute, _, {string, V}}, Rest} ->
+			       {binary_to_list(V), Rest};
+			   {value, {attribute, _, {Type, _}}, _} ->
+			       throw({parse_error, {link, {<<"occi.core.source">>, Type}}});
+			   false ->
+			       throw({parse_error, {link, {<<"occi.core.source">>, <<>>}}})
+		       end,
+    {SourceKind, Attrs3} = case lists:keytake(<<"occi.core.source.kind">>, 2, Attrs2) of
+			       {value, {attribute, _, {string, V1}}, Rest1} ->
+				   {V1, Rest1};
+			       {value, {attribute, _, {Type1, _}}, _} ->
+				   throw({parse_error, {link, {<<"occi.core.source.kind">>, Type1}}});
+			       false ->
+				   {undefined, Attrs2}
+			   end,
+    {Target, Attrs4} = case lists:keytake(<<"occi.core.target">>, 2, Attrs3) of
+			   {value, {attribute, _, {string, V2}}, Rest2} ->
+			       {binary_to_list(V2), Rest2};
+			   {value, {attribute, _, {Type2, _}}, _} ->
+			       throw({parse_error, {link, {<<"occi.core.target">>, Type2}}});
+			   false ->
+			       throw({parse_error, {link, {<<"occi.core.target">>, <<>>}}})
+		       end,
+    {TargetKind, Attrs5} = case lists:keytake(<<"occi.core.target.kind">>, 2, Attrs4) of
+			       {value, {attribute, _, {string, V3}}, Rest3} ->
+				   {V3, Rest3};
+			       {value, {attribute, _, {Type3, _}}, _} ->
+				   throw({parse_error, {link, {<<"occi.core.target.kind">>, Type3}}});
+			       false ->
+				   {undefined, Attrs4}
+			   end,
+    p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attrs5, Valid).
+
+
+p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, Valid) ->
+    L = occi_link:new(Id, Kind, Source, SourceKind, Target, TargetKind),
+    L1 = lists:foldl(fun (MixinId, Acc) ->
+			     occi_link:add_mixin(MixinId, Acc)
+		     end, L, MixinIds),
     occi_link:set(lists:foldl(fun ({Key, Value}, Acc) ->
 				      Acc#{ binary_to_list(Key) => Value }
-			      end, #{}, maps:get(attributes, Link)), Valid, L2).
-
+			      end, #{}, Attributes), Valid, L1).
+    
 
 %%%
 %%% Parse functions
@@ -206,7 +257,7 @@ p_links([], Acc) ->
     lists:reverse(Acc);
 
 p_links([ Bin | Tail ], Acc) ->
-    p_links(Tail, [ {link, p_link(Bin)} | Acc ]).
+    p_links(Tail, [ p_link(Bin) | Acc ]).
 
 
 p_link(<<>>) ->
@@ -215,7 +266,7 @@ p_link(<<>>) ->
 p_link(Bin) ->
     case p_uri_ref(Bin) of
 	{'uri-ref', Target, << $;, Rest/binary >>} ->
-	    p_link_rel(p_kv(Rest), #{ target => Target, attributes => #{} });
+	    p_link_rel(p_kv(eat_ws(Rest)), #{ target => Target, attributes => [] });
 	{'uri-ref', _Target, <<>>} ->
 	    throw({parse_error, {link, <<>>}});
 	{'uri-ref', _Target, << C, _Rest/binary >>} ->
@@ -226,12 +277,15 @@ p_link(Bin) ->
 p_link_rel({rel, Rel, Rest}, Link) when is_list(Rel) ->
     p_link_self(p_kv(Rest), Link#{ rel => Rel });
 
+p_link_rel({rel, Rel, Rest}, Link) when is_binary(Rel) ->
+    p_link_self(p_kv(Rest), Link#{ rel => [Rel] });
+
 p_link_rel({Type, Value, _Rest}, _Link) ->
     throw({parse_error, {rel, {Type, Value}}}).
 
 
 p_link_self(undefined, Link) ->
-    {link, Link, <<>>};
+    {link, Link};
 
 p_link_self({self, Self, Rest}, Link) ->
     p_link_category(p_kv(Rest), Link#{ self => Self });
@@ -244,7 +298,7 @@ p_link_self({Type, Value, _Rest}, _Link) ->
 
 
 p_link_category(undefined, Link) ->
-    {link, Link, <<>>};
+    {link, Link};
 
 p_link_category({category, Categories, Rest}, Link) ->
     p_link_attribute(p_kv(Rest), Link#{ categories => Categories });
@@ -256,11 +310,11 @@ p_link_category({Type, Value, _Rest}, _Link) ->
     throw({parse_error, {Type, Value}}).
 
 
-p_link_attribute(undefined, Link) ->
-    {link, Link, <<>>};
+p_link_attribute(undefined, #{ attributes := Attributes }=Link) ->
+    {link, Link#{ attributes := lists:reverse(Attributes) }};
 
 p_link_attribute({kv, {Key, Value}, Rest}, #{ attributes := Attributes }=Link) ->
-    p_link_attribute(Rest, Link#{ attributes := Attributes#{ Key => Value }});
+    p_link_attribute(p_kv(Rest), Link#{ attributes := [ {Key, Value} | Attributes ]});
 
 p_link_attribute({Type, Value, _Rest}, _Link) ->
     throw({parse_error, {link, {Type, Value}}}).
@@ -424,7 +478,7 @@ p_rel2(<<>>, _Acc) ->
 
 p_rel2(<< $", Rest/binary >>, Acc) ->
     {uri, Uri} = p_uri(Acc),
-    {rel, Uri, Rest};
+    p_rel4(eat_ws(Rest), Uri);
 
 p_rel2(<< $\s, Rest/binary >>, Acc) ->
     {uri, Uri} = p_uri(Acc),
@@ -438,7 +492,7 @@ p_rel3(<<>>, _, _) ->
     throw({parse_error, {rel, <<>>}});
 
 p_rel3(<< $", Rest/binary >>, <<>>, Rels) ->
-    {rel, lists:reverse(Rels), Rest};
+    p_rel4(eat_ws(Rest), lists:reverse(Rels));
 
 p_rel3(<< $\s, Rest/binary >>, Acc, Rels) ->
     {uri, Uri} = p_uri(Acc),
@@ -446,6 +500,16 @@ p_rel3(<< $\s, Rest/binary >>, Acc, Rels) ->
 
 p_rel3(<< C, Rest/binary >>, Acc, Rels) ->
     p_rel3(Rest, << Acc/binary, C >>, Rels).
+
+
+p_rel4(<<>>, Rel) ->
+    {rel, Rel, <<>>};
+
+p_rel4(<< $;, Rest/binary >>, Rel) ->
+    {rel, Rel, eat_ws(Rest)};
+
+p_rel4(<< C, _Rest/binary >>, _Rel) ->
+    throw({parse_error, {rel, C}}).
 
 
 p_scheme(<<>>) ->
@@ -861,6 +925,27 @@ add_header_values(Name, Values, Acc) ->
 		  error -> []
 	      end,
     orddict:store(Name, Values ++ Values0, Acc).
+
+
+filter_categories([], undefined, Mixins) ->
+    {?link_kind_id, Mixins};
+
+filter_categories([], Kind, Mixins) ->
+    {Kind, Mixins};
+
+filter_categories([ Id | Tail ], KindAcc, MixinsAcc) ->
+    Category = occi_models:category(Id),
+    case occi_category:class(Category) of
+	kind ->
+	    AddKind = fun (Kind, undefined) ->
+			      Kind;
+			  (Kind, _) ->
+			      throw({parse_error, {kind_already_defined, Kind}})
+		      end,
+	    filter_categories(Tail, AddKind(Category, KindAcc), MixinsAcc);
+	mixin ->
+	    filter_categories(Tail, KindAcc, [ Id | MixinsAcc ])
+    end.
 
 %%%
 %%% eunit
