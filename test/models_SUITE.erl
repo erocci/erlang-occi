@@ -47,8 +47,7 @@ groups() ->
     [
      {attributes, [], 
       [ 
-	simple_entity
-      ,simple_resource
+	simple_resource
       ,mixin_resource
       ,mixin_depend_resource
       ,mixin_override_resource
@@ -91,10 +90,6 @@ all() ->
 		      "  <depends term=\"mixin1\" scheme=\"http://schemas.example.org/occi#\" />"
 		      "  <attribute name=\"occi.mixin.attr1\" type=\"xs:string\" default=\"Default value 1\" />" 
 		      "</mixin>">>).
-
-simple_entity(_Config) ->
-    E = occi_entity:new(?entity_id),
-    ?assertMatch(undefined, occi_entity:get("occi.core.title", E)).
 
 
 simple_resource(_Config) ->
