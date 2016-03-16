@@ -11,7 +11,7 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, new/2, load/3]},
+-mixin([{occi_entity, except, [load/3]},
 	occi_type]).
 
 -export([new/4,
@@ -54,7 +54,8 @@ new(Id, KindId, Src, Target) when is_list(Id),
 new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_list(Id), 
 						       is_list(Src),
 						       is_list(Target) ->
-    Link = occi_entity:new(Id, KindId),
+    Kind = occi_models:kind(link, KindId),
+    Link = occi_entity:merge_parents(Kind, {link, Id, KindId, [], #{}, #{}}),
     set(#{ "occi.core.source" => Src, 
 	   "occi.core.source.kind" => SrcKind,
 	   "occi.core.target" => Target,

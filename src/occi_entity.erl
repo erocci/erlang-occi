@@ -19,9 +19,7 @@
 -include("occi_entity.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
--export([new/1,
-	 new/2,
-	 id/1,
+-export([id/1,
 	 kind/1,
 	 mixins/1,
 	 add_mixin/2,
@@ -34,6 +32,9 @@
 
 -export([load/3, 
 	 render/3]).
+
+%% Internal (for subtypes)
+-export([merge_parents/2]).
 
 -type entity() :: {
 	      Class      :: occi_type:name(),
@@ -62,34 +63,6 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
-
-
--spec new(string()) -> t().
-new(Id) ->
-    new(Id, ?entity_kind_id).
-
-
-%% @throws {unknown_category, term()}
--spec new(string(), occi_category:id() | string() | binary()) -> t().
-new(Id, KindId) when is_list(Id), is_list(KindId); is_list(Id), is_binary(KindId) ->
-    new(Id, occi_category:parse_id(KindId));
-
-new(Id, {_Scheme, _Term}=CatId) ->
-    case occi_models:category(CatId) of
-	undefined ->
-	    throw({unknown_category, CatId});
-	C ->
-	    E = case known_class([CatId | occi_kind:parents(C)]) of
-		    entity ->
-			{entity, Id, CatId, [], #{}, #{}};
-		    resource ->
-			{resource, Id, CatId, [], #{}, #{}, []};
-		    link ->
-			{link, Id, CatId, [], #{}, #{}}
-		end,
-	    merge_parents(C, E)
-    end.
-
 
 -spec id(t()) -> string().
 id(E) ->
@@ -221,6 +194,17 @@ render(Mimetype, E, Ctx) ->
     occi_rendering:render(Mimetype, E, Ctx).
 
 
+merge_parents(Kind, E) ->
+    Attrs0 = lists:foldl(fun (ParentId, Acc) ->
+				 case occi_models:category(ParentId) of
+				     undefined ->
+					 throw({invalid_category, ParentId});
+				     Parent ->
+					 occi_kind:attributes(Parent) ++ Acc
+				 end
+			 end, occi_kind:attributes(Kind), occi_kind:parents(Kind)),
+    merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E).
+
 %%%
 %%% internal
 %%%
@@ -319,18 +303,6 @@ set_value(Key, Value, Spec, Values, Errors) ->
     end.
 
 
-merge_parents(Kind, E) ->
-    Attrs0 = lists:foldl(fun (ParentId, Acc) ->
-				 case occi_models:category(ParentId) of
-				     undefined ->
-					 throw({invalid_category, ParentId});
-				     Parent ->
-					 occi_kind:attributes(Parent) ++ Acc
-				 end
-			 end, occi_kind:attributes(Kind), occi_kind:parents(Kind)),
-    merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E).
-
-
 merge_mixin(Mixin, E) ->
     Depends = merge_depends(occi_mixin:depends(Mixin), orddict:from_list([{ 0, Mixin }])),
     Attrs0 = orddict:fold(fun (_Idx, Dep, Acc) ->
@@ -375,12 +347,3 @@ merge_attributes([ Spec | Tail ], AttrsAcc, ValuesAcc, E) ->
     AttrsAcc1 = maps:put(Name, [ Category | maps:get(Name, AttrsAcc, []) ], AttrsAcc),
     ValuesAcc1 = maps:merge(#{ Name => undefined }, ValuesAcc),
     merge_attributes(Tail, AttrsAcc1, ValuesAcc1, E).
-
-
-%% Use the module of the closest known ancestor
-%% Clauses order is important !
-known_class([]) ->                      entity;
-known_class([?resource_kind_id | _]) -> resource;
-known_class([?link_kind_id | _]) ->     link;
-known_class([?entity_kind_id | _]) ->   entity;
-known_class([_ | Tail]) ->              known_class(Tail).

@@ -7,6 +7,7 @@
 
 -module(occi_kind).
 
+-include("occi.hrl").
 -include("occi_category.hrl").
 -include_lib("mixer/include/mixer.hrl").
 -include_lib("annotations/include/annotations.hrl").
@@ -17,7 +18,8 @@
 	 parent/1,
 	 parent/2,
 	 parents/1,
-	 parents/2]).
+	 parents/2,
+	 has_parent/2]).
 
 -export([load/2]).
 
@@ -71,8 +73,35 @@ parents(Parents, Kind) ->
     ?s(parents, Parents, Kind).
 
 
+%% @doc Return true if kind has the parent
+%% @end
+-spec has_parent(occi_category:id() | resource | link, t()) -> boolean().
+has_parent(resource, Kind) ->
+    has_parent(?resource_kind_id, Kind);
+
+has_parent(link, Kind) ->
+    has_parent(?link_kind_id, Kind);
+
+has_parent(Parent, Kind) ->
+    has_parents2([ id(Kind) | parents(Kind) ], Parent).
+
+
 %% @doc Load kind from iolist 
 %% @end
 -spec load(occi_utils:mimetype(), iolist()) -> t().
 load(Mimetype, Bin) -> 
     occi_rendering:load_model(kind, Mimetype, Bin).
+
+
+%%%
+%%% Priv
+%%%
+has_parents2([], _) ->
+    false;
+
+has_parents2([ Parent | _Tail ], Parent) ->
+    true;
+
+has_parents2([ _ | Tail ], Parent) ->
+    has_parents2(Tail, Parent).
+

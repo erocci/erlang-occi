@@ -67,14 +67,25 @@ p_entity3(E, Map, Valid) when element(?class, E) =:= link ->
     p_link(Map, Valid, E).
 
 
-p_resource(Map, Valid, E) ->
+p_resource(Map, Valid, R) ->
     Attributes = maps:merge(
 		   maps:fold(fun (K, V, Acc) ->
 				     Acc#{ binary_to_list(K) => V }
 			     end, #{}, maps:get(<<"attributes">>, Map, #{})),
 		   #{ "occi.core.summary" => maps:get(<<"summary">>, Map, <<>>),
 		      "occi.core.title" => maps:get(<<"title">>, Map, <<>>) }),
-    occi_entity:set(Attributes, Valid, E).
+    R2 = occi_entity:set(Attributes, Valid, R),
+    p_resource_links(maps:get(<<"links">>, Map, []), Valid, R2).
+
+
+p_resource_links([], _Valid, R) ->
+    R;
+
+p_resource_links([ Link | Tail ], Valid, R) ->
+    Source = #{ <<"location">> => occi_resource:id(R), 
+		<<"kind">> => occi_resource:kind(R) },
+    L = p_link(Link#{ <<"source">> => Source }, Valid, R),
+    p_resource_links(Tail, Valid, occi_resource:add_link(L, R)).
 
 
 p_link(#{ <<"source">> := #{ <<"location">> := SourceLocation }=Source }=Map, Valid, E) ->

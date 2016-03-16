@@ -11,10 +11,11 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, load/3]},
+-mixin([{occi_entity, except, [load/3]},
 	occi_type]).
 
 -export([new/1,
+	 new/2,
 	 add_link/2,
 	 links/1]).
 
@@ -44,7 +45,14 @@
 %% @end
 -spec new(string()) -> t().
 new(Id) ->
-    occi_entity:new(Id, ?resource_kind_id).
+    occi_resource:new(Id, ?resource_kind_id).
+
+
+%% @throws {unknown_category, term()}
+-spec new(string(), occi_category:id() | string() | binary()) -> t().
+new(Id, KindId) ->
+    Kind = occi_models:kind(resource, KindId),
+    occi_entity:merge_parents(Kind, {resource, Id, KindId, [], #{}, #{}, []}).
 
 
 %% @doc Add the given link to the resource

@@ -9,6 +9,7 @@
 
 -module(occi_models).
 
+-include("occi.hrl").
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
@@ -17,6 +18,7 @@
 -export([import/1,
 	 categories/0,
 	 category/1,
+	 kind/2,
 	 add_category/1,
 	 attribute/2,
 	 attributes/1]).
@@ -60,12 +62,34 @@ categories() ->
     end.
 
 
+%% @doc Return a kind, checking it has specified parent 
+%% @throw {unknown_category, occi_category:id()}, {invalid_kind, occi_category:id()}
+%% @end
+-spec kind(link | resource, occi_category:id()) -> occi_category:t().
+kind(Parent, KindId) when is_list(KindId); is_binary(KindId) ->
+    kind(Parent, occi_category:parse_id(KindId));
+
+kind(Parent, KindId) ->
+    case category(KindId) of
+	undefined ->
+	    throw({unknown_category, KindId});
+	Category ->
+	    case occi_kind:has_parent(Parent, Category) of
+		true -> Category;
+		false -> throw({invalid_kind, KindId})
+	    end
+    end.
+
+
 %% @doc Return a category
 %% Category references (parent, depend, etc) is resolved:
 %% attributes and actions from references are merged into the resulting category
 %%
 %% @end
--spec category(occi_category:id()) -> occi_category:t() | undefined.
+-spec category(string() | binary() | occi_category:id()) -> occi_category:t() | undefined.
+category(Id) when is_list(Id); is_binary(Id) ->
+    category(occi_category:parse_id(Id));
+
 category(Id) ->
     case mnesia:transaction(fun () -> category_t(Id) end) of
 	{aborted, Err} -> throw(Err);
