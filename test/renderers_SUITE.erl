@@ -84,16 +84,18 @@ render_test(Type, Ext, Config) ->
     ct:log(info, ?STD_IMPORTANCE, "=== Check rendering: ~s", [filename:basename(Filename)]),
     {ok, Match} = file:read_file(Filename),
     Rendered = iolist_to_binary(occi_rendering:render(Type, ?config(object, Config), ?config(ctx, Config))),
-    case binary_match(Match, Rendered) of
+    CleanMatch = strip(Match),
+    CleanRendered = strip(Rendered),
+    case binary_match(CleanMatch, CleanRendered) of
 	true ->
 	    ?assert(true);
 	false ->
 	    ct:pal(error, ?STD_IMPORTANCE, "=== Binary match error:~n", []),
-	    ct:pal(error, ?STD_IMPORTANCE, "Expected:~n~n~s~n~n", [Match]),
-	    ct:pal(error, ?STD_IMPORTANCE, "Rendered:~n~n~s~n", [Rendered]),
+	    ct:pal(error, ?STD_IMPORTANCE, "Expected:~n~n#BEGIN#~s#END#~n~n", [CleanMatch]),
+	    ct:pal(error, ?STD_IMPORTANCE, "Rendered:~n~n#BEGIN#~s#END#~n", [CleanRendered]),
 	    ?assert(false)
     end.
-	    
+
 
 binary_match(<<>>, <<>>) ->
     true;
@@ -103,3 +105,32 @@ binary_match(<< C, Rest0/binary >>, << C, Rest1/binary >>) ->
 
 binary_match(_, _) ->
     false.
+
+
+-define(is_ws(X), X =:= $\s; X =:= $\t; X =:= $\r; X =:= $\n).
+strip(<< C, Rest/binary >>) when ?is_ws(C) ->
+    strip(Rest);
+
+strip(<< C, Rest/binary >>) ->
+    strip2(Rest, << C >>).
+
+
+strip2(<<>>, Acc) ->
+    strip3(Acc);
+
+strip2(<< C, Rest/binary >>, Acc) ->
+    strip2(Rest, << C, Acc/binary >>).
+
+
+strip3(<< C, Rest/binary >>) when ?is_ws(C) ->
+    strip3(Rest);
+
+strip3(<< C, Rest/binary >>) ->
+    strip4(Rest, << C >>).
+
+
+strip4(<<>>, Acc) ->
+    Acc;
+
+strip4(<< C, Rest/binary >>, Acc) ->
+    strip4(Rest, << Acc/binary, C >>).
