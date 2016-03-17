@@ -48,6 +48,17 @@ init_per_group('compute_a', Config) ->
     Ctx = ?ctx,
     [ {object, R1}, {ctx, Ctx} | Config ];
 
+init_per_group('compute_b', Config) ->
+    RId = "ns1/mycompute0",
+    RKind = {"http://schemas.ogf.org/occi/infrastructure#", "compute"},
+    R = occi_resource:new(RId, RKind),
+    L = occi_link:new("myif0", {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}, 
+		      RId, RKind, 
+		      "network0", undefined),
+    R1 = occi_resource:add_link(L, R),
+    Ctx = ?ctx,
+    [ {object, R1}, {ctx, Ctx} | Config ];
+
 init_per_group(_, Config) ->
     Config.
 
@@ -67,7 +78,8 @@ end_per_testcase(_TestCase, _Config) ->
 groups() ->
     [
      {'core_resource',       [], [render_xml]}
-    ,{'compute_a',          [], [render_xml]}
+    ,{'compute_a',           [], [render_xml]}
+    ,{'compute_b',           [], [render_xml]}
     ].
 
 
@@ -75,6 +87,7 @@ all() ->
     [
      {group, 'core_resource'}
     ,{group, 'compute_a'}
+    ,{group, 'compute_b'}
     ].
 
 
