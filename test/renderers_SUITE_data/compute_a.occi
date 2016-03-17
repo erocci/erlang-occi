@@ -1,0 +1,2 @@
+category: compute; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind, debian6; scheme="http://occi.example.org/occi/infrastructure/os_tpl#"; class=mixin
+x-occi-attribute: occi.compute.cores=4, occi.compute.hostname="mycompute", occi.compute.memory=2.50000, occi.compute.speed=4.50000, occi.core.title="My super compute"

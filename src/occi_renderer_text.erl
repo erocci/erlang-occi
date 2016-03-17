@@ -29,10 +29,10 @@
 %%%===================================================================
 -spec render(T :: occi:t(), Ctx :: uri:t()) -> iolist().
 render(T, Ctx) ->
-    Headers = to_headers(occi_type:type(T), T, #{}, Ctx),
-    maps:fold(fun (K, Values, Acc) ->
-		      [K, ": ", string:join(Values, ", "), "\n" | Acc]
-	      end, [], Headers).
+    Headers = to_headers(occi_type:type(T), T, orddict:new(), Ctx),
+    orddict:fold(fun (K, Values, Acc) ->
+			 [ Acc, "\n", K, ": ", string:join(Values, ", ") ]
+		 end, [], Headers).
 
 
 %%%
@@ -204,15 +204,19 @@ r_attribute_value(V) when is_integer(V) ->
     io_lib:format("~b", [V]);
 
 r_attribute_value(V) when is_float(V) ->
-    io_lib:format("~f", [V]);
+    io_lib:format("~g", [V]);
 
 r_attribute_value(V) ->
     [ "\"", V, "\"" ].
 
 
 append(Name, Value, Headers) ->
-    Values = maps:get(Name, Headers, []),
-    Headers#{ Name => Values ++ [Value] }.
+    case orddict:is_key(Name, Headers) of
+	true ->
+	    orddict:append_list(Name, [Value], Headers);
+	false ->
+	    orddict:store(Name, [Value], Headers)
+    end.
 
 %%%
 %%% eunit
