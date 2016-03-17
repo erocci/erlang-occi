@@ -168,25 +168,21 @@ r_resource_link(Link, Ctx) ->
 	  occi_utils:ctx(occi_link:id(Link), Ctx) ,
 	  "\"; category=\"", Categories, "\""
 	], 
-    Attributes = maps:fold(fun ("occi.core.id", _, Acc) ->
-				   Acc;
-			       ("occi.core.source", _, Acc) ->
-				   Acc;
-			       ("occi.core.source.kind", _, Acc) ->
-				   Acc;
-			       ("occi.core.target", _, Acc) ->
-				   Acc;
-			       ("occi.core.target.kind", _, Acc) ->
-				   Acc;
-			       (K, V, Acc) ->
-				   [ [ K, "=", r_attribute_value(V) ] | Acc ]
-			   end, [], occi_link:attributes(Link)),
-    case Attributes of
-	[] ->
-	    L;
-	_ ->
-	    [ L, string:join(lists:reverse(Attributes), "; ") ]
-    end.
+    maps:fold(fun ("occi.core.id", _, Acc) ->
+		      Acc;
+		  ("occi.core.source", _, Acc) ->
+		      Acc;
+		  ("occi.core.source.kind", _, Acc) ->
+		      Acc;
+		  ("occi.core.target", _, Acc) ->
+		      Acc;
+		  ("occi.core.target.kind", _, Acc) ->
+		      Acc;
+		  (_, undefined, Acc) ->
+		      Acc;
+		  (K, V, Acc) ->
+		      [ [ "; ", K, "=", r_attribute_value(V) ] | Acc ]
+	      end, L, occi_link:attributes(Link)).
 
 
 r_attribute(K, V) ->

@@ -1,0 +1,3 @@
+category: compute; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind
+link: <http://example.org:8080/network0>; rel="http://schemas.ogf.org/core/occi#entity"; self="http://example.org:8080/myif0"; category="http://schemas.ogf.org/occi/infrastructure#networkinterface"
+x-occi-attribute: occi.compute.cores=4

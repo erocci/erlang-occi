@@ -56,8 +56,9 @@ init_per_group('compute_b', Config) ->
 		      RId, RKind, 
 		      "network0", undefined),
     R1 = occi_resource:add_link(L, R),
+    R2 = occi_resource:set(#{ "occi.compute.cores" => 4 }, client, R1),
     Ctx = ?ctx,
-    [ {object, R1}, {ctx, Ctx} | Config ];
+    [ {object, R2}, {ctx, Ctx} | Config ];
 
 init_per_group(_, Config) ->
     Config.
@@ -79,7 +80,7 @@ groups() ->
     [
      {'core_resource',       [], [render_xml, render_text]}
     ,{'compute_a',           [], [render_xml, render_text]}
-    ,{'compute_b',           [], [render_xml]}
+    ,{'compute_b',           [], [render_xml, render_text]}
     ].
 
 
