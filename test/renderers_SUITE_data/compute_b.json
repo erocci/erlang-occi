@@ -1,0 +1,20 @@
+{
+  "attributes": {
+    "occi.compute.cores": 4
+  },
+  "id": "http://example.org:8080/ns1/mycompute0",
+  "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
+  "links": [
+    {
+      "id": "http://example.org:8080/myif0",
+      "kind": "http://schemas.ogf.org/occi/infrastructure#networkinterface",
+      "source": {
+        "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
+        "location": "http://example.org:8080/ns1/mycompute0"
+      },
+      "target": {
+        "location": "http://example.org:8080/network0"
+      }
+    }
+  ]
+}

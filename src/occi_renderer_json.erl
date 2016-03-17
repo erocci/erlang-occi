@@ -30,7 +30,6 @@
 -spec render(T :: occi:t(), Ctx :: uri:t()) -> iolist().
 render(T, Ctx) ->
     Json = r_type(occi_type:type(T), T, Ctx),
-    ?debug("json=~p", [Json]),
     jsx:encode(Json, [space, {indent, 2}]).
 
 %%%
