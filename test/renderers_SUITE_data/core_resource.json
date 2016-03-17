@@ -1,0 +1,4 @@
+{
+  "id": "http://example.org:8080/myresource",
+  "kind": "http://schemas.ogf.org/occi/core#resource"
+}
