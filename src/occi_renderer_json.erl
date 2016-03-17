@@ -29,7 +29,9 @@
 %%%===================================================================
 -spec render(T :: occi:t(), Ctx :: uri:t()) -> iolist().
 render(T, Ctx) ->
-    jsx:encode(r_type(occi_type:type(T), T, Ctx), [space, {indent, 2}]).
+    Json = r_type(occi_type:type(T), T, Ctx),
+    ?debug("json=~p", [Json]),
+    jsx:encode(Json, [space, {indent, 2}]).
 
 %%%
 %%% Priv
@@ -100,7 +102,8 @@ r_attributes(Attributes) ->
 		  ("occi.core.source.kind", _, Acc) -> Acc;
 		  ("occi.core.target", _, Acc) ->      Acc;
 		  ("occi.core.target.kind", _, Acc) -> Acc;
-		  (K, V, Acc) ->                       Acc#{ K => r_attribute_value(V) }
+		  (K, V, Acc) ->                       
+		      Acc#{ iolist_to_binary(K) => r_attribute_value(V) }
 	      end, #{}, Attributes).
 
 
