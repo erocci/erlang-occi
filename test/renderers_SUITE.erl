@@ -33,10 +33,20 @@ end_per_suite(_Config) ->
 
 
 init_per_group(core_resource, Config) ->
-    Basename = filename:join([?config(data_dir, Config), "core_resource"]),
     Object = occi_resource:new("myresource", {"http://schemas.ogf.org/occi/core#", "resource"}),
     Ctx = ?ctx,
-    [ {basename, Basename}, {object, Object}, {ctx, Ctx} | Config ];
+    [ {object, Object}, {ctx, Ctx} | Config ];
+
+init_per_group('compute_a', Config) ->
+    R = occi_resource:new("ns1/mycompute0", {"http://schemas.ogf.org/occi/infrastructure#", "compute"}),
+    R0 = occi_resource:add_mixin({"http://occi.example.org/occi/infrastructure/os_tpl#", "debian6"}, R),
+    R1 = occi_resource:set(#{ "occi.core.title" => "My super compute",
+			      "occi.compute.cores" => 4,
+			      "occi.compute.hostname" => "mycompute",
+			      "occi.compute.speed" => 4.5,
+			      "occi.compute.memory" => 2.5 }, client, R0),
+    Ctx = ?ctx,
+    [ {object, R1}, {ctx, Ctx} | Config ];
 
 init_per_group(_, Config) ->
     Config.
@@ -56,13 +66,15 @@ end_per_testcase(_TestCase, _Config) ->
 
 groups() ->
     [
-     {core_resource,       [], [render_xml]}
+     {'core_resource',       [], [render_xml]}
+    ,{'compute_a',          [], [render_xml]}
     ].
 
 
 all() -> 
     [
-     {group, core_resource}
+     {group, 'core_resource'}
+    ,{group, 'compute_a'}
     ].
 
 
@@ -80,8 +92,9 @@ render_json(Config) -> render_test(json, ".json", Config).
 %%% Internal
 %%%
 render_test(Type, Ext, Config) ->
-    Filename = ?config(basename, Config) ++ Ext,
-    ct:log(info, ?STD_IMPORTANCE, "=== Check rendering: ~s", [filename:basename(Filename)]),
+    Basename = atom_to_list(proplists:get_value(name, ?config(tc_group_properties, Config))) ++ Ext,
+    Filename = filename:join([?config(data_dir, Config), Basename]),
+    ct:log(info, ?STD_IMPORTANCE, "=== Check rendering: ~s", [Filename]),
     {ok, Match} = file:read_file(Filename),
     Rendered = iolist_to_binary(occi_rendering:render(Type, ?config(object, Config), ?config(ctx, Config))),
     CleanMatch = strip(Match),
