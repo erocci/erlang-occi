@@ -77,7 +77,7 @@ end_per_testcase(_TestCase, _Config) ->
 
 groups() ->
     [
-     {'core_resource',       [], [render_xml]}
+     {'core_resource',       [], [render_xml, render_text]}
     ,{'compute_a',           [], [render_xml]}
     ,{'compute_b',           [], [render_xml]}
     ].
@@ -107,7 +107,7 @@ render_json(Config) -> render_test(json, ".json", Config).
 render_test(Type, Ext, Config) ->
     Basename = atom_to_list(proplists:get_value(name, ?config(tc_group_properties, Config))) ++ Ext,
     Filename = filename:join([?config(data_dir, Config), Basename]),
-    ct:log(info, ?STD_IMPORTANCE, "=== Check rendering: ~s", [Filename]),
+    ct:log(info, ?STD_IMPORTANCE, "=== Check rendering: ~s", [Basename]),
     {ok, Match} = file:read_file(Filename),
     Rendered = iolist_to_binary(occi_rendering:render(Type, ?config(object, Config), ?config(ctx, Config))),
     CleanMatch = strip(Match),
@@ -159,4 +159,4 @@ strip4(<<>>, Acc) ->
     Acc;
 
 strip4(<< C, Rest/binary >>, Acc) ->
-    strip4(Rest, << Acc/binary, C >>).
+    strip4(Rest, << C, Acc/binary >>).

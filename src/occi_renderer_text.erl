@@ -15,6 +15,8 @@
 %%%-------------------------------------------------------------------
 -module(occi_renderer_text).
 
+-include("occi_log.hrl").
+
 %% API
 -export([render/2]).
 
@@ -29,7 +31,7 @@
 render(T, Ctx) ->
     Headers = to_headers(occi_type:type(T), T, #{}, Ctx),
     maps:fold(fun (K, Values, Acc) ->
-		      [K, ":", string:join(Values, ", "), "\n" | Acc]
+		      [K, ": ", string:join(Values, ", "), "\n" | Acc]
 	      end, [], Headers).
 
 
@@ -72,11 +74,11 @@ to_headers(kind, Kind, Headers, Ctx) ->
 	     undefined -> C1;
 	     Location -> [C1, "; location=\"", occi_utils:ctx(Location, Ctx), "\""]
 	 end,
-    C3 = case attribute_list(occi_kind:attributes(Kind), []) of
+    C3 = case r_attribute_defs(occi_kind:attributes(Kind), []) of
 	     [] -> C2;
 	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
 	 end,
-    append_header("category", lists:flatten(C3), Headers);
+    append("category", lists:flatten(C3), Headers);
 
 to_headers(mixin, Mixin, Headers, Ctx) ->
     {Scheme, Term} = occi_mixin:id(Mixin),
@@ -93,11 +95,11 @@ to_headers(mixin, Mixin, Headers, Ctx) ->
 	     undefined -> C1;
 	     Location -> [C1, "; location=\"", occi_utils:ctx(Location, Ctx), "\""]
 	 end,
-    C3 = case attribute_list(occi_mixin:attributes(Mixin), []) of
+    C3 = case r_attribute_defs(occi_mixin:attributes(Mixin), []) of
 	     [] -> C2;
 	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
 	 end,
-    append_header("category", lists:flatten(C3), Headers);
+    append("category", lists:flatten(C3), Headers);
 
 to_headers(action, Action, Headers, _Ctx) ->
     {Scheme, Term} = occi_action:id(Action),
@@ -106,17 +108,31 @@ to_headers(action, Action, Headers, _Ctx) ->
 	     [] -> Cat;
 	     Title -> [Cat, "; title=\"", Title, "\""]
 	 end,
-    C1 = case attribute_list(occi_action:attributes(Action), []) of
+    C1 = case r_attribute_defs(occi_action:attributes(Action), []) of
 	     [] -> C0;
 	     Attributes -> [C0, "; attributes=\"", Attributes, "\""]
 	 end,
-    append_header("category", lists:flatten(C1), Headers).
-			 
+    append("category", lists:flatten(C1), Headers);
 
-attribute_list([], Acc) ->
+to_headers(resource, Resource, Headers, Ctx) ->
+    H0 = append("category", r_category_id(kind, occi_resource:kind(Resource)), Headers),
+    H1 = lists:foldl(fun (MixinId, Acc) ->
+			     append("category", r_category_id(mixin, MixinId), Acc)
+		     end, H0, occi_resource:mixins(Resource)),
+    H2 = lists:foldl(fun (Link, Acc) ->
+			     append("link", r_resource_link(Link, Ctx), Acc)
+		     end, H1, occi_resource:links(Resource)),
+    maps:fold(fun (_, undefined, Acc) ->
+		      Acc;
+		  (K, V, Acc) ->
+		      append("x-occi-attribute", r_attribute(K, V), Acc)
+	      end, H2, occi_resource:attributes(Resource)).
+
+
+r_attribute_defs([], Acc) ->
     string:join(Acc, " ");
 
-attribute_list([ Attr | Tail ], Acc) ->
+r_attribute_defs([ Attr | Tail ], Acc) ->
     Def = occi_attribute:name(Attr),
     Props = case occi_attribute:mutable(Attr) of
 		true -> [];
@@ -130,14 +146,73 @@ attribute_list([ Attr | Tail ], Acc) ->
 	       [] -> Def;
 	       _ -> [ Def, "{", string:join(Props1, " "), "}" ]
 	   end,
-    attribute_list(Tail, [ lists:flatten(Def1) | Acc ]).
+    r_attribute_defs(Tail, [ lists:flatten(Def1) | Acc ]).
 
 
-append_header(Name, Value, Headers) ->
-    case maps:get(Name, Headers, undefined) of
-	undefined -> Headers#{ Name => [Value]};
-	Values -> Headers#{ Name := Values ++ [Value]}
+r_category_id(Class, {Scheme, Term}) ->
+    [ Term, "; scheme=\"", Scheme, "\"; class=", atom_to_list(Class) ].
+
+
+r_resource_link(Link, Ctx) ->
+    Rel = case occi_link:get("occi.core.target.kind", Link) of
+	      undefined ->
+		  {"http://schemas.ogf.org/core/occi#", "entity"};
+	      TypeId ->
+		  TypeId
+	  end,
+    Categories = [ r_type_id(occi_link:kind(Link)), 
+		   [ r_type_id(MixinId) || MixinId <- occi_link:mixins(Link) ]],
+    L = [ 
+	  "<", occi_utils:ctx(occi_link:get("occi.core.target", Link), Ctx), ">; rel=\"", 
+	  r_type_id(Rel), "\"; self=\"", 
+	  occi_utils:ctx(occi_link:id(Link), Ctx) ,
+	  "\"; category=\"", Categories, "\""
+	], 
+    Attributes = maps:fold(fun ("occi.core.id", _, Acc) ->
+				   Acc;
+			       ("occi.core.source", _, Acc) ->
+				   Acc;
+			       ("occi.core.source.kind", _, Acc) ->
+				   Acc;
+			       ("occi.core.target", _, Acc) ->
+				   Acc;
+			       ("occi.core.target.kind", _, Acc) ->
+				   Acc;
+			       (K, V, Acc) ->
+				   [ [ K, "=", r_attribute_value(V) ] | Acc ]
+			   end, [], occi_link:attributes(Link)),
+    case Attributes of
+	[] ->
+	    L;
+	_ ->
+	    [ L, string:join(lists:reverse(Attributes), "; ") ]
     end.
+
+
+r_attribute(K, V) ->
+    [ K, "=", r_attribute_value(V) ].
+
+
+r_type_id({Scheme, Term}) ->
+    [ Scheme, Term ].
+
+
+r_attribute_value(V) when is_atom(V) ->
+    io_lib:format("\"~s\"", [V]);
+
+r_attribute_value(V) when is_integer(V) ->
+    io_lib:format("~b", [V]);
+
+r_attribute_value(V) when is_float(V) ->
+    io_lib:format("~f", [V]);
+
+r_attribute_value(V) ->
+    [ "\"", V, "\"" ].
+
+
+append(Name, Value, Headers) ->
+    Values = maps:get(Name, Headers, []),
+    Headers#{ Name => Values ++ [Value] }.
 
 %%%
 %%% eunit
