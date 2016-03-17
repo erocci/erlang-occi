@@ -150,7 +150,7 @@ to_xml(attribute, Attr, _Ctx) ->
 
 to_xml(resource, R, Ctx) ->
     Id = occi_resource:id(R),
-    A = [{href, occi_utils:ctx(Id, Ctx)}, {id, Id}],
+    A = [{id, occi_utils:ctx(Id, Ctx)}],
     A1 = case occi_resource:get("occi.core.title", R) of
 	     undefined -> A;
 	     Title -> [{title, Title} | A]
@@ -176,8 +176,7 @@ to_xml(link, L, Ctx) ->
     A = [
 	 {target, occi_utils:ctx(occi_link:get("occi.core.target", L), Ctx)},
 	 {source, occi_utils:ctx(occi_link:get("occi.core.source", L), Ctx)},
-	 {href, occi_utils:ctx(Id, Ctx)}, 
-	 {id, Id}
+	 {id, occi_utils:ctx(Id, Ctx)}
 	],
     A1 = case occi_link:get("occi.core.title", L) of
 	     undefined -> A;
