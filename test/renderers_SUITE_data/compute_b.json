@@ -6,7 +6,8 @@
     "http://schemas.ogf.org/occi/infrastructure/compute/action#suspend"
   ],
   "attributes": {
-    "occi.compute.cores": 4
+    "occi.compute.cores": 4,
+    "occi.compute.state": "inactive"
   },
   "id": "http://example.org:8080/ns1/mycompute0",
   "kind": "http://schemas.ogf.org/occi/infrastructure#compute",

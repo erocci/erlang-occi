@@ -48,6 +48,22 @@ init_per_group(core_link, Config) ->
 	  end,
     [ {check, Fun} | Config ];
 
+init_per_group('netif_link', Config) ->
+    Fun = fun(L)  ->
+		  ?assertMatch("http://example.org:8080/netif1", occi_link:id(L)),
+		  ?assertMatch({"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}, occi_link:kind(L)),
+		  ?assertMatch([{"http://schemas.ogf.org/occi/infrastructure/networkinterface#", "ipnetworkinterface"}], 
+			       occi_link:mixins(L)),
+		  ?assertMatch(#{ "occi.core.source" := "http://example.org:8080/compute1",
+				  "occi.core.target" := "http://example.org:8080/network1",
+				  "occi.networkinterface.interface" := "eth0",
+				  "occi.networkinterface.mac" := "00:11:22:33:44:55",
+				  "occi.networkinterface.address" := "192.168.0.1",
+				  "occi.networkinterface.allocation" := static }, 
+			       occi_link:attributes(L))
+	  end,
+    [ {check, Fun} | Config ];
+
 init_per_group('resource_link', Config) ->
     Fun = fun(R)  ->
 		  ?assertMatch("http://example.org:8080/resource1", occi_resource:id(R)),
@@ -67,7 +83,8 @@ init_per_group('compute_a', Config) ->
 		  ?assertMatch(#{ "occi.core.summary" := "A super computer",
 				  "occi.compute.cores" := 45,
 				  "occi.compute.hostname" := "a name",
-				  "occi.compute.speed" := 1.5}, 
+				  "occi.compute.speed" := 1.5,
+				  "occi.compute.state" := inactive }, 
 			       occi_resource:attributes(R)),
 		  ?assertMatch(#{}, occi_resource:attributes(R))
 	  end,
@@ -95,6 +112,7 @@ groups() ->
     ,{core_link,           [], [parse_xml, parse_text, parse_json]}
     ,{'resource_link',     [], [parse_xml, parse_text, parse_json]}
     ,{'compute_a',         [], [parse_xml, parse_text, parse_json]}
+    ,{'netif_link',        [], [parse_xml]}
     ].
 
 
@@ -104,6 +122,7 @@ all() ->
     ,{group, core_link}
     ,{group, 'resource_link'}
     ,{group, 'compute_a'}
+    ,{group, 'netif_link'}
     ].
 
 
@@ -124,12 +143,12 @@ parse_tests(Type, Ext, Config) ->
     Basename = atom_to_list(proplists:get_value(name, ?config(tc_group_properties, Config))),
     lists:foreach(fun (Filename) ->
 			  parse_test(Type, Filename, Config)
-		  end, filelib:wildcard(Basename ++ "*" ++ Ext)).
+		  end, filelib:wildcard(filename:join([?config(data_dir, Config), Basename]) ++ "*" ++ Ext)).
 
 
 parse_test(Type, Filename, Config) ->
-    ct:log(info, ?STD_IMPORTANCE, "=== Parsing ~s", [filename:basename(Filename)]),
+    ct:pal(info, ?STD_IMPORTANCE, "=== Parsing ~s", [filename:basename(Filename)]),
     {ok, Bin} = file:read_file(Filename),
-    R = occi_entity:load(Type, Bin, client),
+    Entity = occi_entity:load(Type, Bin, client),
     Fun = ?config(check, Config),
-    Fun(R).
+    Fun(Entity).

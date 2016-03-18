@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<link xmlns="http://schemas.ogf.org/occi"
+      id="http://example.org:8080/netif1"
+      source="http://example.org:8080/compute1"
+      target="http://example.org:8080/network1" >
+  <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="networkinterface" />
+  <mixin scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#" term="ipnetworkinterface" />
+  <attribute name="occi.networkinterface.interface" value="eth0" />
+  <attribute name="occi.networkinterface.mac" value="00:11:22:33:44:55" />
+  <attribute name="occi.networkinterface.address" value="192.168.0.1" />
+  <attribute name="occi.networkinterface.allocation" value="static" />
+</link>
