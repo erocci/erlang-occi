@@ -97,8 +97,8 @@ default(A) ->
 
 
 -spec default(occi_base_type:t(), t()) -> t().
-default(Value, A) ->
-    A#{ default := Value }.
+default(Value, #{ type := Type }=A) ->
+    A#{ default := occi_base_type:cast(Value, Type) }.
 
 
 -spec pattern(t()) -> string().

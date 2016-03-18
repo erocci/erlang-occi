@@ -77,7 +77,7 @@ cast_enum(_Val, []) ->
     error;
 cast_enum(Val, [ Head | Tail]) ->
     case atom_to_list(Head) of
-        Val -> Head;
+        Val -> {ok, Head};
         _ -> cast_enum(Val, Tail)
     end.
 

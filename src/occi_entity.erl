@@ -128,9 +128,20 @@ rm_mixin(MixinId, E) ->
 
 
 %% @doc Return key-value attributes map
+%% If attribute has default value, return the default value.
+%% If attribute is not set and there is no default value, the attribute is not returned.
+%% @end
 -spec attributes(t()) -> map().
 attributes(E) ->
-    element(?values, E).
+    maps:fold(fun (Key, undefined, Acc) ->
+		      Def = spec(Key, E),
+		      case occi_attribute:default(Def) of
+			  undefined -> Acc;
+			  Default -> Acc#{ Key => Default }
+		      end;
+		  (Key, Value, Acc) ->
+		      Acc#{ Key => Value }
+	      end, #{}, element(?values, E)).
 
 
 %% @throws {invalid_key, occi_attribute:key()}
@@ -155,7 +166,7 @@ get(Key, E) ->
 %%-logging(debug).
 -spec set(map(), validation(), t()) -> t().
 set(Attrs, Validation, E) when is_map(Attrs) ->
-    set_or_update(Attrs, Validation, E).
+    set_or_update(false, Attrs, Validation, E).
 
 
 %% @doc Update attributes values.
@@ -167,7 +178,7 @@ set(Attrs, Validation, E) when is_map(Attrs) ->
 %%-logging(debug).
 -spec update(map(), validation(), t()) -> t().
 update(Attrs, Validation, E) when is_map(Attrs) ->
-    set_or_update(Attrs, Validation, E).
+    set_or_update(true, Attrs, Validation, E).
 
 
 %% @doc Return list of action ids
@@ -212,10 +223,8 @@ merge_parents(Kind, E) ->
 						 undefined ->
 						     throw({invalid_category, ParentId});
 						 Parent ->
-						     {
-						   occi_kind:attributes(Parent) ++ AttrsAcc,
-						   occi_kind:actions(Parent) ++ ActionsAcc
-						  }						     
+						     { occi_kind:attributes(Parent) ++ AttrsAcc,
+						       occi_kind:actions(Parent) ++ ActionsAcc }
 					     end
 				     end, {Attrs0, Actions0}, occi_kind:parents(Kind)),
     E1 = merge_attributes(lists:reverse(Attrs1), element(?attributes, E), element(?values, E), E),
@@ -235,7 +244,7 @@ specs(E) ->
 	      end, #{}, element(?attributes, E)).
 
 
-set_or_update(Attrs, Validation, E) ->
+set_or_update(Update, Attrs, Validation, E) ->
     Specs = specs(E),
     Errors = lists:foldl(fun (K, Acc) ->
 				 case maps:get(K, Specs, undefined) of
@@ -244,8 +253,12 @@ set_or_update(Attrs, Validation, E) ->
 					 InvalidKeys = maps:get(invalid_keys, Acc, []),
 					 maps:put(invalid_keys, [ K | InvalidKeys ], Acc);
 				     Spec ->
-					 %% If client validation, check attribute is mutable
-					 is_allowed(K, Spec, Validation, Acc)
+					 if Update ->
+						 %% If client validation, check attribute is mutable
+						 is_allowed(K, Spec, Validation, Acc);
+					    true ->
+						 Acc
+					 end
 				 end
 			 end, #{}, maps:keys(Attrs)),
     {Values, Errors2} =
@@ -322,10 +335,8 @@ set_value(Key, Value, Spec, Values, Errors) ->
 merge_mixin(Mixin, E) ->
     Depends = merge_depends(occi_mixin:depends(Mixin), orddict:from_list([{ 0, Mixin }])),
     {Attrs0, Actions0} = orddict:fold(fun (_Idx, Dep, {AttrsAcc, ActionsAcc}) ->
-					      {
-					    occi_mixin:attributes(Dep) ++ AttrsAcc,
-					    occi_mixin:actions(Dep) ++ ActionsAcc
-					   }					   
+					      { occi_mixin:attributes(Dep) ++ AttrsAcc,
+						occi_mixin:actions(Dep) ++ ActionsAcc }					   
 				      end, {[], []}, Depends),
     E1 = merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E),
     merge_actions(lists:reverse(Actions0), element(?actions, E1), E1).

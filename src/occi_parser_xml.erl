@@ -158,6 +158,20 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := [ {ex
     Mixin = occi_mixin:title(Title, occi_mixin:new(Scheme, Term)),
     S#{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack ] };
 
+handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, 
+	     #{ stack := [ {resource, Id, Kind, Map} | Stack] }=S) ->
+    Term = attr("term", A),
+    Scheme = attr("scheme", A),
+    Map1 = Map#{ mixins := [ {Scheme, Term} | maps:get(mixins, Map) ]},
+    S#{ stack := [ {resource, Id, Kind, Map1} | Stack ] };
+
+handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, 
+	     #{ stack := [ {link, Id, Kind, Source, Target, Map} | Stack] }=S) ->
+    Term = attr("term", A),
+    Scheme = attr("scheme", A),
+    Map1 = Map#{ mixins := [ {Scheme, Term} | maps:get(mixins, Map) ]},
+    S#{ stack := [ {link, Id, Kind, Source, Target, Map1} | Stack ] };
+
 %% mixin is a root node
 handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Term = attr("term", A),
@@ -174,9 +188,16 @@ handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mix
 handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {document, undefined} ] }=S) ->
     S#{ stack := [ {document, {mixin, Mixin} } ] };
 
+handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {resource, _, _, _} | _]=Stack }=S) ->
+    S#{ stack := Stack };
+
+handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {link, _, _, _, _, _} | _]=Stack }=S) ->
+    S#{ stack := Stack };
+
 handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Id = attr("id", A),
     Map = #{ links => [],
+	     mixins => [],
 	     attributes => #{ "occi.core.title" => attr("title", A, undefined) } },
     S#{ stack := [ {resource, Id, undefined, Map} | Stack ] };
 
@@ -184,7 +205,10 @@ handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := St
 handle_event({endElement, ?occi_uri, "resource", _QN}, _,
 	     #{ stack := [ {resource, Id, Kind, Map}, {document, undefined}], check := Check }=S) ->
     R = occi_resource:new(Id, Kind),
-    R1 = occi_resource:set(maps:get(attributes, Map), Check, R),
+    R0 = lists:foldl(fun (MixinId, Acc) ->
+			     occi_resource:add_mixin(MixinId, Acc)
+		     end, R, maps:get(mixins, Map)),
+    R1 = occi_resource:set(maps:get(attributes, Map), Check, R0),
     R2 = lists:foldl(fun (Link, Acc) ->
 			     occi_resource:add_link(Link, Acc)
 		     end, R1, maps:get(links, Map)),
@@ -197,23 +221,30 @@ handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack 
 		 [ {resource, ResId, _, _} | _ ] -> ResId;
 		 _ -> attr("source", A)
 	     end,
-    Map = #{ attributes => #{ "occi.core.title" => attr("title", A, undefined) } },
+    Map = #{ attributes => #{ "occi.core.title" => attr("title", A, undefined) },
+	     mixins => [] },
     S#{ stack := [ {link, Id, undefined, Source, Target, Map} | Stack ] };
 
 %% link is child of resource
 handle_event({endElement, ?occi_uri, "link", _QN}, _,
 	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {resource, ResId, ResKind, ResMap} | Stack ], check := Check }=S) ->
     L = occi_link:new(Id, Kind, Source, ResKind, Target, undefined),
-    L0 = occi_link:set(maps:get(attributes, Map), Check, L),
-    ResMap0 = ResMap#{ links := [ L0 | maps:get(links, ResMap) ]},
+    L0 = lists:foldl(fun (MixinId, Acc) ->
+			     occi_link:add_mixin(MixinId, Acc)
+		     end, L, maps:get(mixins, Map)),
+    L1 = occi_link:set(maps:get(attributes, Map), Check, L0),
+    ResMap0 = ResMap#{ links := [ L1 | maps:get(links, ResMap) ]},
     S#{stack := [ {resource, ResId, ResKind, ResMap0} | Stack ]};
 
 %% %% link is root node
 handle_event({endElement, ?occi_uri, "link", _QN}, _,
  	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {document, undefined} ], check := Check }=S) ->
     L = occi_link:new(Id, Kind, Source, undefined, Target, undefined),
-    L0 = occi_link:set(maps:get(attributes, Map), Check, L),
-    S#{stack := [ {document, {link, L0}} ]};
+    L0 = lists:foldl(fun (MixinId, Acc) ->
+			     occi_link:add_mixin(MixinId, Acc)
+		     end, L, maps:get(mixins, Map)),
+    L1 = occi_link:set(maps:get(attributes, Map), Check, L0),
+    S#{stack := [ {document, {link, L1}} ]};
 
 handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
     Term = attr("term", A),
@@ -296,7 +327,10 @@ handle_event({endElement, ?occi_uri, "attribute", _QN}, _,
     A2 = occi_attribute:title(maps:get(title, Map), A),
     A3 = occi_attribute:required(maps:get(required, Map), A2),
     A4 = occi_attribute:mutable(maps:get(mutable, Map), A3),
-    A5 = occi_attribute:default(maps:get(default, Map), A4),
+    A5 = case maps:get(default, Map) of
+	     undefined -> A4;
+	     Default -> occi_attribute:default(Default, A4)
+	 end,
     A6 = occi_attribute:description(maps:get(description, Map), A5),
     S#{ stack := [ {Cls, occi_category:add_attribute(A6, Category)} | Stack ] };
 
