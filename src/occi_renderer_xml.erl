@@ -68,7 +68,7 @@ to_xml(kind, K, Ctx) ->
 	     ParentId -> [category_id(parent, ParentId)]
 	 end,
     C1 = lists:foldl(fun (Attr, Acc) ->
-			   [ to_xml(attribute, Attr, Ctx) | Acc ]
+			   [ to_xml(attribute_def, Attr, Ctx) | Acc ]
 		   end, C0, occi_kind:attributes(K)),
     C2 = lists:foldl(fun (Action, Acc) ->
 			     [ to_xml(action, Action, Ctx) | Acc ]
@@ -99,6 +99,17 @@ to_xml(mixin, M, Ctx) ->
 			     [ to_xml(action, Action, Ctx) | Acc ]
 		     end, C1, occi_mixin:actions(M)),
     {mixin, lists:reverse(A1), lists:reverse(C2)};
+
+to_xml(attribute_def, Def, _Ctx) ->
+    A = [ {name, occi_attribute:name(Def)} ],
+    C = [],
+    {A0, C0} = case occi_attribute:type(Def) of
+		   {enum, Enum} ->
+		       {A, [ type_def_enum(Enum) | C ]};
+		   Type ->
+		       {[ {type, type_def(Type)} | A ], C}
+	       end,
+    {attribute, lists:reverse(A0), lists:reverse(C0)};
 
 to_xml(action, Action, Ctx) ->
     {Scheme, Term} = occi_action:id(Action),
@@ -208,7 +219,7 @@ to_xml(link, L, Ctx) ->
 to_document(Type, T, Ctx) ->
     {Name, Attrs, Children} = to_xml(Type, T, Ctx),
     Ns = [{xmlns, ?occi_uri}, {'xmlns:xs', ?xsd_uri}],
-    xmerl:export_simple([{Name, Attrs ++ Ns, Children}], xmerl_xml, []).
+    xmerl:export_simple([{Name, Attrs ++ Ns, Children}], occi_xml, []).
 
 
 category_id(Name, {Scheme, Term}) ->
@@ -223,3 +234,22 @@ attr_value({Scheme, Term}) when is_list(Scheme), is_list(Term) ->
 
 attr_value(V) -> 
     V.
+
+
+type_def_enum(Values) ->
+    {'xs:restriction', [{base, 'xs:string'}], type_def_enum_values(Values, [])}.
+
+type_def_enum_values([], Acc) ->
+    lists:reverse(Acc);
+
+type_def_enum_values([ Value | Tail ], Acc) ->
+    Enum = {'xs:enumeration', [{value, Value}], []},
+    [ Enum | type_def_enum_values(Tail, Acc) ].
+
+
+type_def(string) -> 'xs:string';
+type_def(integer) -> 'xs:integer';
+type_def(float) -> 'xs:float';
+type_def(uri) -> 'xs:anyURI';
+type_def(kind) -> 'kind';
+type_def(resource) -> 'resource'.
