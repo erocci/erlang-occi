@@ -112,7 +112,7 @@ groups() ->
     ,{core_link,           [], [parse_xml, parse_text, parse_json]}
     ,{'resource_link',     [], [parse_xml, parse_text, parse_json]}
     ,{'compute_a',         [], [parse_xml, parse_text, parse_json]}
-    ,{'netif_link',        [], [parse_xml]}
+    ,{'netif_link',        [], [parse_xml, parse_text]}
     ].
 
 

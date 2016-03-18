@@ -32,6 +32,9 @@
 %% @throws {invalid_value, spec(), any()}
 %% @end
 -spec cast(term(), spec()) -> t() | {error, term()}.
+cast(V, {enum, Enum}) when is_binary(V) ->
+    cast(binary_to_list(V), {enum, Enum});
+
 cast(V, {enum, Enum}) ->
     case cast_enum(V, Enum) of
 	{ok, Atom} -> Atom;

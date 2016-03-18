@@ -1,0 +1,2 @@
+category: networkinterface; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind, ipnetworkinterface; scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#"; class=mixin
+x-occi-attribute: occi.core.id="http://example.org:8080/netif1", occi.core.source="http://example.org:8080/compute1", occi.core.target="http://example.org:8080/network1", occi.networkinterface.interface="eth0", occi.networkinterface.mac="00:11:22:33:44:55", occi.networkinterface.address="192.168.0.1", occi.networkinterface.allocation=static

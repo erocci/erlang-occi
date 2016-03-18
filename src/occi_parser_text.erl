@@ -144,7 +144,7 @@ p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, 
     L1 = lists:foldl(fun (MixinId, Acc) ->
 			     occi_link:add_mixin(MixinId, Acc)
 		     end, L, MixinIds),
-    occi_link:set(lists:foldl(fun ({Key, Value}, Acc) ->
+    occi_link:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
 				      Acc#{ binary_to_list(Key) => Value }
 			      end, #{}, Attributes), Valid, L1).
     
@@ -899,6 +899,9 @@ p_header_value(<< $,, Rest/binary >>, Name) ->
 p_header_value(<< C, Rest/binary >>, Name) ->
     p_header_value2(Rest, Name, [], << C >>).
 
+
+p_header_value2(<<>>, Name, Values, Acc) ->
+    {Name, [ Acc | Values ], <<>>};
 
 p_header_value2(<< $\r, $\n, Rest/binary >>, Name, Values, Acc) ->
     {Name, [ Acc | Values ], Rest};
