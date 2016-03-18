@@ -23,7 +23,7 @@
 parse_model(_Type, _Bin) when _Type =:= extension;
 			      _Type =:= kind;
 			      _Type =:= mixin;
-			      _Type =:= actin ->
+			      _Type =:= action ->
     ok.
 
 
@@ -49,7 +49,9 @@ p_entity(_Map, _Valid) ->
 
 
 p_entity2(Id, #{ <<"kind">> := KindId }=Map, Valid) ->
-    Mixins = maps:get(<<"mixins">>, Map, []),
+    Mixins = lists:foldr(fun (MixinId, Acc) ->
+				 [ occi_category:parse_id(MixinId) | Acc ]
+			 end, [], maps:get(<<"mixins">>, Map, [])),
     Kind = occi_models:category(KindId),
     case occi_kind:has_parent(resource, Kind) of
 	true ->
