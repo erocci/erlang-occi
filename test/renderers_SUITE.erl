@@ -32,7 +32,12 @@ end_per_suite(_Config) ->
     ok.
 
 
-init_per_group(core_resource, Config) ->
+init_per_group('categories', Config) ->
+    Object = occi_models:categories(),
+    Ctx = ?ctx,
+    [ {object, Object}, {ctx, Ctx} | Config ];
+
+init_per_group('core_resource', Config) ->
     Object = occi_resource:new("myresource", {"http://schemas.ogf.org/occi/core#", "resource"}),
     Ctx = ?ctx,
     [ {object, Object}, {ctx, Ctx} | Config ];
@@ -78,7 +83,8 @@ end_per_testcase(_TestCase, _Config) ->
 
 groups() ->
     [
-     {'core_resource',       [], [render_xml, render_text, render_json]}
+     {'categories',          [], [render_xml]}
+    ,{'core_resource',       [], [render_xml, render_text, render_json]}
     ,{'compute_a',           [], [render_xml, render_text, render_json]}
     ,{'compute_b',           [], [render_xml, render_text, render_json]}
     ].
