@@ -31,16 +31,14 @@ end_per_suite(_Config) ->
 
 
 init_per_group(core_resource, Config) ->
-    Basename = filename:join([?config(data_dir, Config), "core_resource"]),
     Fun = fun(R)  ->
 		  ?assertMatch("http://example.org:8080/resource1", occi_resource:id(R)),
 		  ?assertMatch({"http://schemas.ogf.org/occi/core#", "resource"}, occi_resource:kind(R)),
 		  ?assertMatch(#{}, occi_resource:attributes(R))
 	  end,
-    [ {basename, Basename}, {check, Fun} | Config ];
+    [ {check, Fun} | Config ];
 
 init_per_group(core_link, Config) ->
-    Basename = filename:join([?config(data_dir, Config), "core_link"]),
     Fun = fun(L)  ->
 		  ?assertMatch("http://example.org:8080/link1", occi_link:id(L)),
 		  ?assertMatch({"http://schemas.ogf.org/occi/core#", "link"}, occi_link:kind(L)),
@@ -48,10 +46,9 @@ init_per_group(core_link, Config) ->
 		  ?assertMatch("/myresource1", occi_link:target(L)),
 		  ?assertMatch(#{}, occi_link:attributes(L))
 	  end,
-    [ {basename, Basename}, {check, Fun} | Config ];
+    [ {check, Fun} | Config ];
 
 init_per_group('resource_link', Config) ->
-    Basename = filename:join([?config(data_dir, Config), "resource_link"]),
     Fun = fun(R)  ->
 		  ?assertMatch("http://example.org:8080/resource1", occi_resource:id(R)),
 		  ?assertMatch({"http://schemas.ogf.org/occi/core#", "resource"}, occi_resource:kind(R)),
@@ -61,10 +58,9 @@ init_per_group('resource_link', Config) ->
  		  ?assertMatch("http://example.org/another_resource1", occi_link:target(Link)),
 		  ?assertMatch(#{}, occi_resource:attributes(R))
 	  end,
-    [ {basename, Basename}, {check, Fun} | Config ];
+    [ {check, Fun} | Config ];
 
 init_per_group('compute_a', Config) ->
-    Basename = filename:join([?config(data_dir, Config), "compute_a"]),
     Fun = fun(R)  ->
 		  ?assertMatch("http://example.org:8080/compute1", occi_resource:id(R)),
 		  ?assertMatch({"http://schemas.ogf.org/occi/infrastructure#", "compute"}, occi_resource:kind(R)),
@@ -75,7 +71,7 @@ init_per_group('compute_a', Config) ->
 			       occi_resource:attributes(R)),
 		  ?assertMatch(#{}, occi_resource:attributes(R))
 	  end,
-    [ {basename, Basename}, {check, Fun} | Config ];
+    [ {check, Fun} | Config ];
 
 init_per_group(_, Config) ->
     Config.
@@ -125,9 +121,10 @@ parse_json(Config) -> parse_tests(json, ".json", Config).
 %%% Internal
 %%%
 parse_tests(Type, Ext, Config) ->
+    Basename = atom_to_list(proplists:get_value(name, ?config(tc_group_properties, Config))),
     lists:foreach(fun (Filename) ->
 			  parse_test(Type, Filename, Config)
-		  end, filelib:wildcard(?config(basename, Config) ++ "*" ++ Ext)).
+		  end, filelib:wildcard(Basename ++ "*" ++ Ext)).
 
 
 parse_test(Type, Filename, Config) ->
