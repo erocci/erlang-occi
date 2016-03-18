@@ -21,7 +21,7 @@
 
 -export([load/3]).
 
--define(links, 7).
+-define(links, 8).
 
 -type resource() :: {
 		Class      :: occi_type:name(),
@@ -30,6 +30,7 @@
 		Mixins     :: [occi_category:id()],
 		Attributes :: maps:map(),
 		Values     :: maps:map(),
+		Actions    :: maps:map(),
 		Links      :: list()
 	       }.
 
@@ -57,7 +58,7 @@ new(Id, {_Scheme, _Term}=KindId) ->
     new(Id, occi_models:kind(resource, KindId));
 
 new(Id, Kind) ->
-    occi_entity:merge_parents(Kind, {resource, Id, occi_kind:id(Kind), [], #{}, #{}, []}).
+    occi_entity:merge_parents(Kind, {resource, Id, occi_kind:id(Kind), [], #{}, #{}, #{}, []}).
 
 
 %% @doc Add the given link to the resource

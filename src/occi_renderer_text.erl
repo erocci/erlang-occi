@@ -115,6 +115,7 @@ to_headers(action, Action, Headers, _Ctx) ->
     append("category", lists:flatten(C1), Headers);
 
 to_headers(resource, Resource, Headers, Ctx) ->
+    Url = occi_utils:ctx(occi_resource:id(Resource), Ctx),
     H0 = append("category", r_category_id(kind, occi_resource:kind(Resource)), Headers),
     H1 = lists:foldl(fun (MixinId, Acc) ->
 			     append("category", r_category_id(mixin, MixinId), Acc)
@@ -122,11 +123,15 @@ to_headers(resource, Resource, Headers, Ctx) ->
     H2 = lists:foldl(fun (Link, Acc) ->
 			     append("link", r_resource_link(Link, Ctx), Acc)
 		     end, H1, occi_resource:links(Resource)),
-    maps:fold(fun (_, undefined, Acc) ->
-		      Acc;
-		  (K, V, Acc) ->
-		      append("x-occi-attribute", r_attribute(K, V), Acc)
-	      end, H2, occi_resource:attributes(Resource)).
+    H3 = lists:foldl(fun (Action, Acc) ->
+			     append("link", r_action_link(Url, Action), Acc)
+		     end, H2, occi_resource:actions(Resource)),
+    H4 = maps:fold(fun (_, undefined, Acc) ->
+			   Acc;
+		       (K, V, Acc) ->
+			   append("x-occi-attribute", r_attribute(K, V), Acc)
+		   end, H3, occi_resource:attributes(Resource)),
+    append("x-occi-attribute", r_attribute("occi.core.id", Url), H4).
 
 
 r_attribute_defs([], Acc) ->
@@ -183,6 +188,10 @@ r_resource_link(Link, Ctx) ->
 		  (K, V, Acc) ->
 		      [ [ "; ", K, "=", r_attribute_value(V) ] | Acc ]
 	      end, L, occi_link:attributes(Link)).
+
+
+r_action_link(Id, {Scheme, Term}) ->
+    [ "<", Id, "?action=", Term, ">; rel=\"", Scheme, Term, "\"" ].
 
 
 r_attribute(K, V) ->

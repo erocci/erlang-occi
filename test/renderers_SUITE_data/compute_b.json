@@ -1,4 +1,10 @@
 {
+  "actions": [
+    "http://schemas.ogf.org/occi/infrastructure/compute/action#restart",
+    "http://schemas.ogf.org/occi/infrastructure/compute/action#start",
+    "http://schemas.ogf.org/occi/infrastructure/compute/action#stop",
+    "http://schemas.ogf.org/occi/infrastructure/compute/action#suspend"
+  ],
   "attributes": {
     "occi.compute.cores": 4
   },

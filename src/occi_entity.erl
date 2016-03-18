@@ -15,7 +15,7 @@
 
 -module(occi_entity).
 
--include("occi.hrl").
+-include("occi_log.hrl").
 -include("occi_entity.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
@@ -28,6 +28,7 @@
 	 get/2,
 	 set/3,
 	 update/3,
+	 actions/1,
 	 is_subtype/2]).
 
 -export([load/3, 
@@ -42,7 +43,8 @@
 	      Kind       :: occi_category:id(),
 	      Mixins     :: [occi_category:id()],
 	      Attributes :: maps:map(),
-	      Values     :: maps:map()
+	      Values     :: maps:map(),
+	      Actions    :: maps:map()
 	     }.
 
 
@@ -168,6 +170,14 @@ update(Attrs, Validation, E) when is_map(Attrs) ->
     set_or_update(Attrs, Validation, E).
 
 
+%% @doc Return list of action ids
+%% @end
+-spec actions(t()) -> [occi_category:id()].
+actions(E) ->
+    Actions = element(?actions, E),
+    maps:keys(Actions).
+
+
 %% @doc Returns true if the entity is of type Type or subtype of
 %% @end
 -spec is_subtype(entity | resource | link, t()) -> boolean().
@@ -195,15 +205,21 @@ render(Mimetype, E, Ctx) ->
 
 
 merge_parents(Kind, E) ->
-    Attrs0 = lists:foldl(fun (ParentId, Acc) ->
-				 case occi_models:category(ParentId) of
-				     undefined ->
-					 throw({invalid_category, ParentId});
-				     Parent ->
-					 occi_kind:attributes(Parent) ++ Acc
-				 end
-			 end, occi_kind:attributes(Kind), occi_kind:parents(Kind)),
-    merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E).
+    Attrs0 = occi_kind:attributes(Kind),
+    Actions0 = occi_kind:actions(Kind),
+    {Attrs1, Actions1} = lists:foldl(fun (ParentId, {AttrsAcc, ActionsAcc}) ->
+					     case occi_models:category(ParentId) of
+						 undefined ->
+						     throw({invalid_category, ParentId});
+						 Parent ->
+						     {
+						   occi_kind:attributes(Parent) ++ AttrsAcc,
+						   occi_kind:actions(Parent) ++ ActionsAcc
+						  }						     
+					     end
+				     end, {Attrs0, Actions0}, occi_kind:parents(Kind)),
+    E1 = merge_attributes(lists:reverse(Attrs1), element(?attributes, E), element(?values, E), E),
+    merge_actions(lists:reverse(Actions1), element(?actions, E1), E1).
 
 %%%
 %%% internal
@@ -305,10 +321,14 @@ set_value(Key, Value, Spec, Values, Errors) ->
 
 merge_mixin(Mixin, E) ->
     Depends = merge_depends(occi_mixin:depends(Mixin), orddict:from_list([{ 0, Mixin }])),
-    Attrs0 = orddict:fold(fun (_Idx, Dep, Acc) ->
-				  occi_mixin:attributes(Dep) ++ Acc
-			  end, [], Depends),
-    merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E).
+    {Attrs0, Actions0} = orddict:fold(fun (_Idx, Dep, {AttrsAcc, ActionsAcc}) ->
+					      {
+					    occi_mixin:attributes(Dep) ++ AttrsAcc,
+					    occi_mixin:actions(Dep) ++ ActionsAcc
+					   }					   
+				      end, {[], []}, Depends),
+    E1 = merge_attributes(lists:reverse(Attrs0), element(?attributes, E), element(?values, E), E),
+    merge_actions(lists:reverse(Actions0), element(?actions, E1), E1).
 
 
 merge_depends(Depends, Acc) ->
@@ -347,3 +367,13 @@ merge_attributes([ Spec | Tail ], AttrsAcc, ValuesAcc, E) ->
     AttrsAcc1 = maps:put(Name, [ Category | maps:get(Name, AttrsAcc, []) ], AttrsAcc),
     ValuesAcc1 = maps:merge(#{ Name => undefined }, ValuesAcc),
     merge_attributes(Tail, AttrsAcc1, ValuesAcc1, E).
+
+
+merge_actions([], Acc, E) ->
+    setelement(?actions, E, Acc);
+
+merge_actions([ Action | Tail ], Acc, E) ->
+    Id = occi_action:id(Action),
+    Category = occi_action:category(Action),
+    Acc1 = maps:put(Id, [ Category | maps:get(Id, Acc, []) ], Acc),
+    merge_actions(Tail, Acc1, E).

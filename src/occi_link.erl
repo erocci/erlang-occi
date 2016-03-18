@@ -60,7 +60,7 @@ new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
 new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_list(Id), 
 						     is_list(Src),
 						     is_list(Target) ->
-    Link = occi_entity:merge_parents(Kind, {link, Id, occi_kind:id(Kind), [], #{}, #{}}),
+    Link = occi_entity:merge_parents(Kind, {link, Id, occi_kind:id(Kind), [], #{}, #{}, #{}}),
     set(#{ "occi.core.source" => Src, 
 	   "occi.core.source.kind" => SrcKind,
 	   "occi.core.target" => Target,

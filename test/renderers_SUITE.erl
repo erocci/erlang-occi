@@ -117,8 +117,8 @@ render_test(Type, Ext, Config) ->
 	true ->
 	    ?assert(true);
 	false ->
-	    ct:pal(error, ?STD_IMPORTANCE, "=== Binary match error:~n", []),
-	    ct:pal(error, ?STD_IMPORTANCE, "Expected:~n~n#BEGIN#~s#END#~n~n", [CleanMatch]),
+	    ct:pal(error, ?STD_IMPORTANCE, "=== Binary match error: ~s~n", [Basename]),
+	    ct:pal(error, ?STD_IMPORTANCE, "Expected :~n~n#BEGIN#~s#END#~n~n", [CleanMatch]),
 	    ct:pal(error, ?STD_IMPORTANCE, "Rendered:~n~n#BEGIN#~s#END#~n", [CleanRendered]),
 	    ?assert(false)
     end.

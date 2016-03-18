@@ -236,7 +236,8 @@ handle_event({startElement, ?occi_uri, "action", _QN, A}, _Pos,
     Term = attr("term", A),
     Scheme = attr("scheme", A, occi_extension:scheme(Ext)),
     Title = attr("title", A, ""),
-    Action = occi_action:title(Title, occi_action:new(Scheme, Term)),
+    Related = occi_category:id(Category),
+    Action = occi_action:title(Title, occi_action:new(Scheme, Term, Related)),
     S#{ stack := [ {action, Action}, {Cls, Category}, {extension, Ext} | Stack ] };
 
 handle_event({endElement, ?occi_uri, "action", _QN}, _, 

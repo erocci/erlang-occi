@@ -1,1 +1,2 @@
 category: resource; scheme="http://schemas.ogf.org/occi/core#"; class=kind
+x-occi-attribute: occi.core.id="http://example.org:8080/myresource"
