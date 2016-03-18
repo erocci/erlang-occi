@@ -92,7 +92,8 @@ groups() ->
 
 all() -> 
     [
-     {group, 'core_resource'}
+     {group, 'categories'}
+    ,{group, 'core_resource'}
     ,{group, 'compute_a'}
     ,{group, 'compute_b'}
     ].
