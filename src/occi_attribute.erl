@@ -41,7 +41,7 @@ new(Category, Name, Type) ->
      required => false,
      mutable => true,
      default => undefined,
-     pattern => "",
+     pattern => undefined,
      description => ""
     }.
 

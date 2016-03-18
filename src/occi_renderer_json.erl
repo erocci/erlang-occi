@@ -35,6 +35,38 @@ render(T, Ctx) ->
 %%%
 %%% Priv
 %%%
+r_type(categories, Categories, Ctx) ->
+    {Kinds, Mixins} = lists:foldl(fun (Cat, {KindAcc, MixinsAcc}) ->
+					  case occi_category:class(Cat) of
+					      kind ->
+						  { [ Cat | KindAcc ], MixinsAcc };
+					      mixin ->
+						  { KindAcc, [ Cat | MixinsAcc ]}
+					  end
+				  end, {[], []}, Categories),
+    M0 = #{ kinds => lists:map(fun (Kind) -> 
+				       r_kind(Kind, Ctx)
+			       end, Kinds) },
+    M1 = case Mixins of
+	     [] ->
+		 M0;
+	     _ ->
+		 M0#{ mixins => lists:map(fun (Mixin) ->
+						  r_mixin(Mixin, Ctx)
+					  end, Mixins) }
+	 end,
+    Actions = lists:foldl(fun (Category, Acc) ->
+				  occi_category:actions(Category) ++ Acc
+			  end, [], Categories),
+    case Actions of
+	[] ->
+	    M1;
+	_ ->
+	    M1#{ actions => lists:map(fun (Action) ->
+					      r_action(Action)
+				      end, Actions) }
+    end;
+
 r_type(resource, R, Ctx) ->
     M = r_entity(R, Ctx),
     M1 = case occi_resource:links(R) of
@@ -45,6 +77,127 @@ r_type(resource, R, Ctx) ->
 	undefined -> M1;
 	Summary -> M1#{ summary => r_string(Summary) }
     end.
+
+
+r_kind(Kind, Ctx) ->
+    M = r_category(Kind, Ctx),
+    case occi_kind:parent(Kind) of
+	undefined ->
+	    M;
+	Parent ->
+	    M#{ parent => r_type_id(Parent) }
+    end.
+
+
+r_mixin(Mixin, Ctx) ->
+    M = r_category(Mixin, Ctx),
+    M1 = case occi_mixin:depends(Mixin) of
+	     [] ->
+		 M;
+	     Depends ->
+		 M#{ depends => [ r_type_id(Dep) || Dep <- Depends ] }
+	 end,
+    case occi_mixin:applies(Mixin) of
+	[] ->
+	    M1;
+	Applies ->
+	    M1#{ applies => [ r_type_id(Apply) || Apply <- Applies ] }
+    end.
+
+
+r_action(Action) ->
+    {Scheme, Term} = occi_action:id(Action),
+    M = #{ term => list_to_binary(Term), scheme => list_to_binary(Scheme) },
+    M0 = case occi_action:title(Action) of
+	     "" -> M;
+	     Title -> M#{ title => list_to_binary(Title) }
+	 end,
+    case occi_action:attributes(Action) of
+	[] ->
+	    M0;
+	Attributes ->
+	    Defs = lists:foldl(fun (Def, Acc) ->
+				       Name = list_to_binary(occi_attribute:name(Def)),
+				       Acc#{ Name => r_attr_def(Def) }
+			       end, #{}, Attributes),
+	    M0#{ attributes => Defs }
+    end.
+
+
+r_category(Category, Ctx) ->
+    {Scheme, Term} = occi_category:id(Category),
+    M = #{ term => list_to_binary(Term), scheme => list_to_binary(Scheme) },
+    M0 = case occi_category:title(Category) of
+	     "" -> M;
+	     Title -> M#{ title => list_to_binary(Title) }
+	 end,
+    M1 = case occi_category:attributes(Category) of
+	     [] ->
+		 M0;
+	     Attributes ->
+		 Defs = lists:foldl(fun (Def, Acc) ->
+					    Name = list_to_binary(occi_attribute:name(Def)),
+					    Acc#{ Name => r_attr_def(Def) }
+				    end, #{}, Attributes),
+		 M0#{ attributes => Defs }
+	 end,
+    M2 = case occi_category:actions(Category) of
+	     [] ->
+		 M1;
+	     Actions ->
+		 M1#{ actions => [ r_type_id(occi_action:id(Action)) || Action <- Actions ] }
+	 end,
+    M2#{ location => iolist_to_binary(occi_utils:ctx(occi_category:location(Category), Ctx)) }.
+
+
+r_attr_def(Def) ->
+    M = #{ mutable => occi_attribute:mutable(Def),
+	   required => occi_attribute:required(Def),
+	   type => r_attr_type(occi_attribute:type(Def))
+	 },
+    M0 = case occi_attribute:pattern(Def) of
+	     undefined ->
+		 M;
+	     Pattern ->
+		 M#{ pattern => Pattern }
+	 end,
+    M1 = case occi_attribute:default(Def) of
+	     undefined ->
+		 M0;
+	     Default ->
+		 M0#{ default => r_attribute_value(Default) }
+	 end,
+    case occi_attribute:description(Def) of
+	"" ->
+	    M1;
+	Desc ->
+	    M1#{ description => list_to_binary(Desc) }
+    end.
+
+
+r_attr_type({enum, _}) ->
+    array;
+
+r_attr_type(string) ->
+    string;
+
+r_attr_type(integer) ->
+    number;
+
+r_attr_type(float) ->
+    number;
+
+r_attr_type(boolean) ->
+    boolean;
+
+r_attr_type(uri) ->
+    string;
+
+r_attr_type(kind) ->
+    string;
+
+r_attr_type(resource) ->
+    string.
 
 
 r_link(L, Ctx) ->

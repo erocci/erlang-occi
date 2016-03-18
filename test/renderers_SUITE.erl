@@ -83,7 +83,7 @@ end_per_testcase(_TestCase, _Config) ->
 
 groups() ->
     [
-     {'categories',          [], [render_xml, render_text]}
+     {'categories',          [], [render_xml, render_text, render_json]}
     ,{'core_resource',       [], [render_xml, render_text, render_json]}
     ,{'compute_a',           [], [render_xml, render_text, render_json]}
     ,{'compute_b',           [], [render_xml, render_text, render_json]}
