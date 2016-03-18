@@ -36,13 +36,13 @@
 '#root#'(Data, [#xmlAttribute{name=prolog,value=V}], [], _E) ->
     [V,Data];
 '#root#'(Data, _Attrs, [], _E) ->
-    ["<?xml version=\"1.0\"?>\n", Data].
+    ["<?xml version=\"1.0\"?>", Data].
 
 %% The '#element#' function is the default handler for XML elements.
-'#element#'(Tag, [], Attrs, _, _E) ->
-    empty_tag(Tag, Attrs);
+'#element#'(Tag, [], Attrs, Parents, _E) ->
+    [ "\n", lists:duplicate(length(Parents), ?indent), empty_tag(Tag, Attrs) ];
 
 '#element#'(Tag, Data, Attrs, Parents, _E) ->
-    Data1 = [ "\n", lists:duplicate(length(Parents)+1, ?indent),
-	      Data, "\n", lists:duplicate(length(Parents), ?indent) ],
-    markup(Tag, Attrs, Data1).
+    Data1 = [ Data, "\n", lists:duplicate(length(Parents), ?indent) ],
+    [ "\n", lists:duplicate(length(Parents), ?indent),
+      markup(Tag, Attrs, Data1) ].
