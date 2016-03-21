@@ -10,8 +10,12 @@
 
 -compile(export_all).
 
+-include("../src/occi_rendering.hrl").
+
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
+
+-define(ctx, #parse_ctx{ url = uri:from_string("http://localhost:8080/collections") } ).
 
 suite() ->
     [{timetrap,{seconds,30}}].
@@ -99,7 +103,7 @@ simple_resource(_Config) ->
     ?assertThrow({invalid_key, "bad"}, occi_resource:get("bad", R)).
 
 mixin_resource(_Config) ->
-    M = occi_mixin:load(xml, ?mixin0_xml),
+    M = occi_mixin:load(xml, ?mixin0_xml, ?ctx),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin0"}, R),
@@ -108,7 +112,7 @@ mixin_resource(_Config) ->
     ?assertMatch(undefined, occi_resource:get("occi.mixin.attr0", R1)).
 
 mixin_depend_resource(_Config) ->
-    M = occi_mixin:load(xml, ?mixin1_xml),
+    M = occi_mixin:load(xml, ?mixin1_xml, ?ctx),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin1"}, R),
@@ -119,7 +123,7 @@ mixin_depend_resource(_Config) ->
 
 
 mixin_override_resource(_Config) ->
-    M = occi_mixin:load(xml, ?mixin2_xml),
+    M = occi_mixin:load(xml, ?mixin2_xml, ?ctx),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
@@ -133,7 +137,7 @@ mixin_override_resource(_Config) ->
 %% an already defined attribute, but with different default value
 %% @end
 mixin_delete_resource1(_Config) ->
-    M = occi_mixin:load(xml, ?mixin2_xml),
+    M = occi_mixin:load(xml, ?mixin2_xml, ?ctx),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
@@ -145,7 +149,7 @@ mixin_delete_resource1(_Config) ->
 %% @doc Test value of an attribute when removing a mixin 
 %% @end
 mixin_delete_resource2(_Config) ->
-    M = occi_mixin:load(xml, ?mixin2_xml),
+    M = occi_mixin:load(xml, ?mixin2_xml, ?ctx),
     ok = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({"http://schemas.example.org/occi#", "mixin2"}, R),
