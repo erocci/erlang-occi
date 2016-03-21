@@ -90,6 +90,15 @@ init_per_group('compute_a', Config) ->
 	  end,
     [ {check, Fun} | Config ];
 
+init_per_group('user_mixin', Config) ->
+    Fun = fun(M)  ->
+		  ?assertMatch({"http://schemas.example.org/occi#", "mymixin0"},
+			       occi_mixin:id(M)),
+		  ?assertMatch("/categories/mymixin0", occi_mixin:location(M))
+	  end,
+    Load = fun (Type, Bin) -> occi_mixin:load(Type, Bin) end,
+    [ {check, Fun}, {load, Load} | Config ];
+
 init_per_group(_, Config) ->
     Config.
 
@@ -113,6 +122,7 @@ groups() ->
     ,{'resource_link',     [], [parse_xml, parse_text, parse_json]}
     ,{'compute_a',         [], [parse_xml, parse_text, parse_json]}
     ,{'netif_link',        [], [parse_xml, parse_text, parse_json]}
+    ,{'user_mixin',        [], [parse_xml]}
     ].
 
 
@@ -123,6 +133,7 @@ all() ->
     ,{group, 'resource_link'}
     ,{group, 'compute_a'}
     ,{group, 'netif_link'}
+    ,{group, 'user_mixin'}
     ].
 
 
@@ -149,6 +160,7 @@ parse_tests(Type, Ext, Config) ->
 parse_test(Type, Filename, Config) ->
     ct:pal(info, ?STD_IMPORTANCE, "=== Parsing ~s", [filename:basename(Filename)]),
     {ok, Bin} = file:read_file(Filename),
-    Entity = occi_entity:load(Type, Bin, client),
-    Fun = ?config(check, Config),
-    Fun(Entity).
+    LoadFun = proplists:get_value(load, Config, fun (T, B) -> occi_entity:load(T, B, client) end),
+    O = LoadFun(Type, Bin),
+    CheckFun = ?config(check, Config),
+    CheckFun(O).

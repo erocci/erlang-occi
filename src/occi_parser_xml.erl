@@ -174,11 +174,10 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos,
 
 %% mixin is a root node
 handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    Title = attr("title", A, ""),
-    Mixin = occi_mixin:title(Title, occi_mixin:new(Scheme, Term)),
-    S#{ stack := [ {mixin, Mixin} | Stack ] };
+    M0 = occi_mixin:new(attr("scheme", A), attr("term", A)),
+    M1 = occi_mixin:title(attr("title", A, ""), M0),
+    M2 = occi_mixin:location(attr("location", A, ""), M1),
+    S#{ stack := [ {mixin, M2} | Stack ] };
 
 handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack] }=S) ->
     Ext2 = occi_extension:add_category(Mixin, Ext),
