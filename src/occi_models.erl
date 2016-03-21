@@ -10,12 +10,13 @@
 -module(occi_models).
 
 -include("occi.hrl").
+-include("occi_rendering.hrl").
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
 -export([start_link/0]).
 
--export([import/1,
+-export([import/2,
 	 categories/0,
 	 category/1,
 	 kind/2,
@@ -43,9 +44,9 @@ start_link() ->
 %% @doc Import an extension into the model
 %%
 %% @end
--spec import(occi_extension:t()) -> ok.
-import(E) ->
-    ok = load_imports(occi_extension:imports(E)),
+-spec import(occi_extension:t(), parse_ctx()) -> ok.
+import(E, Ctx) ->
+    ok = load_imports(occi_extension:imports(E), Ctx),
     ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
     ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
 
@@ -140,6 +141,8 @@ attributes(CatId) ->
 %%
 %% Priv
 %%
+-define(model_ctx, #parse_ctx{ valid=model, url=undefined }).
+
 -spec init() -> ok.
 init() ->
     case mnesia:create_table(category, [{ram_copies, nodes()}, {attributes, record_info(fields, category)}]) of
@@ -147,7 +150,7 @@ init() ->
 	{aborted, {already_exists, category}} -> ok;
 	{aborted, _} = Err -> throw(Err)
     end,
-    ok = load_imports([?core_scheme]),
+    ok = load_imports([?core_scheme], ?model_ctx),
     loop().
 
 
@@ -159,20 +162,20 @@ loop() ->
 
 
 %% Check extension exists in the database, throw error if not
-load_imports([]) ->
+load_imports([], _Ctx) ->
     ok;
 
-load_imports([ Scheme | Imports ]) ->
+load_imports([ Scheme | Imports ], Ctx) ->
     ?debug("Import extension: ~s", [Scheme]),
     case dl_schema(Scheme) of
 	{ok, Path} ->
 	    case file:read_file(Path) of
 		{ok, Bin} ->
-		    import(occi_extension:load(occi_utils:mimetype(Path), Bin));
+		    import(occi_extension:load(occi_utils:mimetype(Path), Bin, Ctx), Ctx);
 		{error, Err} ->
 		    throw({import, Err})
 	    end,
-	    load_imports(Imports);
+	    load_imports(Imports, Ctx);
 	{error, Err} ->
 	    throw({import, Err})
     end.

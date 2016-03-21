@@ -17,6 +17,7 @@
 
 -include("occi_log.hrl").
 -include("occi_entity.hrl").
+-include("occi_rendering.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
 -export([id/1,
@@ -47,15 +48,6 @@
 	      Actions    :: maps:map()
 	     }.
 
-
-%% @doc Check type:
-%% <ul>
-%%   <li>server: immutable attributes can be changed, required ones must be set</li>
-%%   <li>client: immutable attributes can not be set</li>
-%%   <li>internal: for entity sub-types. Do not check if all required attributes are set (for instance in link constructor)</li>
-%% </ul>
-%% @end
--type validation() :: server | client | internal.
 
 %% @doc opaque type representing an entity
 %% @end
@@ -203,9 +195,9 @@ is_subtype(_, _) -> false.
 
 %% @doc Load entity from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), occi_entity:validation()) -> t().
-load(Mimetype, Bin, V) -> 
-    occi_rendering:load_entity(entity, Mimetype, Bin, V).
+-spec load(occi_utils:mimetype(), iolist(), parse_ctx()) -> t().
+load(Mimetype, Bin, Ctx) -> 
+    occi_rendering:load_entity(entity, Mimetype, Bin, Ctx).
 
 
 %% @doc Render entity into given mimetype

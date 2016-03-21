@@ -7,6 +7,7 @@
 
 -module(occi_category).
 
+-include("occi_uri.hrl").
 -include("occi_category.hrl").
 
 -export([new/2, 
@@ -118,13 +119,13 @@ actions(C) ->
     maps:values(Actions).
 
 
--spec location(t()) -> string().
+-spec location(t()) -> uri:t().
 location(C) ->
     ?g(location, C).
 
 
--spec location(string(), t()) -> t().
-location(Location, C) when is_list(Location) ->
+-spec location(uri:t(), t()) -> t().
+location(Location, C) when ?is_uri(Location) ->
     ?s(location, Location, C).
 
 
@@ -151,7 +152,7 @@ parse_id(Id) ->
 
 %% @doc Render category into given mimetype
 %% @end
--spec render(occi_utils:mimetype(), t(), uri:t()) -> iolist().
+-spec render(occi_utils:mimetype(), t(), render_ctx()) -> iolist().
 render(Mimetype, E, Ctx) ->
     occi_rendering:render(Mimetype, E, Ctx).
 

@@ -7,13 +7,11 @@
 
 -module(occi_rendering).
 
--export([load_model/3,
+-include("occi_rendering.hrl").
+
+-export([load_model/4,
 	 load_entity/4,
 	 render/3]).
-
--type ctx() :: uri:t().
-
--export_type([ctx/0]).
 
 %% @doc Load the specified OCCI category or extension from an iolist()
 %% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
@@ -27,13 +25,13 @@
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_model(occi_type:name(), occi_utils:mimetype(), iolist()) -> occi_type:t().
-load_model(Type, MimeType, Bin) ->
+-spec load_model(occi_type:name(), occi_utils:mimetype(), iolist(), parse_ctx()) -> occi_type:t().
+load_model(Type, MimeType, Bin, Ctx) ->
     case parser(MimeType) of
 	undefined -> 
 	    throw({unknown_mimetype, MimeType});
 	Mod -> 
-	    Mod:parse_model(Type, Bin)
+	    Mod:parse_model(Type, Bin, Ctx)
     end.
 
 
@@ -49,17 +47,17 @@ load_model(Type, MimeType, Bin) ->
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_entity(occi_type:name(), occi_utils:mimetype(), iolist(), occi_entity:validation()) -> occi_type:t().
-load_entity(Type, MimeType, Bin, V) ->
+-spec load_entity(occi_type:name(), occi_utils:mimetype(), iolist(), parse_ctx()) -> occi_type:t().
+load_entity(Type, MimeType, Bin, Ctx) ->
     case parser(MimeType) of
 	undefined -> 
 	    throw({unknown_mimetype, MimeType});
 	Mod -> 
-	    Mod:parse_entity(Type, Bin, V)
+	    Mod:parse_entity(Type, Bin, Ctx)
     end.
 
 
--spec render(occi_utils:mimetype(), occi_type:t(), ctx()) -> iolist().
+-spec render(occi_utils:mimetype(), occi_type:t(), render_ctx()) -> iolist().
 render(MimeType, T, Ctx) ->
     case renderer(MimeType) of
 	undefined ->

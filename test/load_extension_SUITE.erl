@@ -10,8 +10,11 @@
 
 -compile(export_all).
 
+-include("../src/occi_rendering.hrl").
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
+
+-define(ctx, #parse_ctx{ url = uri:from_string("http://localhost:8080/collections") } ).
 
 suite() ->
     [{timetrap,{seconds,30}}].
@@ -55,8 +58,8 @@ all() ->
 load_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Bin} = file:read_file(ExtFile),
-    Ext = occi_extension:load(xml, Bin),
-    occi_models:import(Ext),
+    Ext = occi_extension:load(xml, Bin, ?ctx),
+    occi_models:import(Ext, ?ctx),
     ?assertMatch(kind,
 		 occi_category:class(occi_models:category({"http://schemas.ogf.org/occi/infrastructure#", "compute"}))),
     ?assertMatch(kind,
@@ -89,8 +92,8 @@ load_import(_Config) ->
 				     " scheme=\"http://example.org/occi#\""
 				     " status=\"stable\" version=\"1\">"
 				     " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
-				     "</occi:extension>">>),
-    occi_models:import(Ext),
+				     "</occi:extension>">>, ?ctx),
+    occi_models:import(Ext, ?ctx),
     ?assertMatch(kind,
 		 occi_category:class(occi_models:category({"http://schemas.ogf.org/occi/infrastructure#", "compute"}))),
     ?assertMatch(kind,

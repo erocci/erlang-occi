@@ -1,6 +1,8 @@
 -ifndef(occi_entity_hrl).
 -define(occi_entity_hrl, true).
 
+-include("occi_rendering.hrl").
+
 -define(class,      1).
 -define(id,         2).
 -define(kind,       3).

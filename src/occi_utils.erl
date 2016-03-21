@@ -12,9 +12,7 @@
 -export([mkdir/1,
 	 priv_dir/0,
 	 resources_dir/0,
-	 mimetype/1,
-	 urn/1,
-	 ctx/2]).
+	 mimetype/1]).
 
 -type mimetype() :: {Type :: binary(), SubType :: binary(), Options :: list()}
 		  | undefined.
@@ -63,16 +61,3 @@ mimetype(Path) ->
 	".json" ->
 	    {<<"application">>, <<"json">>, []}
     end.
-
-
--spec urn(binary()) -> binary().
-urn(Seed) ->
-    <<"urn:uuid:", (uuid:uuid_to_string(uuid:get_v3(oid, Seed), binary_standard))/binary >>.
-
-
--spec ctx(string() | binary(), occi_rendering:ctx()) -> string() | binary().
-ctx(Path, Ctx) when is_list(Path) ->
-    binary_to_list(ctx(list_to_binary(Path), Ctx));
-
-ctx(Path, Ctx) ->
-    uri:to_string(uri:path(Ctx, filename:join([uri:path(Ctx), Path]))).
