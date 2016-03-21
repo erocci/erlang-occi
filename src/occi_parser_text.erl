@@ -20,11 +20,14 @@
 
 
 -spec parse_model(extension | kind | mixin | action, binary()) -> occi_type:t().
-parse_model(_Type, _Bin) when _Type =:= extension;
-			      _Type =:= kind;
-			      _Type =:= mixin;
-			      _Type =:= actin ->
-    ok.
+parse_model(mixin, Bin) ->
+    parse_mixin(parse_headers(Bin));
+
+parse_model(Type, _Bin) when Type =:= extension;
+			     Type =:= kind;
+			     Type =:= mixin;
+			     Type =:= actin ->
+    throw({not_implemented, Type}).
 
 
 -spec parse_entity(entity | resource | link, binary(), occi_entity:validation()) -> occi_type:t().
@@ -41,6 +44,24 @@ parse_entity(Type, Bin, Valid) when Type =:= entity;
 %%%
 %%% Parsers
 %%%
+parse_mixin(H) ->
+    case p_categories(orddict:find('category', H)) of
+	[] ->
+	    throw({parse_error, {mixin, no_mixin}});
+	[{category, #{ class := mixin, scheme := Scheme, term := Term }=Map }] ->
+	    M0 = occi_mixin:new(Scheme, Term),
+	    M1 = occi_mixin:location(binary_to_list(maps:get(location, Map)), M0),
+	    case maps:get(title, Map, undefined) of
+		undefined ->
+		    M1;
+		Title ->
+		    occi_mixin:title(Title, M1)
+	    end;    
+	_ ->
+	    throw({parse_error, {mixin, multiple_mixin}})
+    end.
+
+
 parse_entity2(H, Valid) ->
     Filter = fun ({category, #{ class := kind, scheme := Scheme, term := Term }},
 		  {undefined, Mixins}) ->
@@ -399,8 +420,7 @@ p_value(Bin, class) ->
     p_class(Bin);
 
 p_value(Bin, location) ->
-    {uri, Uri, Rest} = p_uri(Bin),
-    {location, Uri, Rest};
+    p_location(Bin);
 
 p_value(Bin, rel) ->
     p_rel(Bin);
@@ -462,6 +482,43 @@ p_value2(<< C, Rest/binary >>, Key) when ?is_alpha(C) ->
 p_value2(<< C, _Rest/binary >>, _Key) ->
     throw({parse_error, {value, C}}).
 
+
+p_location(<<>>) ->
+    throw({parse_error, {location, <<>>}});
+
+p_location(<< $", Rest/binary >>) ->
+    p_location2(Rest, <<>>);
+
+p_location(<< C, _Rest/binary >>) ->
+    throw({parse_error, {location, C}}).
+
+
+p_location2(<<>>, _Acc) ->
+    throw({parse_error, {location, <<>>}});
+
+p_location2(<< C, _Rest/binary >>, _Acc) when C =:= $\n;
+					    C =:= $\s;
+					    C =:= $\t ->
+    throw({parse_error, {location, C}});
+
+p_location2(<< $", Rest/binary >>, Acc) ->
+    p_location3(eat_ws(Rest), Acc);
+
+p_location2(<< C, Rest/binary >>, Acc) ->
+    p_location2(Rest, << Acc/binary, C >>).
+
+
+p_location3(<<>>, Acc) ->
+    {uri, Uri} = p_uri(Acc),
+    {location, Uri, <<>>};
+
+p_location3(<< $;, Rest/binary >>, Acc) ->
+    {uri, Uri} = p_uri(Acc),
+    {location, Uri, Rest};
+
+p_location3(<< C, _Rest/binary >>, _Acc) ->
+    throw({parse_error, {location, C}}).
+    
 
 p_rel(<<>>) ->
     throw({parse_error, {rel, <<>>}});

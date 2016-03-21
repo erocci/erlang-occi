@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mixin xmlns="http://schemas.ogf.org/occi"
        scheme="http://schemas.example.org/occi#" term="mymixin0"
-       location="/categories/mymixin0" />
+       location="http://localhost:8080/categories/mymixin0" />

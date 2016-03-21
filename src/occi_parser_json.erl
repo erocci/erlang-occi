@@ -34,7 +34,7 @@ parse_model(mixin, Bin) ->
 parse_model(Type, _Bin) when Type =:= extension;
 			     Type =:= kind;
 			     Type =:= action ->
-    throw({non_implemented, Type}).
+    throw({not_implemented, Type}).
 
 
 -spec parse_entity(entity | resource | link, binary(), occi_entity:validation()) -> occi_type:t().
