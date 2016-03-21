@@ -1,0 +1,9 @@
+{
+    "mixins": [
+	{
+	    "scheme": "http://schemas.example.org/occi#",
+	    "term": "mymixin0",
+	    "location": "/categories/mymixin0"
+	}
+    ]
+}

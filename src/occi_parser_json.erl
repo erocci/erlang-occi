@@ -20,11 +20,21 @@
 
 
 -spec parse_model(extension | kind | mixin | action, binary()) -> occi_type:t().
-parse_model(_Type, _Bin) when _Type =:= extension;
-			      _Type =:= kind;
-			      _Type =:= mixin;
-			      _Type =:= action ->
-    ok.
+parse_model(mixin, Bin) ->
+    Map = jsx:decode(Bin, [return_maps]),
+    case maps:get(<<"mixins">>, Map, []) of
+	[] ->
+	    throw({parse_error, {mixin, no_mixin}});
+	[Mixin] ->
+	    p_mixin(Mixin);
+	_Else ->
+	    throw({parse_error, {mixin, multiple_mixin}})
+    end;
+
+parse_model(Type, _Bin) when Type =:= extension;
+			     Type =:= kind;
+			     Type =:= action ->
+    throw({non_implemented, Type}).
 
 
 -spec parse_entity(entity | resource | link, binary(), occi_entity:validation()) -> occi_type:t().
@@ -41,6 +51,34 @@ parse_entity(Type, Bin, Valid) when Type =:= entity;
 %%%
 %%% Parsers
 %%%
+p_mixin(#{ <<"scheme">> := Scheme }=Map) ->
+    p_mixin2(Map, binary_to_list(Scheme));
+
+p_mixin(_) ->
+    throw({parse_error, {mixin, missing_scheme}}).
+
+
+p_mixin2(#{ <<"term">> := Term}=Map, Scheme) ->
+    p_mixin3(Map, Scheme, binary_to_list(Term));
+
+p_mixin2(_, _) ->
+    throw({parse_error, {mixin, missing_term}}).
+
+
+p_mixin3(#{ <<"location">> := Location}=Map, Scheme, Term) ->
+    M0 = occi_mixin:new(Scheme, Term),
+    M1 = occi_mixin:location(binary_to_list(Location), M0),
+    case maps:get(<<"title">>, Map, undefined) of
+	undefined ->
+	    M1;
+	Title ->
+	    occi_mixin:title(binary_to_list(Title), M1)
+    end;
+
+p_mixin3(_, _, _) ->
+    throw({parse_error, {mixin, missing_location}}).
+
+
 p_entity(#{ <<"id">> := Id }=Map, Valid) ->
     p_entity2(binary_to_list(Id), Map, Valid);
 	

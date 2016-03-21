@@ -122,7 +122,7 @@ groups() ->
     ,{'resource_link',     [], [parse_xml, parse_text, parse_json]}
     ,{'compute_a',         [], [parse_xml, parse_text, parse_json]}
     ,{'netif_link',        [], [parse_xml, parse_text, parse_json]}
-    ,{'user_mixin',        [], [parse_xml]}
+    ,{'user_mixin',        [], [parse_xml, parse_json]}
     ].
 
 
