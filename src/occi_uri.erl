@@ -66,7 +66,7 @@ urn(Seed) ->
 to_abs(Url, Ctx) when is_list(Url) ->
     to_abs(list_to_binary(Url), Ctx);
 
-to_abs(<< $/, _/binary >> = Url, Ctx) when ?is_uri(Ctx)  ->
+to_abs(<< $/, _/binary >> =Url, Ctx) when ?is_uri(Ctx)  ->
     uri:path(Ctx, Url);
 
 to_abs(<< "http://", _/binary >> = Url, _Ctx) ->

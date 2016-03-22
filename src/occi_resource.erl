@@ -9,6 +9,7 @@
 
 -include("occi.hrl").
 -include("occi_entity.hrl").
+-include("occi_uri.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
 -mixin([{occi_entity, except, [load/3]},
@@ -25,7 +26,7 @@
 
 -type resource() :: {
 		Class      :: occi_type:name(),
-		Id         :: string(),
+		Id         :: uri:t(),
 		Kind       :: occi_category:id(),
 		Mixins     :: [occi_category:id()],
 		Attributes :: maps:map(),
@@ -44,20 +45,20 @@
 
 %% @doc Creates a resource with given id, of kind ...core#resource
 %% @end
--spec new(string()) -> t().
+-spec new(uri:t()) -> t().
 new(Id) ->
     occi_resource:new(Id, ?resource_kind_id).
 
 
 %% @throws {unknown_category, term()}
--spec new(string(), occi_category:t() | occi_category:id() | string() | binary()) -> t().
+-spec new(uri:t(), occi_category:t() | occi_category:id() | string() | binary()) -> t().
 new(Id, KindId) when is_list(KindId); is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId));
 
 new(Id, {_Scheme, _Term}=KindId) ->
     new(Id, occi_models:kind(resource, KindId));
 
-new(Id, Kind) ->
+new(Id, Kind) when ?is_uri(Id) ->
     occi_entity:merge_parents(Kind, {resource, Id, occi_kind:id(Kind), [], #{}, #{}, #{}, []}).
 
 

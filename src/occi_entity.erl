@@ -40,7 +40,7 @@
 
 -type entity() :: {
 	      Class      :: occi_type:name(),
-	      Id         :: string(),
+	      Id         :: uri:t(),
 	      Kind       :: occi_category:id(),
 	      Mixins     :: [occi_category:id()],
 	      Attributes :: maps:map(),
@@ -58,7 +58,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--spec id(t()) -> string().
+-spec id(t()) -> uri:t().
 id(E) ->
     element(?id, E).
 

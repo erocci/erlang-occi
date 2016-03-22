@@ -7,11 +7,12 @@
 
 -module(occi_parser_text).
 
+-include("occi_rendering.hrl").
 -include("occi.hrl").
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
--export([parse_model/2,
+-export([parse_model/3,
 	 parse_entity/3]).
 
 -ifdef(TEST).
@@ -19,22 +20,22 @@
 -endif.
 
 
--spec parse_model(extension | kind | mixin | action, binary()) -> occi_type:t().
-parse_model(mixin, Bin) ->
-    parse_mixin(parse_headers(Bin));
+-spec parse_model(extension | kind | mixin | action, binary(), parse_ctx()) -> occi_type:t().
+parse_model(mixin, Bin, Ctx) ->
+    parse_mixin(parse_headers(Bin), Ctx);
 
-parse_model(Type, _Bin) when Type =:= extension;
-			     Type =:= kind;
-			     Type =:= mixin;
-			     Type =:= actin ->
+parse_model(Type, _Bin, _Ctx) when Type =:= extension;
+				   Type =:= kind;
+				   Type =:= mixin;
+				   Type =:= actin ->
     throw({not_implemented, Type}).
 
 
--spec parse_entity(entity | resource | link, binary(), occi_entity:validation()) -> occi_type:t().
-parse_entity(Type, Bin, Valid) when Type =:= entity;
-				    Type =:= resource;
-				    Type =:= link ->
-    Entity = parse_entity2(parse_headers(Bin), Valid),
+-spec parse_entity(entity | resource | link, binary(), parse_ctx()) -> occi_type:t().
+parse_entity(Type, Bin, Ctx) when Type =:= entity;
+				  Type =:= resource;
+				  Type =:= link ->
+    Entity = parse_entity2(parse_headers(Bin), Ctx),
     case occi_entity:is_subtype(Type, Entity) of
 	true -> Entity;
 	false -> throw({parse_error, {type, Entity}})
@@ -44,13 +45,14 @@ parse_entity(Type, Bin, Valid) when Type =:= entity;
 %%%
 %%% Parsers
 %%%
-parse_mixin(H) ->
+parse_mixin(H, Ctx) ->
     case p_categories(orddict:find('category', H)) of
 	[] ->
 	    throw({parse_error, {mixin, no_mixin}});
 	[{category, #{ class := mixin, scheme := Scheme, term := Term }=Map }] ->
 	    M0 = occi_mixin:new(Scheme, Term),
-	    M1 = occi_mixin:location(binary_to_list(maps:get(location, Map)), M0),
+	    Location = occi_uri:to_abs(maps:get(location, Map), Ctx#parse_ctx.url),
+	    M1 = occi_mixin:location(Location, M0),
 	    case maps:get(title, Map, undefined) of
 		undefined ->
 		    M1;
@@ -62,7 +64,7 @@ parse_mixin(H) ->
     end.
 
 
-parse_entity2(H, Valid) ->
+parse_entity2(H, Ctx) ->
     Filter = fun ({category, #{ class := kind, scheme := Scheme, term := Term }},
 		  {undefined, Mixins}) ->
 		     { {Scheme, Term}, Mixins };
@@ -79,7 +81,7 @@ parse_entity2(H, Valid) ->
     Attributes = p_attributes(orddict:find('x-occi-attribute', H)),
     {Id, Attributes2} = case lists:keytake(<<"occi.core.id">>, 2, Attributes) of
 			    {value, {attribute, _, {string, SId}}, Rest} ->
-				{binary_to_list(SId), Rest};
+				{occi_uri:to_abs(SId, Ctx#parse_ctx.url), Rest};
 			    {value, {attribute, _, {Type, _}}, _} ->
 				throw({parse_error, {entity, {<<"occi.core.id">>, Type}}});
 			    false ->
@@ -89,45 +91,45 @@ parse_entity2(H, Valid) ->
     case occi_kind:has_parent(resource, Kind) of
 	true ->
 	    Links = p_links(orddict:find('link', H)),
-	    p_resource(Id, Kind, MixinIds, Attributes2, Links, Valid);
+	    p_resource(Id, Kind, MixinIds, Attributes2, Links, Ctx);
 	false ->
-	    p_link(Id, Kind, MixinIds, Attributes2, Valid)
+	    p_link(Id, Kind, MixinIds, Attributes2, Ctx)
     end.
 
 
-p_resource(Id, Kind, MixinIds, Attributes, Links, Valid) ->
+p_resource(Id, Kind, MixinIds, Attributes, Links, Ctx) ->
     R = occi_resource:new(Id, Kind),
     R1 = lists:foldl(fun (Mixin, Acc) ->
 			     occi_entity:add_mixin(Mixin, Acc)
 		     end, R, MixinIds),
     R2 = lists:foldl(fun ({link, Link}, Acc) ->
-			     occi_resource:add_link(p_resource_link(Id, Kind, Link, Valid), Acc)
+			     occi_resource:add_link(p_resource_link(Id, Kind, Link, Ctx), Acc)
 		     end, R1, Links),
     occi_entity:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
 					Acc#{ binary_to_list(Key) => Value }
-				end, #{}, Attributes), Valid, R2).
+				end, #{}, Attributes), Ctx#parse_ctx.valid, R2).
 
 
-p_resource_link(Source, SourceKind, Link, Valid) ->
+p_resource_link(Source, SourceKind, Link, Ctx) ->
     Id = case maps:get(self, Link, undefined) of
 	     undefined ->
 		 occi_utils:urn(Source);
 	     Self ->
-		 Self
+		 occi_uri:to_abs(Self, Ctx#parse_ctx.url)
 	 end,
     Categories = maps:get(categories, Link, [?link_kind_id]),
     {Kind, MixinIds} = filter_categories(Categories, undefined, []),
-    Target = maps:get(target, Link),
+    Target = occi_uri:to_abs(maps:get(target, Link), Ctx#parse_ctx.url),
     [ TargetKind | _ ] = maps:get(rel, Link),
     Attributes = maps:get(attributes, Link),
-    p_link2(binary_to_list(Id), Kind, MixinIds, Source, occi_kind:id(SourceKind), 
-	    binary_to_list(Target), binary_to_list(TargetKind), Attributes, Valid).
+    p_link2(Id, Kind, MixinIds, Source, occi_kind:id(SourceKind), 
+	    Target, TargetKind, Attributes, Ctx).
 
 
-p_link(Id, Kind, MixinIds, Attributes, Valid) ->
+p_link(Id, Kind, MixinIds, Attributes, Ctx) ->
     {Source, Attrs2} = case lists:keytake(<<"occi.core.source">>, 2, Attributes) of
 			   {value, {attribute, _, {string, V}}, Rest} ->
-			       {binary_to_list(V), Rest};
+			       {occi_uri:to_abs(V, Ctx#parse_ctx.url), Rest};
 			   {value, {attribute, _, {Type, _}}, _} ->
 			       throw({parse_error, {link, {<<"occi.core.source">>, Type}}});
 			   false ->
@@ -143,7 +145,7 @@ p_link(Id, Kind, MixinIds, Attributes, Valid) ->
 			   end,
     {Target, Attrs4} = case lists:keytake(<<"occi.core.target">>, 2, Attrs3) of
 			   {value, {attribute, _, {string, V2}}, Rest2} ->
-			       {binary_to_list(V2), Rest2};
+			       {occi_uri:to_abs(V2, Ctx#parse_ctx.url), Rest2};
 			   {value, {attribute, _, {Type2, _}}, _} ->
 			       throw({parse_error, {link, {<<"occi.core.target">>, Type2}}});
 			   false ->
@@ -157,17 +159,17 @@ p_link(Id, Kind, MixinIds, Attributes, Valid) ->
 			       false ->
 				   {undefined, Attrs4}
 			   end,
-    p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attrs5, Valid).
+    p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attrs5, Ctx).
 
 
-p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, Valid) ->
+p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, Ctx) ->
     L = occi_link:new(Id, Kind, Source, SourceKind, Target, TargetKind),
     L1 = lists:foldl(fun (MixinId, Acc) ->
 			     occi_link:add_mixin(MixinId, Acc)
 		     end, L, MixinIds),
     occi_link:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
 				      Acc#{ binary_to_list(Key) => Value }
-			      end, #{}, Attributes), Valid, L1).
+			      end, #{}, Attributes), Ctx#parse_ctx.valid, L1).
     
 
 %%%

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <link xmlns="http://schemas.ogf.org/occi"
-      id="http://example.org:8080/netif1"
-      source="http://example.org:8080/compute1"
-      target="http://example.org:8080/network1" >
+      id="/netif1"
+      source="/compute1"
+      target="/network1" >
   <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="networkinterface" />
   <mixin scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#" term="ipnetworkinterface" />
   <attribute name="occi.networkinterface.interface" value="eth0" />

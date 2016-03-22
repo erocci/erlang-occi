@@ -8,6 +8,7 @@
 -module(occi_link).
 
 -include("occi.hrl").
+-include("occi_uri.hrl").
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
@@ -31,10 +32,10 @@
 
 %% @equiv new(Id, KindId, Src, Target, occi_resource:kind(Target) | undefined)
 %% @end
--spec new(string(), occi_category:id() | string() | binary(), 
+-spec new(uri:t(), occi_category:id() | string() | binary(), 
 	  string() | occi_resource:t(), 
 	  string() | occi_resource:t()) -> t().
-new(Id, KindId, Src, Target) when is_list(Id), 
+new(Id, KindId, Src, Target) when ?is_uri(Id), 
 				  element(?class, Src) =:= resource, 
 				  element(?class, Target) =:= resource ->
     TargetKind = case is_list(Target) of
@@ -46,7 +47,7 @@ new(Id, KindId, Src, Target) when is_list(Id),
 
 %% @doc Creates a new link
 %% @end
--spec new(string(), occi_category:id() | string() | binary(), 
+-spec new(uri:t(), occi_category:id() | string() | binary(), 
 	  string(), 
 	  occi_category:id(),
 	  string(),
@@ -57,9 +58,9 @@ new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_list(KindId); is_binar
 new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
     new(Id, occi_models:kind(link, KindId), Src, SrcKind, Target, TargetKind);
 
-new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_list(Id), 
-						     is_list(Src),
-						     is_list(Target) ->
+new(Id, Kind, Src, SrcKind, Target, TargetKind) when ?is_uri(Id), 
+						     ?is_uri(Src),
+						     ?is_uri(Target) ->
     Link = occi_entity:merge_parents(Kind, {link, Id, occi_kind:id(Kind), [], #{}, #{}, #{}}),
     set(#{ "occi.core.source" => Src, 
 	   "occi.core.source.kind" => SrcKind,
@@ -67,12 +68,12 @@ new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_list(Id),
 	   "occi.core.target.kind" => TargetKind }, internal, Link).
 
 
--spec source(t()) -> string().
+-spec source(t()) -> occi_uri:t().
 source(E) ->
     get("occi.core.source", E).
 
 
--spec target(t()) -> string().
+-spec target(t()) -> occi_uri:t().
 target(E) ->
     get("occi.core.target", E).
 

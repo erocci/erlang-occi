@@ -1,12 +1,12 @@
 {
     "kind": "http://schemas.ogf.org/occi/infrastructure#networkinterface",
     "mixins": ["http://schemas.ogf.org/occi/infrastructure/networkinterface#ipnetworkinterface"],
-    "id": "http://example.org:8080/netif1",
+    "id": "/netif1",
     "source": {
-	"location": "http://example.org:8080/compute1"
+	"location": "/compute1"
     },
     "target": {
-	"location": "http://example.org:8080/network1"
+	"location": "/network1"
     },
     "attributes": {
 	"occi.networkinterface.interface": "eth0",
