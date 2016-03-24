@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<link id="http://example.org:8080/myif" source="http://example.org:8080/myif/mycompute" target="http://example.org:8080/myif/mynetwork" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="networkinterface"/>
+  <mixin scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#" term="ipnetworkinterface"/>
+  <attribute name="occi.core.source.kind" value="http://schemas.ogf.org/occi/infrastructure#compute"/>
+  <attribute name="occi.core.target.kind" value="http://schemas.ogf.org/occi/infrastructure#network"/>
+  <attribute name="occi.networkinterface.address" value="192.168.0.1"/>
+  <attribute name="occi.networkinterface.allocation" value="static"/>
+  <attribute name="occi.networkinterface.interface" value="eth0"/>
+  <attribute name="occi.networkinterface.mac" value="00:11:22:33:44:55"/>
+</link>

@@ -15,6 +15,7 @@
 %%%-------------------------------------------------------------------
 -module(occi_renderer_text).
 
+-include("occi_uri.hrl").
 -include("occi_log.hrl").
 
 %% API
@@ -135,9 +136,25 @@ to_headers(resource, Resource, Headers, Ctx) ->
     H4 = maps:fold(fun (_, undefined, Acc) ->
 			   Acc;
 		       (K, V, Acc) ->
-			   append("x-occi-attribute", r_attribute(K, V), Acc)
+			   append("x-occi-attribute", r_attribute(K, V, Ctx), Acc)
 		   end, H3, occi_resource:attributes(Resource)),
-    append("x-occi-attribute", r_attribute("occi.core.id", Url), H4).
+    append("x-occi-attribute", r_attribute("occi.core.id", Url, Ctx), H4);
+
+to_headers(link, Link, Headers, Ctx) ->
+    Url = occi_uri:to_string(occi_link:id(Link), Ctx),
+    H0 = append("category", r_category_id(kind, occi_resource:kind(Link)), Headers),
+    H1 = lists:foldl(fun (MixinId, Acc) ->
+			     append("category", r_category_id(mixin, MixinId), Acc)
+		     end, H0, occi_link:mixins(Link)),
+    H2 = lists:foldl(fun (Action, Acc) ->
+			     append("link", r_action_link(Url, Action), Acc)
+		     end, H1, occi_link:actions(Link)),
+    H3 = maps:fold(fun (_, undefined, Acc) ->
+			   Acc;
+		       (K, V, Acc) ->
+			   append("x-occi-attribute", r_attribute(K, V, Ctx), Acc)
+		   end, H2, occi_link:attributes(Link)),
+    append("x-occi-attribute", r_attribute("occi.core.id", Url, Ctx), H3).
 
 
 r_attribute_defs([], Acc) ->
@@ -192,7 +209,7 @@ r_resource_link(Link, Ctx) ->
 		  (_, undefined, Acc) ->
 		      Acc;
 		  (K, V, Acc) ->
-		      [ [ "; ", K, "=", r_attribute_value(V) ] | Acc ]
+		      [ [ "; ", K, "=", r_attribute_value(V, Ctx) ] | Acc ]
 	      end, L, occi_link:attributes(Link)).
 
 
@@ -200,24 +217,30 @@ r_action_link(Id, {Scheme, Term}) ->
     [ "<", Id, "?action=", Term, ">; rel=\"", Scheme, Term, "\"" ].
 
 
-r_attribute(K, V) ->
-    [ K, "=", r_attribute_value(V) ].
+r_attribute(K, V, Ctx) ->
+    [ K, "=", r_attribute_value(V, Ctx) ].
 
 
 r_type_id({Scheme, Term}) ->
     [ Scheme, Term ].
 
 
-r_attribute_value(V) when is_atom(V) ->
+r_attribute_value({Scheme, Term}, _) ->
+    io_lib:format("\"~s~s\"", [Scheme, Term]);
+
+r_attribute_value(V, Ctx) when ?is_uri(V) ->
+    io_lib:format("\"~s\"", [occi_uri:to_string(V, Ctx)]);
+
+r_attribute_value(V, _) when is_atom(V) ->
     io_lib:format("\"~s\"", [V]);
 
-r_attribute_value(V) when is_integer(V) ->
+r_attribute_value(V, _) when is_integer(V) ->
     io_lib:format("~b", [V]);
 
-r_attribute_value(V) when is_float(V) ->
+r_attribute_value(V, _) when is_float(V) ->
     io_lib:format("~g", [V]);
 
-r_attribute_value(V) ->
+r_attribute_value(V, _) ->
     [ "\"", V, "\"" ].
 
 

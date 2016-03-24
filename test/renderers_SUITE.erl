@@ -36,14 +36,12 @@ end_per_suite(_Config) ->
 
 init_per_group('categories', Config) ->
     Object = occi_models:categories(),
-    Ctx = ?ctx,
-    [ {object, Object}, {ctx, Ctx} | Config ];
+    [ {object, Object}, {ctx, ?ctx} | Config ];
 
 init_per_group('core_resource', Config) ->
     Id = occi_uri:from_string(<<"myresource">>, ?ctx),
     Object = occi_resource:new(Id, {"http://schemas.ogf.org/occi/core#", "resource"}),
-    Ctx = ?ctx,
-    [ {object, Object}, {ctx, Ctx} | Config ];
+    [ {object, Object}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_a', Config) ->
     Id = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
@@ -54,8 +52,7 @@ init_per_group('compute_a', Config) ->
 			      "occi.compute.hostname" => "mycompute",
 			      "occi.compute.speed" => 4.5,
 			      "occi.compute.memory" => 2.5 }, client, R0),
-    Ctx = ?ctx,
-    [ {object, R1}, {ctx, Ctx} | Config ];
+    [ {object, R1}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_b', Config) ->
     RId = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
@@ -67,8 +64,23 @@ init_per_group('compute_b', Config) ->
 		      occi_uri:from_string(<<"network0">>, ?ctx), undefined),
     R1 = occi_resource:add_link(L, R),
     R2 = occi_resource:set(#{ "occi.compute.cores" => 4 }, client, R1),
-    Ctx = ?ctx,
-    [ {object, R2}, {ctx, Ctx} | Config ];
+    [ {object, R2}, {ctx, ?ctx} | Config ];
+
+init_per_group('netif', Config) ->
+    Id = occi_uri:from_string(<<"myif">>, ?ctx),
+    Kind = {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"},
+    Mixin = {"http://schemas.ogf.org/occi/infrastructure/networkinterface#", "ipnetworkinterface"},
+    Src = occi_uri:from_string(<<"mycompute">>, Id),
+    SrcKind = {"http://schemas.ogf.org/occi/infrastructure#", "compute"},
+    Target = occi_uri:from_string(<<"mynetwork">>, Id),
+    TargetKind = {"http://schemas.ogf.org/occi/infrastructure#", "network"},
+    L = occi_link:new(Id, Kind, Src, SrcKind, Target, TargetKind),
+    L0 = occi_link:add_mixin(Mixin, L),
+    L1 = occi_link:set(#{ "occi.networkinterface.interface" => "eth0",
+			  "occi.networkinterface.mac" => "00:11:22:33:44:55",
+			  "occi.networkinterface.address" => "192.168.0.1",
+			  "occi.networkinterface.allocation" => "static"}, client, L0),
+    [ {object, L1}, {ctx, ?ctx} | Config ];
 
 init_per_group(_, Config) ->
     Config.
@@ -92,6 +104,7 @@ groups() ->
     ,{'core_resource',       [], [render_xml, render_text, render_json]}
     ,{'compute_a',           [], [render_xml, render_text, render_json]}
     ,{'compute_b',           [], [render_xml, render_text, render_json]}
+    ,{'netif',               [], [render_xml, render_text, render_json]}
     ].
 
 
@@ -101,6 +114,7 @@ all() ->
     ,{group, 'core_resource'}
     ,{group, 'compute_a'}
     ,{group, 'compute_b'}
+    ,{group, 'netif'}
     ].
 
 

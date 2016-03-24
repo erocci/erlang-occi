@@ -1,0 +1,21 @@
+{
+  "attributes": {
+    "occi.networkinterface.address": "192.168.0.1",
+    "occi.networkinterface.allocation": "static",
+    "occi.networkinterface.interface": "eth0",
+    "occi.networkinterface.mac": "00:11:22:33:44:55"
+  },
+  "id": "http://example.org:8080/myif",
+  "kind": "http://schemas.ogf.org/occi/infrastructure#networkinterface",
+  "mixins": [
+    "http://schemas.ogf.org/occi/infrastructure/networkinterface#ipnetworkinterface"
+  ],
+  "source": {
+    "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
+    "location": "http://example.org:8080/myif/mycompute"
+  },
+  "target": {
+    "kind": "http://schemas.ogf.org/occi/infrastructure#network",
+    "location": "http://example.org:8080/myif/mynetwork"
+  }
+}

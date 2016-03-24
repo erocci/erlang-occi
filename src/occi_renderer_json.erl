@@ -76,7 +76,10 @@ r_type(resource, R, Ctx) ->
     case occi_resource:get("occi.core.summary", R) of
 	undefined -> M1;
 	Summary -> M1#{ summary => r_string(Summary) }
-    end.
+    end;
+
+r_type(link, L, Ctx) ->
+    r_link(L, Ctx).  
 
 
 r_kind(Kind, Ctx) ->
