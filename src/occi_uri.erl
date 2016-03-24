@@ -18,7 +18,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--export([urn/1,
+-export([urn/1, path_strip/1,
 	 from_string/1,
 	 from_string/2,
 	 to_string/1,
@@ -58,7 +58,7 @@ from_string(<< "https://", _/binary >> = Url, _Ctx) ->
     uri:from_string(Url);
 
 from_string(Url, Ctx) when ?is_uri(Ctx), is_binary(Url)  ->
-    uri:append_path(Ctx, Url).
+    append_path(Ctx, Url).
 
 
 %% @doc Render uri as binary
@@ -97,16 +97,32 @@ urn(Seed) ->
 append_path(Uri, <<$/, NewPath/binary>>) ->
     append_path(Uri, NewPath);
 
-append_path(Uri=#uri{path = <<>>}, NewPath) ->
-    uri:path(Uri, << $/, NewPath/binary >>);
-
 append_path(Uri=#uri{path=Path}, NewPath) when is_binary(NewPath) ->
-    case binary:last(Path) of
-	$/ ->
-	    uri:path(Uri, <<Path/binary, NewPath/binary>>);
-	_ ->
-	    uri:path(Uri, <<Path/binary, $/, NewPath/binary>>)
-    end.
+    Stripped = path_strip(Path),
+    uri:path(Uri, <<Stripped/binary, $/, NewPath/binary>>).
+
+%%%
+%%% Priv
+%%%
+path_strip(<<>>) ->
+    <<>>;
+
+path_strip(<< $/ >>) ->
+    <<>>;
+
+path_strip(Bin) ->
+    path_strip2(lists:reverse(binary_to_list(Bin))).
+
+
+path_strip2([]) ->
+    <<>>;
+
+path_strip2([ $/ | Tail ]) ->
+    path_strip2(Tail);
+
+path_strip2(L) ->
+    list_to_binary(lists:reverse(L)).
+
 
 %%%
 %%% eunit
@@ -143,5 +159,12 @@ append_path_test_() ->
 		   append_path(from_string(<<"http://localhost/super/">>), <<"path">>)),
      ?_assertMatch(#uri{path = <<"/super/path">>}, 
 		   append_path(from_string(<<"http://localhost/super/">>), <<"/path">>))
+    ].
+
+path_strip_test_() ->
+    [
+     ?_assertMatch(<<"/my/path">>, path_strip(<<"/my/path/">>)),
+     ?_assertMatch(<<"/my/path">>, path_strip(<<"/my/path//">>)),
+     ?_assertMatch(<<"/my/path">>, path_strip(<<"/my/path">>))
     ].
 -endif.
