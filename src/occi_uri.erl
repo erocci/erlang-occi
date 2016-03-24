@@ -44,7 +44,10 @@ from_string(S) ->
 %% @doc Parse uri, eventually completing with host/port and path's 
 %% prefix from context
 %% @end
--spec from_string(binary(), t()) -> t().
+-spec from_string(binary() | string(), t()) -> t().
+from_string(Url, Ctx) when is_list(Url) ->
+    from_string(list_to_binary(Url) ,Ctx);
+
 from_string(Url, undefined) ->
     from_string(Url);
 

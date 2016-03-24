@@ -69,7 +69,7 @@ all() ->
 %%%
 %%% Tests
 %%%
--define(entity_id, "http://example.org/entity").
+-define(entity_id, occi_uri:from_string(<<"http://example.org/entity">>)).
 
 -define(mixin0_xml, <<"<?xml version=\"1.0\" ?>"
 		      "<mixin xmlns=\"http://schemas.ogf.org/occi\""
