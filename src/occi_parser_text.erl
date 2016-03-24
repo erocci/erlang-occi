@@ -51,7 +51,7 @@ parse_mixin(H, Ctx) ->
 	    throw({parse_error, {mixin, no_mixin}});
 	[{category, #{ class := mixin, scheme := Scheme, term := Term }=Map }] ->
 	    M0 = occi_mixin:new(Scheme, Term),
-	    Location = occi_uri:to_abs(maps:get(location, Map), Ctx#parse_ctx.url),
+	    Location = occi_uri:from_string(maps:get(location, Map), Ctx#parse_ctx.url),
 	    M1 = occi_mixin:location(Location, M0),
 	    case maps:get(title, Map, undefined) of
 		undefined ->
@@ -81,7 +81,7 @@ parse_entity2(H, Ctx) ->
     Attributes = p_attributes(orddict:find('x-occi-attribute', H)),
     {Id, Attributes2} = case lists:keytake(<<"occi.core.id">>, 2, Attributes) of
 			    {value, {attribute, _, {string, SId}}, Rest} ->
-				{occi_uri:to_abs(SId, Ctx#parse_ctx.url), Rest};
+				{occi_uri:from_string(SId, Ctx#parse_ctx.url), Rest};
 			    {value, {attribute, _, {Type, _}}, _} ->
 				throw({parse_error, {entity, {<<"occi.core.id">>, Type}}});
 			    false ->
@@ -115,11 +115,11 @@ p_resource_link(Source, SourceKind, Link, Ctx) ->
 	     undefined ->
 		 occi_utils:urn(Source);
 	     Self ->
-		 occi_uri:to_abs(Self, Ctx#parse_ctx.url)
+		 occi_uri:from_string(Self, Ctx#parse_ctx.url)
 	 end,
     Categories = maps:get(categories, Link, [?link_kind_id]),
     {Kind, MixinIds} = filter_categories(Categories, undefined, []),
-    Target = occi_uri:to_abs(maps:get(target, Link), Ctx#parse_ctx.url),
+    Target = occi_uri:from_string(maps:get(target, Link), Ctx#parse_ctx.url),
     [ TargetKind | _ ] = maps:get(rel, Link),
     Attributes = maps:get(attributes, Link),
     p_link2(Id, Kind, MixinIds, Source, occi_kind:id(SourceKind), 
@@ -129,7 +129,7 @@ p_resource_link(Source, SourceKind, Link, Ctx) ->
 p_link(Id, Kind, MixinIds, Attributes, Ctx) ->
     {Source, Attrs2} = case lists:keytake(<<"occi.core.source">>, 2, Attributes) of
 			   {value, {attribute, _, {string, V}}, Rest} ->
-			       {occi_uri:to_abs(V, Ctx#parse_ctx.url), Rest};
+			       {occi_uri:from_string(V, Ctx#parse_ctx.url), Rest};
 			   {value, {attribute, _, {Type, _}}, _} ->
 			       throw({parse_error, {link, {<<"occi.core.source">>, Type}}});
 			   false ->
@@ -145,7 +145,7 @@ p_link(Id, Kind, MixinIds, Attributes, Ctx) ->
 			   end,
     {Target, Attrs4} = case lists:keytake(<<"occi.core.target">>, 2, Attrs3) of
 			   {value, {attribute, _, {string, V2}}, Rest2} ->
-			       {occi_uri:to_abs(V2, Ctx#parse_ctx.url), Rest2};
+			       {occi_uri:from_string(V2, Ctx#parse_ctx.url), Rest2};
 			   {value, {attribute, _, {Type2, _}}, _} ->
 			       throw({parse_error, {link, {<<"occi.core.target">>, Type2}}});
 			   false ->

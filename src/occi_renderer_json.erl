@@ -147,7 +147,12 @@ r_category(Category, Ctx) ->
 	     Actions ->
 		 M1#{ actions => [ r_type_id(occi_action:id(Action)) || Action <- Actions ] }
 	 end,
-    M2#{ location => iolist_to_binary(occi_utils:ctx(occi_category:location(Category), Ctx)) }.
+    case occi_category:location(Category) of
+	undefined ->
+	    M2;
+	Location ->
+	    M2#{ location => occi_uri:to_string(Location, Ctx) }
+    end.
 
 
 r_attr_def(Def) ->
@@ -202,7 +207,7 @@ r_attr_type(resource) ->
 
 r_link(L, Ctx) ->
     M = r_entity(L, Ctx),
-    M#{ id => r_string(occi_utils:ctx(occi_resource:id(L), Ctx)),
+    M#{ id => occi_uri:to_string(occi_resource:id(L), Ctx),
 	source => r_link_end(occi_link:get("occi.core.source", L), 
 			     occi_link:get("occi.core.source.kind", L), Ctx),
 	target => r_link_end(occi_link:get("occi.core.target", L), 
@@ -226,7 +231,7 @@ r_entity(E, Ctx) ->
 	     Actions -> 
 		 M2#{ actions => [ r_type_id(Action) || Action <- Actions ] }
 	 end,
-    M4 = M3#{ id => r_string(occi_utils:ctx(occi_entity:id(E), Ctx)) },
+    M4 = M3#{ id => occi_uri:to_string(occi_entity:id(E), Ctx) },
     case occi_link:get("occi.core.title", E) of
 	undefined -> M4;
 	Title -> M4#{ title => r_string(Title) }
@@ -244,10 +249,10 @@ r_links([ Link | Tail ], Acc, Ctx) ->
     r_links(Tail, [ r_link(Link, Ctx) | Acc ], Ctx).
 
 r_link_end(Location, undefined, Ctx) ->
-    #{ location => r_string(occi_utils:ctx(Location, Ctx)) };
+    #{ location => r_string(occi_uri:to_string(Location, Ctx)) };
 
 r_link_end(Location, Kind, Ctx) ->
-    #{ location => r_string(occi_utils:ctx(Location, Ctx)),
+    #{ location => occi_uri:to_string(Location, Ctx),
        kind => r_type_id(Kind) }.
 
 

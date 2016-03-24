@@ -78,7 +78,7 @@ to_headers(kind, Kind, Headers, Ctx) ->
 	 end,
     C2 = case occi_kind:location(Kind) of
 	     undefined -> C1;
-	     Location -> [C1, "; location=\"", occi_utils:ctx(Location, Ctx), "\""]
+	     Location -> [C1, "; location=\"", occi_uri:to_string(Location, Ctx), "\""]
 	 end,
     C3 = case r_attribute_defs(occi_kind:attributes(Kind), []) of
 	     [] -> C2;
@@ -99,7 +99,7 @@ to_headers(mixin, Mixin, Headers, Ctx) ->
 	 end,
     C2 = case occi_mixin:location(Mixin) of
 	     undefined -> C1;
-	     Location -> [C1, "; location=\"", occi_utils:ctx(Location, Ctx), "\""]
+	     Location -> [C1, "; location=\"", occi_uri:to_string(Location, Ctx), "\""]
 	 end,
     C3 = case r_attribute_defs(occi_mixin:attributes(Mixin), []) of
 	     [] -> C2;
@@ -121,7 +121,7 @@ to_headers(action, Action, Headers, _Ctx) ->
     append("category", lists:flatten(C1), Headers);
 
 to_headers(resource, Resource, Headers, Ctx) ->
-    Url = occi_utils:ctx(occi_resource:id(Resource), Ctx),
+    Url = occi_uri:to_string(occi_resource:id(Resource), Ctx),
     H0 = append("category", r_category_id(kind, occi_resource:kind(Resource)), Headers),
     H1 = lists:foldl(fun (MixinId, Acc) ->
 			     append("category", r_category_id(mixin, MixinId), Acc)
@@ -174,9 +174,9 @@ r_resource_link(Link, Ctx) ->
     Categories = [ r_type_id(occi_link:kind(Link)), 
 		   [ r_type_id(MixinId) || MixinId <- occi_link:mixins(Link) ]],
     L = [ 
-	  "<", occi_utils:ctx(occi_link:get("occi.core.target", Link), Ctx), ">; rel=\"", 
+	  "<", occi_uri:to_string(occi_link:get("occi.core.target", Link), Ctx), ">; rel=\"", 
 	  r_type_id(Rel), "\"; self=\"", 
-	  occi_utils:ctx(occi_link:id(Link), Ctx) ,
+	  occi_uri:to_string(occi_link:id(Link), Ctx) ,
 	  "\"; category=\"", Categories, "\""
 	], 
     maps:fold(fun ("occi.core.id", _, Acc) ->

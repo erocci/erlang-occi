@@ -137,7 +137,7 @@ handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos,
 	     undefined ->
 		 K1;
 	     _ ->
-		 Location = occi_uri:to_abs(attr("location", A, Term), Ctx),
+		 Location = occi_uri:from_string(attr("location", A, Term), Ctx),
 		 occi_kind:location(Location, K1)
 	 end,
     S#{ stack := [ {kind, K2}, {extension, Ext} | Stack ] };
@@ -178,7 +178,7 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos,
 	     undefined ->
 		 M1;
 	     _ ->
-		 Location = occi_uri:to_abs(attr("location", A, Term), Ctx),
+		 Location = occi_uri:from_string(attr("location", A, Term), Ctx),
 		 occi_mixin:location(Location, M1)
 	 end,
     S#{ stack := [ {mixin, M2}, {extension, Ext} | Stack ] };
@@ -202,7 +202,7 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack
     Term = attr("term", A),
     M0 = occi_mixin:new(attr("scheme", A), Term),
     M1 = occi_mixin:title(attr("title", A, ""), M0),
-    Location = occi_uri:to_abs(attr("location", A, Term), Ctx),
+    Location = occi_uri:from_string(attr("location", A, Term), Ctx),
     M2 = occi_mixin:location(Location, M1),
     S#{ stack := [ {mixin, M2} | Stack ] };
 
@@ -221,7 +221,7 @@ handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {link, _, _
     S#{ stack := Stack };
 
 handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := Stack, url := Ctx }=S) ->
-    Id = occi_uri:to_abs(attr("id", A), Ctx),
+    Id = occi_uri:from_string(attr("id", A), Ctx),
     Map = #{ links => [],
 	     mixins => [],
 	     attributes => #{ "occi.core.title" => attr("title", A, undefined) } },
@@ -241,11 +241,11 @@ handle_event({endElement, ?occi_uri, "resource", _QN}, _,
     S#{ stack := [ {document, {resource, R2}} ] };
 
 handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack, url := Ctx }=S) ->
-    Id = occi_uri:to_abs(attr("id", A), Ctx),
-    Target = occi_uri:to_abs(attr("target", A), Ctx),
+    Id = occi_uri:from_string(attr("id", A), Ctx),
+    Target = occi_uri:from_string(attr("target", A), Ctx),
     Source = case Stack of
 		 [ {resource, ResId, _, _} | _ ] -> ResId;
-		 _ -> occi_uri:to_abs(attr("source", A), Ctx)
+		 _ -> occi_uri:from_string(attr("source", A), Ctx)
 	     end,
     Map = #{ attributes => #{ "occi.core.title" => attr("title", A, undefined) },
 	     mixins => [] },

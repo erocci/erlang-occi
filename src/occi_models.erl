@@ -16,7 +16,7 @@
 
 -export([start_link/0]).
 
--export([import/2,
+-export([import/1,
 	 categories/0,
 	 category/1,
 	 kind/2,
@@ -44,8 +44,9 @@ start_link() ->
 %% @doc Import an extension into the model
 %%
 %% @end
--spec import(occi_extension:t(), parse_ctx()) -> ok.
-import(E, Ctx) ->
+-spec import(occi_extension:t()) -> ok.
+import(E) ->
+    Ctx = #parse_ctx{ valid = model },
     ok = load_imports(occi_extension:imports(E), Ctx),
     ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
     ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
@@ -171,7 +172,7 @@ load_imports([ Scheme | Imports ], Ctx) ->
 	{ok, Path} ->
 	    case file:read_file(Path) of
 		{ok, Bin} ->
-		    import(occi_extension:load(occi_utils:mimetype(Path), Bin, Ctx), Ctx);
+		    import(occi_extension:load(occi_utils:mimetype(Path), Bin, Ctx));
 		{error, Err} ->
 		    throw({import, Err})
 	    end,

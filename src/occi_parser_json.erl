@@ -68,7 +68,7 @@ p_mixin2(_, _, _) ->
 
 p_mixin3(#{ <<"location">> := Location}=Map, Scheme, Term, Ctx) ->
     M0 = occi_mixin:new(Scheme, Term),
-    AbsLoc = occi_uri:to_abs(Location, Ctx#parse_ctx.url),
+    AbsLoc = occi_uri:from_string(Location, Ctx#parse_ctx.url),
     M1 = occi_mixin:location(AbsLoc, M0),
     case maps:get(<<"title">>, Map, undefined) of
 	undefined ->
@@ -82,7 +82,7 @@ p_mixin3(_, _, _, _) ->
 
 
 p_entity(#{ <<"id">> := Id }=Map, Ctx) ->
-    Url = occi_uri:to_abs(Id, Ctx#parse_ctx.url),
+    Url = occi_uri:from_string(Id, Ctx#parse_ctx.url),
     p_entity2(Url, Map, Ctx);
 	
 p_entity(_Map, _Ctx) ->
@@ -131,7 +131,7 @@ p_resource_links([ Link | Tail ], Valid, R) ->
 
 
 p_resource_link(#{ <<"id">> := Id }=Link, Ctx) ->
-    Url = occi_uri:to_abs(Id, Ctx#parse_ctx.url),
+    Url = occi_uri:from_string(Id, Ctx#parse_ctx.url),
     p_resource_link2(Url, Link, Ctx);
 
 p_resource_link(_, _) ->
@@ -148,7 +148,7 @@ p_resource_link2(_, _, _) ->
 p_link(Id, Kind, Mixins,
        #{ <<"source">> := #{ <<"location">> := SourceLocation }=Source }=Map, Ctx) ->
     p_link2(Id, Kind, Mixins, 
-	    occi_uri:to_abs(SourceLocation, Ctx#parse_ctx.url), Source, Map, Ctx);
+	    occi_uri:from_string(SourceLocation, Ctx#parse_ctx.url), Source, Map, Ctx);
 
 p_link(_Id, _Kind, _Mixins, _Map, _Ctx) ->
     throw({parse_error, {link, missing_source}}).
@@ -160,7 +160,7 @@ p_link2(Id, Kind, Mixins, SourceLocation, Source,
     TargetKind = maps:get(<<"kind">>, Target, undefined),
     Link = occi_link:new(Id, Kind,
 			 SourceLocation, SourceKind, 
-			 occi_uri:to_abs(TargetLocation, Ctx#parse_ctx.url), TargetKind),
+			 occi_uri:from_string(TargetLocation, Ctx#parse_ctx.url), TargetKind),
     Link1 = lists:foldl(fun (MixinId, Acc) ->
 				occi_resource:add_mixin(MixinId, Acc)
 			end, Link, Mixins),

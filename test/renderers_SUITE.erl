@@ -10,10 +10,12 @@
 
 -compile(export_all).
 
+-include("../src/occi_rendering.hrl").
+
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
 
--define(ctx, uri:new(<<"http">>, <<"">>, <<"example.org">>, 8080, <<"/">>, [], <<"">>)).
+-define(ctx, uri:from_string(<<"http://example.org:8080/">>)).
 
 suite() ->
     [{timetrap,{seconds,30}}].
@@ -22,7 +24,7 @@ init_per_suite(Config) ->
     {ok, _} = application:ensure_all_started(occi),
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Xml} = file:read_file(ExtFile),
-    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml)),
+    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml, #parse_ctx{ valid = model })),
     Config.
 
 
@@ -38,12 +40,14 @@ init_per_group('categories', Config) ->
     [ {object, Object}, {ctx, Ctx} | Config ];
 
 init_per_group('core_resource', Config) ->
-    Object = occi_resource:new("myresource", {"http://schemas.ogf.org/occi/core#", "resource"}),
+    Id = occi_uri:from_string(<<"myresource">>, ?ctx),
+    Object = occi_resource:new(Id, {"http://schemas.ogf.org/occi/core#", "resource"}),
     Ctx = ?ctx,
     [ {object, Object}, {ctx, Ctx} | Config ];
 
 init_per_group('compute_a', Config) ->
-    R = occi_resource:new("ns1/mycompute0", {"http://schemas.ogf.org/occi/infrastructure#", "compute"}),
+    Id = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
+    R = occi_resource:new(Id, {"http://schemas.ogf.org/occi/infrastructure#", "compute"}),
     R0 = occi_resource:add_mixin({"http://occi.example.org/occi/infrastructure/os_tpl#", "debian6"}, R),
     R1 = occi_resource:set(#{ "occi.core.title" => "My super compute",
 			      "occi.compute.cores" => 4,
@@ -54,12 +58,13 @@ init_per_group('compute_a', Config) ->
     [ {object, R1}, {ctx, Ctx} | Config ];
 
 init_per_group('compute_b', Config) ->
-    RId = "ns1/mycompute0",
+    RId = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
     RKind = {"http://schemas.ogf.org/occi/infrastructure#", "compute"},
     R = occi_resource:new(RId, RKind),
-    L = occi_link:new("myif0", {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}, 
+    LId = occi_uri:from_string(<<"myif0">>, ?ctx),
+    L = occi_link:new(LId, {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}, 
 		      RId, RKind, 
-		      "network0", undefined),
+		      occi_uri:from_string(<<"network0">>, ?ctx), undefined),
     R1 = occi_resource:add_link(L, R),
     R2 = occi_resource:set(#{ "occi.compute.cores" => 4 }, client, R1),
     Ctx = ?ctx,

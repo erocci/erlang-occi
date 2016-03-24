@@ -67,7 +67,7 @@ to_xml(kind, K, Ctx) ->
 	 end,
     A1 = case occi_kind:location(K) of
 	     undefined -> A0;
-	     Location -> [{location, occi_utils:ctx(Location, Ctx)} | A0]
+	     Location -> [{location, occi_uri:to_string(Location, Ctx)} | A0]
 	 end,
     C0 = case occi_kind:parent(K) of
 	     undefined -> [];
@@ -90,7 +90,7 @@ to_xml(mixin, M, Ctx) ->
 	 end,
     A1 = case occi_mixin:location(M) of
 	     undefined -> A0;
-	     Location -> [{location, occi_utils:ctx(Location, Ctx)} | A0]
+	     Location -> [{location, occi_uri:to_string(Location, Ctx)} | A0]
 	 end,
     C = lists:foldl(fun (DepId, Acc) ->
 			    [ category_id(depends, DepId) | Acc ]
@@ -167,7 +167,7 @@ to_xml(attribute, Attr, _Ctx) ->
 
 to_xml(resource, R, Ctx) ->
     Id = occi_resource:id(R),
-    A = [{id, occi_utils:ctx(Id, Ctx)}],
+    A = [{id, occi_uri:to_string(Id, Ctx)}],
     A1 = case occi_resource:get("occi.core.title", R) of
 	     undefined -> A;
 	     Title -> [{title, Title} | A]
@@ -194,9 +194,9 @@ to_xml(resource, R, Ctx) ->
 to_xml(link, L, Ctx) ->
     Id = occi_link:id(L),
     A = [
-	 {target, occi_utils:ctx(occi_link:get("occi.core.target", L), Ctx)},
-	 {source, occi_utils:ctx(occi_link:get("occi.core.source", L), Ctx)},
-	 {id, occi_utils:ctx(Id, Ctx)}
+	 {target, occi_uri:to_string(occi_link:get("occi.core.target", L), Ctx)},
+	 {source, occi_uri:to_string(occi_link:get("occi.core.source", L), Ctx)},
+	 {id, occi_uri:to_string(Id, Ctx)}
 	],
     A1 = case occi_link:get("occi.core.title", L) of
 	     undefined -> A;
