@@ -13,7 +13,8 @@
 -include_lib("annotations/include/annotations.hrl").
 
 -export([parse_model/3,
-	 parse_entity/3]).
+	 parse_entity/3,
+	 parse_collection/2]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -49,9 +50,40 @@ parse_entity(Type, Bin, Ctx) when Type =:= entity;
     end.
 
 
+-spec parse_collection(iolist(), parse_ctx()) -> occi_collection:t().
+parse_collection(Bin, Ctx) ->
+    p_collection(jsx:decode(Bin, [return_maps]), Ctx).
+
+
 %%%
 %%% Parsers
 %%%
+p_collection(Map, Ctx) ->
+    C = occi_collection:new(),
+    Resources = lists:map(fun (E) ->
+				  p_collection_entity(E, Ctx)
+			  end, maps:get(<<"resources">>, Map, [])),
+    C0 = occi_collection:append(Resources, C),
+    Links = lists:map(fun (E) ->
+			      p_collection_entity(E, Ctx)
+		      end, maps:get(<<"links">>, Map, [])),
+    occi_collection:append(Links, C0).
+
+
+p_collection_entity(#{ <<"id">> := Id }=M, Ctx) ->
+    p_collection_entity2(occi_uri:from_string(Id, Ctx#parse_ctx.url), M, Ctx);
+
+p_collection_entity(_, _Ctx) ->
+    throw({parse_error, {collection, missing_id}}).
+
+
+p_collection_entity2(Id, #{ <<"kind">> := _Kind }=Map, Ctx) ->
+    p_entity2(Id, Map, Ctx);
+
+p_collection_entity2(Id, _M, _Ctx) ->
+    {Id, undefined}.
+
+
 p_mixin(#{ <<"scheme">> := Scheme }=Map, Ctx) ->
     p_mixin2(Map, binary_to_list(Scheme), Ctx);
 

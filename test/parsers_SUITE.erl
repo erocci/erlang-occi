@@ -110,8 +110,8 @@ init_per_group('user_mixin', Config) ->
 
 init_per_group('collection', Config) ->
     Fun = fun(C)  ->
-		  ?assertMatch([<<"http://localhost:8080/path/resource0">>, <<"http://localhost:8080/path/resource1">>],
-			       occi_collection:ids(C))
+		  ?assertMatch([<<"http://localhost:8080/resource0">>, <<"http://localhost:8080/resource1">>],
+			       lists:map(fun (Id) -> occi_uri:to_string(Id) end, occi_collection:ids(C)))
 	  end,
     Load = fun (Type, Bin) -> occi_collection:load(Type, Bin, ?ctx) end,
     [ {check, Fun}, {load, Load} | Config ];

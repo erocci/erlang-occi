@@ -13,7 +13,8 @@
 -include_lib("annotations/include/annotations.hrl").
 
 -export([parse_model/3,
-	 parse_entity/3]).
+	 parse_entity/3,
+	 parse_collection/2]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -40,6 +41,14 @@ parse_entity(Type, Bin, Ctx) when Type =:= entity;
 	true -> Entity;
 	false -> throw({parse_error, {type, Entity}})
     end.
+
+
+-spec parse_collection(iolist(), parse_ctx()) -> occi_collection:t().
+parse_collection(Bin, Ctx) ->
+    Headers = parse_headers(Bin),
+    Locations = p_locations(orddict:find('x-occi-location', Headers), Ctx),
+    C = occi_collection:new(),
+    occi_collection:append(Locations, C).
 
 
 %%%
@@ -179,6 +188,25 @@ p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, 
 -define(is_lowercase(C), C >= 97, C =< 122).
 -define(is_uppercase(C), C >= 65, C =< 90).
 -define(is_digit(C), C >= 48, C =< 57).
+
+p_locations(error, _Ctx) ->
+    [];
+
+p_locations({ok, Values}, Ctx) ->
+    p_locations(Values, [], Ctx).
+
+
+p_locations([], Acc, _Ctx) ->
+    lists:reverse(Acc);
+
+p_locations([ Bin | Tail ], Acc, Ctx) ->
+    case p_location_value(eat_ws(Bin)) of
+	{location, Location} ->
+	    p_locations(Tail, [ occi_uri:from_string(Location, Ctx#parse_ctx.url) | Acc ], Ctx);
+	Else ->
+	    throw({parse_error, {invalid_location, Else}})
+    end.
+
 
 p_categories(error) -> 
     [];
@@ -413,7 +441,8 @@ p_value(Bin, attributes) ->
     p_attributes_def(Bin);
 
 p_value(Bin, actions) ->
-    p_actions(Bin);
+    {rel, Actions, Rest} = p_rel(Bin),
+    {actions, Actions, Rest};
 
 p_value(Bin, category) ->
     p_link_type(eat_ws(Bin), <<>>, []);
@@ -485,6 +514,30 @@ p_value2(<< C, _Rest/binary >>, _Key) ->
     throw({parse_error, {value, C}}).
 
 
+p_location_value(<<>>) ->
+    throw({parse_error, {location, <<>>}});
+
+p_location_value(<< C, Rest/binary >>) ->
+    p_location_value2(Rest, <<C>>).
+
+
+p_location_value2(<<>>, Acc) ->
+    {location, Acc};
+
+p_location_value2(<< $\n, Rest/binary >>, Acc) ->
+    p_location_value3(eat_ws(Rest), Acc);
+
+p_location_value2(<< C, Rest/binary >>, Acc) ->
+    p_location_value2(Rest, << Acc/binary, C >>).
+
+
+p_location_value3(<<>>, Acc) ->
+    {location, Acc};
+
+p_location_value3(<< C, _Rest/binary >>, _Acc) ->
+    throw({parse_error, {location, C}}).
+
+
 p_location(<<>>) ->
     throw({parse_error, {location, <<>>}});
 
@@ -499,8 +552,8 @@ p_location2(<<>>, _Acc) ->
     throw({parse_error, {location, <<>>}});
 
 p_location2(<< C, _Rest/binary >>, _Acc) when C =:= $\n;
-					    C =:= $\s;
-					    C =:= $\t ->
+					      C =:= $\s;
+					      C =:= $\t ->
     throw({parse_error, {location, C}});
 
 p_location2(<< $", Rest/binary >>, Acc) ->
@@ -511,12 +564,10 @@ p_location2(<< C, Rest/binary >>, Acc) ->
 
 
 p_location3(<<>>, Acc) ->
-    {uri, Uri} = p_uri(Acc),
-    {location, Uri, <<>>};
+    {location, Acc, <<>>};
 
 p_location3(<< $;, Rest/binary >>, Acc) ->
-    {uri, Uri} = p_uri(Acc),
-    {location, Uri, Rest};
+    {location, Acc, Rest};
 
 p_location3(<< C, _Rest/binary >>, _Acc) ->
     throw({parse_error, {location, C}}).
@@ -536,12 +587,10 @@ p_rel2(<<>>, _Acc) ->
     throw({parse_error, {rel, <<>>}});
 
 p_rel2(<< $", Rest/binary >>, Acc) ->
-    {uri, Uri} = p_uri(Acc),
-    p_rel4(eat_ws(Rest), Uri);
+    p_rel4(eat_ws(Rest), Acc);
 
 p_rel2(<< $\s, Rest/binary >>, Acc) ->
-    {uri, Uri} = p_uri(Acc),
-    p_rel3(eat_ws(Rest), <<>>, [Uri]);
+    p_rel3(eat_ws(Rest), <<>>, [Acc]);
 
 p_rel2(<< C, Rest/binary >>, Acc) ->
     p_rel2(Rest, << Acc/binary, C >>).
@@ -554,8 +603,7 @@ p_rel3(<< $", Rest/binary >>, <<>>, Rels) ->
     p_rel4(eat_ws(Rest), lists:reverse(Rels));
 
 p_rel3(<< $\s, Rest/binary >>, Acc, Rels) ->
-    {uri, Uri} = p_uri(Acc),
-    p_rel3(eat_ws(Rest), <<>>, [ Uri | Rels ]);
+    p_rel3(eat_ws(Rest), <<>>, [ Acc | Rels ]);
 
 p_rel3(<< C, Rest/binary >>, Acc, Rels) ->
     p_rel3(Rest, << Acc/binary, C >>, Rels).
@@ -582,8 +630,7 @@ p_scheme(<< C, _Rest/binary >>) ->
 
 
 p_scheme2(<< $", Rest/binary >>, Acc) ->
-    {uri, Uri} = p_uri(Acc),
-    p_scheme3(eat_ws(Rest), Uri);
+    p_scheme3(eat_ws(Rest), Acc);
 
 p_scheme2(<< C, Rest/binary >>, Acc) ->
     p_scheme2(Rest, << Acc/binary, C >>).
@@ -600,23 +647,13 @@ p_link_type(<<>>, <<>>, []) ->
     throw({parse_error, {'link-type', <<>>}});
 
 p_link_type(<<>>, Acc, Categories) ->
-    {uri, Uri} = p_uri(Acc),
-    {category, lists:reverse([ Uri | Categories ]), <<>>};
+    {category, lists:reverse([ Acc | Categories ]), <<>>};
 
 p_link_type(<< $\s, Rest/binary >>, Acc, Categories) ->
-    {uri, Uri} = p_uri(Acc),
-    p_link_type(eat_ws(Rest), <<>>, [ Uri | Categories ]);
+    p_link_type(eat_ws(Rest), <<>>, [ Acc | Categories ]);
 
 p_link_type(<< C, Rest/binary >>, Acc, Categories) ->
     p_link_type(Rest, << Acc/binary, C >>, Categories).
-
-
-p_uri(Bin) ->
-    try uri:from_string(Bin) of
-	_ -> {uri, Bin}
-    catch error:{badmatch, _} ->
-	    throw({parse_error, {uri, Bin}})
-    end.
 
 
 p_number(<<>>, Acc) ->
@@ -722,30 +759,6 @@ p_attribute_prop(<< C, _Rest/binary >>, _Attr, _AttrList) ->
     throw({parse_error, {attribute_prop, C}}).
 
 
-p_actions(<<>>) ->
-    [];
-
-p_actions(<< $", Rest/binary >>) ->
-    p_actions(Rest, []);
-
-p_actions(<< C, _Rest/binary >>) ->
-    throw({parse_error, {action, C}}).
-
-
-p_actions(<<>>, _Acc) ->
-    throw({parse_error, {actions, <<>>}});
-
-p_actions(<< $", Rest/binary >>, Acc) ->
-    {actions, lists:reverse(Acc), Rest};
-
-p_actions(<< $\s, Rest/binary >>, Acc) ->
-    p_attributes(Rest, Acc);
-
-p_actions(Bin, Acc) ->
-    {type_id, Action, Rest} = p_type_id(Bin),
-    p_actions(Rest, [ Action | Acc ]).
-
-
 %%%
 %%% Lex functions
 %%%
@@ -787,14 +800,6 @@ p_qs2(<< End, Rest/binary >>, End, Acc) ->
 
 p_qs2(<< C, Rest/binary >>, End, Acc) ->
     p_qs2(Rest, End, << Acc/binary, C >>).
-
-
-p_type_id(Bin) ->
-    {uri, Uri, Rest} = p_uri(Bin),
-    case uri:frag(Uri) of
-	<<>> -> throw({parse_error, {type_id, Uri}});
-	_Term -> {type_id, Uri, Rest}
-    end.
 
 
 p_uri_ref(Bin) ->

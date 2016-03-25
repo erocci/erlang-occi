@@ -14,7 +14,8 @@
 -include_lib("xmerl/include/xmerl.hrl").
 
 -export([parse_model/3,
-	 parse_entity/3]).
+	 parse_entity/3,
+	 parse_collection/2]).
 
 -type state() :: #{}.
 
@@ -45,15 +46,23 @@ parse_entity(entity, Xml, Ctx) ->
 	{Other, _} -> throw({parse_error, {invalid_type, Other}})
     end;
 
-parse_entity(resource, Xml, Valid) ->
-    case parse(Xml, Valid) of
+parse_entity(resource, Xml, Ctx) ->
+    case parse(Xml, Ctx) of
 	{resource, R} -> R;
 	{Other, _} -> throw({parse_error, {invalid_type, Other}})
     end;
 
-parse_entity(link, Xml, Valid) ->
-    case parse(Xml, Valid) of
+parse_entity(link, Xml, Ctx) ->
+    case parse(Xml, Ctx) of
 	{link, L} -> L;
+	{Other, _} -> throw({parse_error, {invalid_type, Other}})
+    end.
+
+
+-spec parse_collection(iolist(), parse_ctx()) -> occi_collection:t().
+parse_collection(Xml, Ctx) ->
+    case parse(Xml, Ctx) of
+	{collection, C} -> C;
 	{Other, _} -> throw({parse_error, {invalid_type, Other}})
     end.
 
@@ -104,6 +113,22 @@ handle_event({startPrefixMapping, Prefix, URI}, _, #{ ns := NS }=S) ->
 
 handle_event({endPrefixMapping, _Prefix}, _, S) ->
     S;
+
+handle_event({startElement, ?occi_uri, "collection", _QN, A}, _Pos, #{ stack := Stack, 
+								       url := Ctx }=S) ->
+    C = case attr("id", A, undefined) of
+	    undefined ->
+		Scheme = attr("scheme", A),
+		Term = attr("term", A),
+		occi_collection:new({Scheme, Term});
+	    Id ->
+		occi_collection:new(occi_uri:from_string(Id, Ctx))
+	end,
+    S#{ stack => [ {collection, C} | Stack ] };
+
+handle_event({endElement, ?occi_uri, "collection", _QN}, _, 
+	     #{ stack := [ {collection, Coll},  {document, undefined} ] }=S) ->
+    S#{ stack := [ {document, {collection, Coll} } ]};
 
 handle_event({startElement, ?occi_uri, "extension", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Scheme = attr("scheme", A),
@@ -227,18 +252,22 @@ handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := St
 	     attributes => #{ "occi.core.title" => attr("title", A, undefined) } },
     S#{ stack := [ {resource, Id, undefined, Map} | Stack ] };
 
-%% resource can only be a root node
 handle_event({endElement, ?occi_uri, "resource", _QN}, _,
-	     #{ stack := [ {resource, Id, Kind, Map}, {document, undefined}], check := Check }=S) ->
-    R = occi_resource:new(Id, Kind),
-    R0 = lists:foldl(fun (MixinId, Acc) ->
-			     occi_resource:add_mixin(MixinId, Acc)
-		     end, R, maps:get(mixins, Map)),
-    R1 = occi_resource:set(maps:get(attributes, Map), Check, R0),
-    R2 = lists:foldl(fun (Link, Acc) ->
-			     occi_resource:add_link(Link, Acc)
-		     end, R1, maps:get(links, Map)),
-    S#{ stack := [ {document, {resource, R2}} ] };
+	     #{ stack := [ {resource, Id, Kind, Map}, {document, undefined} ], check := Check }=S) ->
+    R = build_resource(Id, Kind, Map, Check),
+    S#{ stack := [ {document, {resource, R}} ] };
+
+handle_event({endElement, ?occi_uri, "resource", _QN}, _,
+	     #{ stack := [ {resource, Id, undefined, _Map}, {collection, Coll} | Stack ] }=S) ->
+    R = {Id, undefined},
+    Coll1 = occi_collection:append([R], Coll),
+    S#{ stack := [ {collection, Coll1} | Stack ] };
+
+handle_event({endElement, ?occi_uri, "resource", _QN}, _,
+	     #{ stack := [ {resource, Id, Kind, Map}, {collection, Coll} | Stack ], check := Check }=S) ->
+    R = build_resource(Id, Kind, Map, Check),
+    Coll1 = occi_collection:append([R], Coll),
+    S#{ stack := [ {collection, Coll1} | Stack ] };
 
 handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack, url := Ctx }=S) ->
     Id = occi_uri:from_string(attr("id", A), Ctx),
@@ -254,23 +283,26 @@ handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack,
 %% link is child of resource
 handle_event({endElement, ?occi_uri, "link", _QN}, _,
 	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {resource, ResId, ResKind, ResMap} | Stack ], check := Check }=S) ->
-    L = occi_link:new(Id, Kind, Source, ResKind, Target, undefined),
-    L0 = lists:foldl(fun (MixinId, Acc) ->
-			     occi_link:add_mixin(MixinId, Acc)
-		     end, L, maps:get(mixins, Map)),
-    L1 = occi_link:set(maps:get(attributes, Map), Check, L0),
-    ResMap0 = ResMap#{ links := [ L1 | maps:get(links, ResMap) ]},
+    L = build_link(Id, Kind, Source, ResKind, Target, Map, Check),
+    ResMap0 = ResMap#{ links := [ L | maps:get(links, ResMap) ]},
     S#{stack := [ {resource, ResId, ResKind, ResMap0} | Stack ]};
 
-%% %% link is root node
 handle_event({endElement, ?occi_uri, "link", _QN}, _,
  	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {document, undefined} ], check := Check }=S) ->
-    L = occi_link:new(Id, Kind, Source, undefined, Target, undefined),
-    L0 = lists:foldl(fun (MixinId, Acc) ->
-			     occi_link:add_mixin(MixinId, Acc)
-		     end, L, maps:get(mixins, Map)),
-    L1 = occi_link:set(maps:get(attributes, Map), Check, L0),
-    S#{stack := [ {document, {link, L1}} ]};
+    L = build_link(Id, Kind, Source, undefined, Target, Map, Check),
+    S#{stack := [ {document, {link, L}} ]};
+
+handle_event({endElement, ?occi_uri, "link", _QN}, _,
+ 	     #{ stack := [ {link, Id, undefined, _Source, _Target, _Map}, {collection, Coll} | Stack ] }=S) ->
+    L = {Id, undefined},
+    Coll1 = occi_collection:append([L], Coll),
+    S#{stack := [ {collection, Coll1} | Stack ]};
+
+handle_event({endElement, ?occi_uri, "link", _QN}, _,
+ 	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {collection, Coll} | Stack ], check := Check }=S) ->
+    L = build_link(Id, Kind, Source, undefined, Target, Map, Check),
+    Coll1 = occi_collection:append([L], Coll),
+    S#{stack := [ {collection, Coll1} | Stack ]};
 
 handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
     Term = attr("term", A),
@@ -475,6 +507,24 @@ from_xml_type([Prefix, "resource"], #{ ?occi_uri := Prefix }) ->
 from_xml_type(Else, _) ->
     throw({invalid_type, Else}).
 
+
+build_resource(Id, Kind, Map, Check) ->
+    R = occi_resource:new(Id, Kind),
+    R0 = lists:foldl(fun (MixinId, Acc) ->
+			     occi_resource:add_mixin(MixinId, Acc)
+		     end, R, maps:get(mixins, Map)),
+    R1 = occi_resource:set(maps:get(attributes, Map), Check, R0),
+    lists:foldl(fun (Link, Acc) ->
+			occi_resource:add_link(Link, Acc)
+		end, R1, maps:get(links, Map)).
+
+
+build_link(Id, Kind, Src, SrcKind, Target, Map, Check) ->
+    L = occi_link:new(Id, Kind, Src, SrcKind, Target, undefined),
+    L0 = lists:foldl(fun (MixinId, Acc) ->
+			     occi_link:add_mixin(MixinId, Acc)
+		     end, L, maps:get(mixins, Map)),
+    occi_link:set(maps:get(attributes, Map), Check, L0).
 
 %%%
 %%% eunit

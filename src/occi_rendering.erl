@@ -11,6 +11,7 @@
 
 -export([load_model/4,
 	 load_entity/4,
+	 load_collection/3,
 	 render/3]).
 
 %% @doc Load the specified OCCI category or extension from an iolist()
@@ -54,6 +55,28 @@ load_entity(Type, MimeType, Bin, Ctx) ->
 	    throw({unknown_mimetype, MimeType});
 	Mod -> 
 	    Mod:parse_entity(Type, Bin, Ctx)
+    end.
+
+
+%% @doc Load the specified OCCI collection
+%% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
+%%
+%% Supported mimetypes are:
+%% <ul>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"xml"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
+%% </ul>
+%% @end
+%% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
+-spec load_collection(occi_utils:mimetype(), iolist(), parse_ctx()) -> occi_type:t().
+load_collection(MimeType, Bin, Ctx) ->
+    case parser(MimeType) of
+	undefined -> 
+	    throw({unknown_mimetype, MimeType});
+	Mod -> 
+	    Mod:parse_collection(Bin, Ctx)
     end.
 
 

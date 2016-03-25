@@ -10,7 +10,8 @@
 -include("occi_uri.hrl").
 -include("occi_rendering.hrl").
 
--export([new/1,
+-export([new/0,
+	 new/1,
 	 id/1,
 	 ids/1,
 	 elements/1,
@@ -27,6 +28,13 @@
 		     elements = [] :: [elem()]}).
 
 -type t() :: #collection{}.
+
+
+%% @doc Create a new collection
+%% @end
+-spec new() -> t().
+new() ->
+    #collection{id=undefined}.
 
 
 %% @doc Create a new collection.
