@@ -68,23 +68,20 @@ r_type(categories, Categories, Ctx) ->
     end;
 
 r_type(collection, Coll, Ctx) ->
-    SplitFun = fun (E, {AccR, AccL}) ->
+    SplitFun = fun ({Id, undefined}, Acc) ->
+		       Entity = #{ id => occi_uri:to_string(Id, Ctx) },
+		       Acc#{ entities => [ Entity | maps:get(entities, Acc, []) ] };
+		   ({_, E}, Acc) ->
 		       case occi_type:type(E) of
 			   resource ->
-			       { [ r_type(resource, E, Ctx) | AccR ], AccL };
+			       Resource = r_type(resource, E, Ctx),
+			       Acc#{ resources => [ Resource | maps:get(resources, Acc, []) ] };
 			   link ->
-			       { AccR, [ r_link(E, Ctx) | AccL] }
+			       Link = r_link(E, Ctx),
+			       Acc#{ links => [ Link | maps:get(links, Acc, []) ] }
 		       end
 	       end,
-    {Resources, Links} = lists:foldl(SplitFun, {[], []}, occi_collection:entities(Coll)),
-    M0 = case Resources of
-	     [] -> #{ };
-	     _ -> #{ resource => Resources }
-	 end,
-    case Links of
-	[] -> M0;
-	_ -> M0#{ links => Links }
-    end;
+    lists:foldl(SplitFun, #{}, occi_collection:elements(Coll));
 
 r_type(resource, R, Ctx) ->
     M = r_entity(R, Ctx),

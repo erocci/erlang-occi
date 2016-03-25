@@ -1,5 +1,5 @@
 {
-  "resource": [
+  "resources": [
     {
       "id": "http://example.org:8080/resource1",
       "kind": "http://schemas.ogf.org/occi/core#resource"

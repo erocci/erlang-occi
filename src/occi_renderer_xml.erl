@@ -49,9 +49,11 @@ to_xml(collection, Coll, Ctx) ->
 	    {Scheme, Term} ->
 		[{scheme, Scheme}, {term, Term}]
 	end,
-    C = lists:map(fun (E) ->
+    C = lists:map(fun ({Id, undefined}) ->
+			  {location, [{href, occi_uri:to_string(Id, Ctx)}], []};
+		      ({_, E}) ->
 			  to_xml(occi_type:type(E), E, Ctx)
-		  end, occi_collection:entities(Coll)),
+		  end, occi_collection:elements(Coll)),
     {collection, A, lists:reverse(C)};
 
 

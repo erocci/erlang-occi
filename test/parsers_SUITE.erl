@@ -108,6 +108,14 @@ init_per_group('user_mixin', Config) ->
     Load = fun (Type, Bin) -> occi_mixin:load(Type, Bin, ?ctx) end,
     [ {check, Fun}, {load, Load} | Config ];
 
+init_per_group('collection', Config) ->
+    Fun = fun(C)  ->
+		  ?assertMatch([<<"http://localhost:8080/path/resource0">>, <<"http://localhost:8080/path/resource1">>],
+			       occi_collection:ids(C))
+	  end,
+    Load = fun (Type, Bin) -> occi_collection:load(Type, Bin, ?ctx) end,
+    [ {check, Fun}, {load, Load} | Config ];
+
 init_per_group(_, Config) ->
     Config.
 
@@ -132,6 +140,7 @@ groups() ->
     ,{'compute_a',         [], [parse_xml, parse_text, parse_json]}
     ,{'netif_link',        [], [parse_xml, parse_text, parse_json]}
     ,{'user_mixin',        [], [parse_xml, parse_json, parse_text]}
+    ,{'collection',        [], [parse_xml, parse_json, parse_text]}
     ].
 
 
@@ -143,6 +152,7 @@ all() ->
     ,{group, 'compute_a'}
     ,{group, 'netif_link'}
     ,{group, 'user_mixin'}
+    ,{group, 'collection'}
     ].
 
 
