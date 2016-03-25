@@ -11,14 +11,16 @@
 
 -export([new/1,
 	 id/1,
-	 entities/1,
-	 entities/2,
+	 ids/1,
+	 elements/1,
+	 elements/2,
 	 append/2]).
 
 -type id() :: occi_uri:t() | occi_category:id().
+-type elem() :: {occi_entity:id(), occi_entity:t() | undefined}.
 
 -record(collection, {id            :: id(),
-		     entities = [] :: [occi_entity:t()]}).
+		     elements = [] :: [elem()]}).
 
 -type t() :: #collection{}.
 
@@ -42,22 +44,46 @@ id(#collection{id=Id}) ->
     Id.
 
 
-%% @doc Get all entities
+%% @doc Get all entity ids
 %% @end
--spec entities(t()) -> [occi_entity:t()].
-entities(#collection{ entities=E }) ->
-    E.
+-spec ids(t()) -> [occi_entity:id()].
+ids(#collection{ elements=Elements }) ->
+    lists:map(fun ({Id, _}) ->
+		      Id
+	      end, Elements).
 
 
-%% @doc Set entities
+%% @doc Get all elements
 %% @end
--spec entities([occi_entity:t()], t()) -> t().
-entities(Entities, #collection{}=C) ->
-     C#collection{ entities=Entities }.
+-spec elements(t()) -> [elem()].
+elements(#collection{ elements=Elements }) ->
+    Elements.
 
 
-%% @doc Append entities to the collection
+%% @doc Set elements or entities
 %% @end
--spec append([occi_entity:t()], t()) -> t().
-append(NewEntities, #collection{ entities=Entities }=C) ->
-    C#collection{ entities=NewEntities ++ Entities }.
+-spec elements([elem() | occi_entity:id() | occi_entity:t()], t()) -> t().
+elements(Elements, #collection{}=C) ->
+    L = lists:map(fun to_elem/1, Elements),
+    C#collection{ elements=L }.
+
+
+%% @doc Append elements to the collection
+%% @end
+-spec append([elem()], t()) -> t().
+append(NewElements, #collection{ elements=Elements }=C) ->
+    C#collection{ elements=lists:map(fun to_elem/1, NewElements) ++ Elements }.
+
+
+%%%
+%%% Priv
+%%%
+to_elem(E) when ?is_uri(E) ->
+    {E, undefined};
+
+to_elem({Id, _}=E) when ?is_uri(Id) ->
+    E;
+
+to_elem(E) when element(1, E) =:= resource;
+		element(1, E) =:= link ->
+    {occi_entity:id(E), E}.
