@@ -8,6 +8,7 @@
 -module(occi_collection).
 
 -include("occi_uri.hrl").
+-include("occi_rendering.hrl").
 
 -export([new/1,
 	 id/1,
@@ -15,6 +16,9 @@
 	 elements/1,
 	 elements/2,
 	 append/2]).
+
+-export([load/3,
+	 render/3]).
 
 -type id() :: occi_uri:t() | occi_category:id().
 -type elem() :: {occi_entity:id(), occi_entity:t() | undefined}.
@@ -74,6 +78,19 @@ elements(Elements, #collection{}=C) ->
 append(NewElements, #collection{ elements=Elements }=C) ->
     C#collection{ elements=lists:map(fun to_elem/1, NewElements) ++ Elements }.
 
+
+%% @doc Load collection from iolist
+%% @end
+-spec load(occi_utils:mimetype(), iolist(), parse_ctx()) -> t().
+load(Mimetype, Bin, Ctx) ->
+    occi_rendering:load_collection(Mimetype, Bin, Ctx).
+
+
+%% @doc Render collection into given mimetype
+%% @end
+-spec render(occi_utils:mimetype(), t(), render_ctx()) -> iolist().
+render(Mimetype, E, Ctx) ->
+    occi_rendering:render(Mimetype, E, Ctx).
 
 %%%
 %%% Priv
