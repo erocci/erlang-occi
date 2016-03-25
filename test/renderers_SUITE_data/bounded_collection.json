@@ -1,0 +1,12 @@
+{
+  "resource": [
+    {
+      "id": "http://example.org:8080/resource1",
+      "kind": "http://schemas.ogf.org/occi/core#resource"
+    },
+    {
+      "id": "http://example.org:8080/resource0",
+      "kind": "http://schemas.ogf.org/occi/core#resource"
+    }
+  ]
+}

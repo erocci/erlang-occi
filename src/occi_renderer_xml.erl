@@ -7,6 +7,7 @@
 
 -module(occi_renderer_xml).
 
+-include("occi_uri.hrl").
 -include("occi_xml.hrl").
 
 -include_lib("xmerl/include/xmerl.hrl").
@@ -40,6 +41,19 @@ to_xml(categories, Categories, Ctx) ->
 			     [ to_xml(mixin, Mixin, Ctx) | Acc ]
 		     end, C0, Mixins),
     {capabilities, [], lists:reverse(C1)};
+
+to_xml(collection, Coll, Ctx) ->
+    A = case occi_collection:id(Coll) of
+	    Id when ?is_uri(Id) ->
+		[{id, occi_uri:to_string(Id)}];
+	    {Scheme, Term} ->
+		[{scheme, Scheme}, {term, Term}]
+	end,
+    C = lists:map(fun (E) ->
+			  to_xml(occi_type:type(E), E, Ctx)
+		  end, occi_collection:entities(Coll)),
+    {collection, A, lists:reverse(C)};
+
 
 to_xml(extension, T, Ctx) ->
     A0 = [{scheme, occi_extension:scheme(T)}],

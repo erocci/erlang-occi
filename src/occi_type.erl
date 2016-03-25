@@ -11,6 +11,7 @@
 
 -type name() :: extension
 	      | categories
+	      | collection
 	      | category
 	      | kind
 	      | mixin
@@ -21,6 +22,7 @@
 	      | link.
 
 -type t() :: occi_extension:t()
+	   | occi_collection:t()
 	   | occi_category:t()
 	   | occi_kind:t()
 	   | occi_mixin:t()

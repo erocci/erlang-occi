@@ -32,7 +32,10 @@
 render(T, Ctx) ->
     Headers = to_headers(occi_type:type(T), T, orddict:new(), Ctx),
     orddict:fold(fun (K, Values, Acc) ->
-			 [ Acc, "\n", K, ": ", string:join(Values, ", ") ]
+			 [ ", " | Joined ] = lists:foldl(fun (V, Acc2) ->
+								 [ ", ", V | Acc2 ]
+							 end, [], lists:reverse(Values)),
+			 [ Acc, "\n", K, ": ", Joined ]
 		 end, [], Headers).
 
 
@@ -65,6 +68,12 @@ to_headers(categories, Categories, Headers, Ctx) ->
 to_headers(extension, Ext, Headers, Ctx) ->
     Categories = occi_extension:kinds(Ext) ++ occi_extension:mixins(Ext),
     to_headers(categories, Categories, Headers, Ctx);
+
+to_headers(collection, Coll, Headers, Ctx) ->
+    lists:foldl(fun (E, Acc) ->
+			Id = occi_entity:id(E),
+			append("x-occi-location", occi_uri:to_string(Id, Ctx), Acc)
+		end, Headers, occi_collection:entities(Coll));
 
 to_headers(kind, Kind, Headers, Ctx) ->
     {Scheme, Term} = occi_kind:id(Kind),

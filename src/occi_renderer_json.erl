@@ -67,6 +67,25 @@ r_type(categories, Categories, Ctx) ->
 				      end, Actions) }
     end;
 
+r_type(collection, Coll, Ctx) ->
+    SplitFun = fun (E, {AccR, AccL}) ->
+		       case occi_type:type(E) of
+			   resource ->
+			       { [ r_type(resource, E, Ctx) | AccR ], AccL };
+			   link ->
+			       { AccR, [ r_link(E, Ctx) | AccL] }
+		       end
+	       end,
+    {Resources, Links} = lists:foldl(SplitFun, {[], []}, occi_collection:entities(Coll)),
+    M0 = case Resources of
+	     [] -> #{ };
+	     _ -> #{ resource => Resources }
+	 end,
+    case Links of
+	[] -> M0;
+	_ -> M0#{ links => Links }
+    end;
+
 r_type(resource, R, Ctx) ->
     M = r_entity(R, Ctx),
     M1 = case occi_resource:links(R) of

@@ -82,6 +82,14 @@ init_per_group('netif', Config) ->
 			  "occi.networkinterface.allocation" => "static"}, client, L0),
     [ {object, L1}, {ctx, ?ctx} | Config ];
 
+init_per_group('bounded_collection', Config) ->
+    Kind = {"http://schemas.ogf.org/occi/core#", "resource"},
+    C = occi_collection:new(Kind),
+    R0 = occi_resource:new(occi_uri:from_string(<<"resource0">>, ?ctx)),
+    R1 = occi_resource:new(occi_uri:from_string(<<"resource1">>, ?ctx)),
+    C1 = occi_collection:append([R0, R1], C),
+    [ {object, C1}, {ctx, ?ctx} | Config ];
+
 init_per_group(_, Config) ->
     Config.
 
@@ -105,6 +113,7 @@ groups() ->
     ,{'compute_a',           [], [render_xml, render_text, render_json]}
     ,{'compute_b',           [], [render_xml, render_text, render_json]}
     ,{'netif',               [], [render_xml, render_text, render_json]}
+    ,{'bounded_collection',  [], [render_xml, render_text, render_json]}
     ].
 
 
@@ -115,6 +124,7 @@ all() ->
     ,{group, 'compute_a'}
     ,{group, 'compute_b'}
     ,{group, 'netif'}
+    ,{group, 'bounded_collection'}
     ].
 
 

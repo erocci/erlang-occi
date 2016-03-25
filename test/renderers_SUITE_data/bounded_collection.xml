@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<collection scheme="http://schemas.ogf.org/occi/core#" term="resource" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <resource id="http://example.org:8080/resource1">
+    <kind scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
+  </resource>
+  <resource id="http://example.org:8080/resource0">
+    <kind scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
+  </resource>
+</collection>
