@@ -99,6 +99,20 @@ init_per_group('compute_a', Config) ->
 	  end,
     [ {check, Fun} | Config ];
 
+init_per_group('compute_a_comma', Config) ->
+    Fun = fun(R)  ->
+		  ?assertMatch(<<"http://example.org:8080/compute1">>, occi_uri:to_string(occi_resource:id(R))),
+		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}, occi_resource:kind(R)),
+		  ?assertMatch(#{ <<"occi.core.summary">> := <<"A super, virtual computer">>,
+				  <<"occi.compute.cores">> := 45,
+				  <<"occi.compute.hostname">> := <<"a name">>,
+				  <<"occi.compute.speed">> := 1.5,
+				  <<"occi.compute.state">> := inactive }, 
+			       occi_resource:attributes(R)),
+		  ?assertMatch(#{}, occi_resource:attributes(R))
+	  end,
+    [ {check, Fun} | Config ];
+
 init_per_group('user_mixin', Config) ->
     Fun = fun(M)  ->
 		  ?assertMatch({<<"http://schemas.example.org/occi#">>, <<"mymixin0">>},
@@ -149,6 +163,7 @@ groups() ->
     ,{core_link,           [], [parse_xml, parse_text, parse_json]}
     ,{'resource_link',     [], [parse_xml, parse_text, parse_json]}
     ,{'compute_a',         [], [parse_xml, parse_text, parse_json]}
+    ,{'compute_a_comma',   [], [parse_text]}
     ,{'netif_link',        [], [parse_xml, parse_text, parse_json]}
     ,{'user_mixin',        [], [parse_xml, parse_json, parse_text]}
     ,{'collection',        [], [parse_xml, parse_json, parse_text]}
@@ -162,6 +177,7 @@ all() ->
     ,{group, core_link}
     ,{group, 'resource_link'}
     ,{group, 'compute_a'}
+    ,{group, 'compute_a_comma'}
     ,{group, 'netif_link'}
     ,{group, 'user_mixin'}
     ,{group, 'collection'}
@@ -184,9 +200,16 @@ parse_json(Config) -> parse_tests(json, ".json", Config).
 %%%
 parse_tests(Type, Ext, Config) ->
     Basename = atom_to_list(proplists:get_value(name, ?config(tc_group_properties, Config))),
-    lists:foreach(fun (Filename) ->
-			  parse_test(Type, Filename, Config)
-		  end, filelib:wildcard(filename:join([?config(data_dir, Config), Basename]) ++ "*" ++ Ext)).
+    Filename0 = filename:join([?config(data_dir, Config), Basename]) ++ Ext,
+    case filelib:is_file(Filename0) of
+	true ->
+	    parse_test(Type, Filename0, Config);
+	false ->
+	    Filenames = filelib:wildcard(filename:join([?config(data_dir, Config), Basename]) ++ "[0-9][0-9]" ++ Ext),
+	    lists:foreach(fun (Filename) ->
+				  parse_test(Type, Filename, Config)
+			  end, Filenames)
+    end.
 
 
 parse_test(Type, Filename, Config) ->
