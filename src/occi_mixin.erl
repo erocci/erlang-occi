@@ -28,15 +28,15 @@
 
 -export_type([t/0]).
 
--spec new(Scheme :: string(), Term :: string()) -> t().
+-spec new(Scheme :: binary(), Term :: binary()) -> t().
 new(Scheme, Term) ->
     M0 = occi_category:new(Scheme, Term, mixin),
     Map = M0#mixin.m,
     M0#mixin{m = Map#{applies => [], depends => [], actions => #{}, location => undefined} }.
 
 
--spec add_apply(string() | binary() | occi_category:id(), t()) -> t().
-add_apply(Apply, #{ applies := Applies }=Mixin) when is_list(Apply); is_binary(Apply) ->
+-spec add_apply(binary() | occi_category:id(), t()) -> t().
+add_apply(Apply, #{ applies := Applies }=Mixin) when is_binary(Apply) ->
     ApplyId = occi_category:parse_id(Apply),
     ?s(applies, [ ApplyId | Applies ], Mixin);
 
@@ -50,8 +50,8 @@ applies(M) ->
     ?g(applies, M).
 
 
--spec add_depend(string() | binary() | occi_category:id(), t()) -> t().
-add_depend(Depend, Mixin) when is_list(Depend); is_binary(Depend) ->
+-spec add_depend(binary() | occi_category:id(), t()) -> t().
+add_depend(Depend, Mixin) when is_binary(Depend) ->
     DependId = occi_category:parse_id(Depend),
     Depends = ?g(depends, Mixin),
     ?s(depends, [ DependId | Depends ], Mixin);

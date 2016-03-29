@@ -29,7 +29,7 @@
 -export([parse_id/1]).
 
 -type class() :: kind | mixin | action.
--type id() :: {Scheme :: string(), Term :: string()}.
+-type id() :: {Scheme :: binary(), Term :: binary()}.
 
 
 -record(category, {id :: id(), m :: #{}}).
@@ -44,7 +44,7 @@
 
 %% @throws {invalid_cid, term()}
 -spec new(Id :: string() | id(), Cls :: class()) -> t().
-new(CatId, Cls) when is_list(CatId); is_binary(CatId) ->
+new(CatId, Cls) when is_binary(CatId) ->
     new(parse_id(CatId), Cls);
 
 new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
@@ -53,7 +53,7 @@ new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
 	    attributes => #{}
 	   }};
 
-new({"http://schemas.ogf.org/occi/core#", "entity"}=Id, kind) ->
+new({<<"http://schemas.ogf.org/occi/core#">>, <<"entity">>}=Id, kind) ->
     {kind, Id, #{ 
 	     title => "Entity",
 	     attributes => #{} 
@@ -61,8 +61,8 @@ new({"http://schemas.ogf.org/occi/core#", "entity"}=Id, kind) ->
 
 
 %% throws {invalid_cid, {term(), term()}}
--spec new(Scheme :: string(), Term :: string(), Cls :: class()) -> t().
-new(Scheme, Term, Cls) when is_list(Scheme), is_list(Term) ->
+-spec new(Scheme :: binary(), Term :: binary(), Cls :: class()) -> t().
+new(Scheme, Term, Cls) when is_binary(Scheme), is_binary(Term) ->
     new({Scheme, Term}, Cls);
 
 new(Scheme, Term, _Cls) ->
@@ -79,12 +79,12 @@ id(C) ->
     element(2, C).
 
 
--spec title(t()) -> string().
+-spec title(t()) -> binary().
 title(C) ->
     ?g(title, C).
 
 
--spec title(string(), t()) -> t().
+-spec title(binary(), t()) -> t().
 title(Title, C) ->
     ?s(title, Title, C).
 
@@ -130,16 +130,15 @@ location(Location, C) when ?is_uri(Location) ->
 
 
 %% @throws {invalid_cid, term()}
--spec parse_id(string() | binary()) -> id().
-parse_id(Id) when is_list(Id); is_binary(Id) ->
+-spec parse_id(binary()) -> id().
+parse_id(Id) when is_binary(Id) ->
     try uri:from_string(Id) of
 	Uri ->
-	    Scheme = binary_to_list(uri:to_string(uri:frag(Uri, <<>>))) ++ "#",
+	    Scheme = << (uri:to_string(uri:frag(Uri, <<>>)))/binary, "#" >>,
 	    Term = case uri:frag(Uri) of
 		       <<>> -> throw({invalid_cid, Id});
-		       T -> binary_to_list(T)
+		       T -> T
 		   end,
-	    Term = binary_to_list(uri:frag(Uri)),
 	    {Scheme, Term}
     catch
 	error:{badmatch, _} ->
@@ -163,12 +162,12 @@ render(Mimetype, E, Ctx) ->
 -ifdef(TEST).
 parse_id_test_() ->
     [
-     ?_assertThrow({invalid_cid, ""}, parse_id("")),
-     ?_assertThrow({invalid_cid, "bad_scheme"}, parse_id("bad_scheme")),
-     ?_assertThrow({invalid_cid, "http://example.org/occi#"}, parse_id("http://example.org/occi#")),
-     ?_assertMatch({"http://example.org/occi#", "t"}, 
-		   parse_id("http://example.org/occi#t")),
-     ?_assertMatch({"http://example.org/occi#", "t"}, 
+     ?_assertThrow({invalid_cid, <<>>}, parse_id(<<>>)),
+     ?_assertThrow({invalid_cid, <<"bad_scheme">>}, parse_id(<<"bad_scheme">>)),
+     ?_assertThrow({invalid_cid, <<"http://example.org/occi#">>}, parse_id(<<"http://example.org/occi#">>)),
+     ?_assertMatch({<<"http://example.org/occi#">>, <<"t">>}, 
+		   parse_id(<<"http://example.org/occi#t">>)),
+     ?_assertMatch({<<"http://example.org/occi#">>, <<"t">>}, 
 		   parse_id(<<"http://example.org/occi#t">>))
     ].
 

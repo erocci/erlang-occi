@@ -32,13 +32,13 @@
 
 %% @equiv new(Id, KindId, Src, Target, occi_resource:kind(Target) | undefined)
 %% @end
--spec new(uri:t(), occi_category:id() | string() | binary(), 
-	  string() | occi_resource:t(), 
-	  string() | occi_resource:t()) -> t().
+-spec new(uri:t(), occi_category:id() | binary(), 
+	  binary() | occi_resource:t(), 
+	  binary() | occi_resource:t()) -> t().
 new(Id, KindId, Src, Target) when ?is_uri(Id), 
 				  element(?class, Src) =:= resource, 
 				  element(?class, Target) =:= resource ->
-    TargetKind = case is_list(Target) of
+    TargetKind = case is_binary(Target) of
 		     true -> undefined;
 		     false -> occi_resource:kind(Target)
 		 end,
@@ -47,12 +47,12 @@ new(Id, KindId, Src, Target) when ?is_uri(Id),
 
 %% @doc Creates a new link
 %% @end
--spec new(uri:t(), occi_category:id() | string() | binary(), 
-	  string(), 
+-spec new(uri:t(), occi_category:id() | binary(), 
+	  binary(), 
 	  occi_category:id(),
-	  string(),
+	  binary(),
 	  occi_category:id() | undefined) -> t().
-new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_list(KindId); is_binary(KindId) ->
+new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId), Src, SrcKind, Target, TargetKind);
 
 new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
@@ -62,20 +62,20 @@ new(Id, Kind, Src, SrcKind, Target, TargetKind) when ?is_uri(Id),
 						     ?is_uri(Src),
 						     ?is_uri(Target) ->
     Link = occi_entity:merge_parents(Kind, {link, Id, occi_kind:id(Kind), [], #{}, #{}, #{}}),
-    set(#{ "occi.core.source" => Src, 
-	   "occi.core.source.kind" => SrcKind,
-	   "occi.core.target" => Target,
-	   "occi.core.target.kind" => TargetKind }, internal, Link).
+    set(#{ <<"occi.core.source">> => Src, 
+	   <<"occi.core.source.kind">> => SrcKind,
+	   <<"occi.core.target">> => Target,
+	   <<"occi.core.target.kind">> => TargetKind }, internal, Link).
 
 
 -spec source(t()) -> occi_uri:t().
 source(E) ->
-    get("occi.core.source", E).
+    get(<<"occi.core.source">>, E).
 
 
 -spec target(t()) -> occi_uri:t().
 target(E) ->
-    get("occi.core.target", E).
+    get(<<"occi.core.target">>, E).
 
 
 %% @doc Load link from iolist 

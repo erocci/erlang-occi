@@ -31,7 +31,7 @@
 
 -export_type([t/0]).
 
--spec new(Scheme :: string(), Term :: string()) -> t().
+-spec new(Scheme :: binary(), Term :: binary()) -> t().
 new(Scheme, Term) ->
     K0 = occi_category:new(Scheme, Term, kind),
     M = K0#kind.m,
@@ -51,8 +51,8 @@ parent(Kind) ->
 
 %% @doc Set parent of the category
 %% @end
--spec parent(string() | binary() | occi_category:id(), t()) -> t().
-parent(Parent, Kind) when is_list(Parent); is_binary(Parent) ->
+-spec parent(binary() | occi_category:id(), t()) -> t().
+parent(Parent, Kind) when is_binary(Parent) ->
     ParentId = occi_category:parse_id(Parent),
     ?s(parents, [ ParentId | ?g(parents, Kind) ], Kind);
 

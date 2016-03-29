@@ -25,7 +25,7 @@
 	 attributes/1]).
 
 %% internal
--define(core_scheme, "http://schemas.ogf.org/occi/core#").
+-define(core_scheme, <<"http://schemas.ogf.org/occi/core#">>).
 
 -record category, {id        :: occi_category:id(),
 		   value     :: occi_category:t()}.
@@ -192,7 +192,8 @@ load_categories(Scheme, [ Cat | Categories ]) ->
 
 
 dl_schema(Scheme) ->
-    Urls = [{baseurl() ++ "/" ++ http_uri:encode(http_uri:encode(Scheme)) ++ ".xml", http_uri:encode(Scheme) ++ ".xml"}],
+    S = http_uri:encode(binary_to_list(Scheme)),
+    Urls = [{baseurl() ++ "/" ++ http_uri:encode(S) ++ ".xml", S ++ ".xml"}],
     occi_dl:resource(Scheme, Urls).    
 
 

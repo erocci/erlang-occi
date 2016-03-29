@@ -24,9 +24,9 @@
 	 description/1,
 	 description/2]).
 
--type name_t() :: string().
+-type name_t() :: binary().
 -type type_t() :: occi_base_type:t().
--type key() :: string().
+-type key() :: binary().
 -type t() :: #{}.
 
 -export_type([t/0, key/0]).
@@ -61,12 +61,12 @@ type(A) ->
     maps:get(type, A).
 
 
--spec title(t()) -> string().
+-spec title(t()) -> binary().
 title(A) ->
     maps:get(title, A).
 
 
--spec title(string(), t()) -> t().
+-spec title(binary(), t()) -> t().
 title(Title, A) ->
     A#{ title := Title }.
 
@@ -111,11 +111,11 @@ pattern(Pattern, A) ->
     A#{ pattern := Pattern }.
 
 
--spec description(t()) -> string().
+-spec description(t()) -> binary().
 description(A) ->
     maps:get(description, A).
 
 
--spec description(string(), t()) -> t().
-description(Desc, A) when is_list(Desc) ->
+-spec description(binary(), t()) -> t().
+description(Desc, A) when is_binary(Desc) ->
     A#{ description := Desc }.

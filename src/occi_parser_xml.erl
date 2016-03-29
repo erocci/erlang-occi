@@ -10,12 +10,14 @@
 -include("occi_log.hrl").
 -include("occi_xml.hrl").
 -include("occi_rendering.hrl").
+-include("occi_type.hrl").
 -include_lib("annotations/include/annotations.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
 
 -export([parse_model/3,
 	 parse_entity/3,
-	 parse_collection/2]).
+	 parse_collection/2,
+	 parse_invoke/2]).
 
 -type state() :: #{}.
 
@@ -63,6 +65,14 @@ parse_entity(link, Xml, Ctx) ->
 parse_collection(Xml, Ctx) ->
     case parse(Xml, Ctx) of
 	{collection, C} -> C;
+	{Other, _} -> throw({parse_error, {invalid_type, Other}})
+    end.
+
+
+-spec parse_invoke(iolist(), parse_ctx()) -> occi_invoke:t().
+parse_invoke(Xml, Ctx) ->
+    case parse(Xml, Ctx) of
+	{invoke, I} -> I;
 	{Other, _} -> throw({parse_error, {invalid_type, Other}})
     end.
 
@@ -133,7 +143,7 @@ handle_event({endElement, ?occi_uri, "collection", _QN}, _,
 handle_event({startElement, ?occi_uri, "extension", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Scheme = attr("scheme", A),
     Ext = occi_extension:new(Scheme),
-    E2 = occi_extension:name(attr("name", A, ""), Ext),
+    E2 = occi_extension:name(attr("name", A, <<>>), Ext),
     S#{ stack => [ {extension, E2} | Stack ] };
 
 %% extension can only be a root node
@@ -249,7 +259,7 @@ handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := St
     Id = occi_uri:from_string(attr("id", A), Ctx),
     Map = #{ links => [],
 	     mixins => [],
-	     attributes => #{ "occi.core.title" => attr("title", A, undefined) } },
+	     attributes => #{ <<"occi.core.title">> => attr("title", A, undefined) } },
     S#{ stack := [ {resource, Id, undefined, Map} | Stack ] };
 
 handle_event({endElement, ?occi_uri, "resource", _QN}, _,
@@ -276,7 +286,7 @@ handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack,
 		 [ {resource, ResId, _, _} | _ ] -> ResId;
 		 _ -> occi_uri:from_string(attr("source", A), Ctx)
 	     end,
-    Map = #{ attributes => #{ "occi.core.title" => attr("title", A, undefined) },
+    Map = #{ attributes => #{ <<"occi.core.title">> => attr("title", A, undefined) },
 	     mixins => [] },
     S#{ stack := [ {link, Id, undefined, Source, Target, Map} | Stack ] };
 
@@ -321,13 +331,24 @@ handle_event({endElement, ?occi_uri, "applies", _QN}, _, S) ->
     S;
 
 handle_event({startElement, ?occi_uri, "action", _QN, A}, _Pos,
+	     #{ stack := [ {document, undefined} ] }=S) ->
+    Term = attr("term", A),
+    Scheme = attr("scheme", A),
+    S#{ stack := [ {invoke, {Scheme, Term}, #{}}, {document, undefined} ] };
+
+handle_event({startElement, ?occi_uri, "action", _QN, A}, _Pos,
 	     #{ stack := [ {Cls, Category}, {extension, Ext} | Stack] }=S) when Cls =:= kind; Cls =:= mixin ->
     Term = attr("term", A),
     Scheme = attr("scheme", A, occi_extension:scheme(Ext)),
-    Title = attr("title", A, ""),
+    Title = attr("title", A, <<>>),
     Related = occi_category:id(Category),
     Action = occi_action:title(Title, occi_action:new(Scheme, Term, Related)),
     S#{ stack := [ {action, Action}, {Cls, Category}, {extension, Ext} | Stack ] };
+
+handle_event({endElement, ?occi_uri, "action", _QN}, _, 
+	     #{ stack := [ {invoke, Id, Attributes}, {document, undefined} ] }=S) ->
+    Invoke = occi_invoke:new(Id, Attributes),
+    S#{ stack := [ {document, {invoke, Invoke}} ] };
 
 handle_event({endElement, ?occi_uri, "action", _QN}, _, 
 	     #{ stack := [ {action, Action}, {Cls, Category} | Stack ] }=S) ->
@@ -347,17 +368,17 @@ handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos,
 	     #{ stack := [ {Cls, Category} | Stack] }=S) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
     Name = attr("name", A),
     Type = type_(attr("type", A, undefined), maps:get(ns, S)),
-    Map = #{ title => attr("title", A, ""),
-	     required => case attr("use", A, "optional") of
-			     "optional" -> false;
-			     "required" -> true
+    Map = #{ title => attr("title", A, <<>>),
+	     required => case attr("use", A, <<"optional">>) of
+			     <<"optional">> -> false;
+			     <<"required">> -> true
 			 end,
-	     mutable => case attr("immutable", A, "false") of
-			    "true" -> false;
-			     "false" -> true
+	     mutable => case attr("immutable", A, <<"false">>) of
+			    <<"true">> -> false;
+			    <<"false">> -> true
 			end,
 	     default => attr("default", A, undefined),
-	     description => attr("default", A, "") },
+	     description => attr("default", A, <<>>) },
     S#{ stack := [ {attribute, Name, Type, Map}, {Cls, Category} | Stack ] };
 
 %% resource attribute instance
@@ -373,6 +394,12 @@ handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos,
     Attrs0 = maps:put(attr("name", A), attr("value", A), maps:get(attributes, Map)),
     Map0 = Map#{ attributes := Attrs0 },
     S#{ stack := [ {link, Id, Kind, Source, Target, Map0} | Stack ] };
+
+%% action invocation attribute instance
+handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
+	     #{ stack := [ {invoke, Id, Attrs} | Stack] }=S) ->
+    Attrs0 = maps:put(attr("name", A), attr("value", A), Attrs),
+    S#{ stack := [ {invoke, Id, Attrs0} | Stack ] };
 
 handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
 	     #{ stack := [ {attribute, _, undefined, _} | _] }) ->
@@ -394,13 +421,17 @@ handle_event({endElement, ?occi_uri, "attribute", _QN}, _,
 
 handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
 	     #{ stack := [ Entity | Stack ] }=S) 
-  when element(1, Entity) =:= resource; element(1, Entity) =:= link ->
+  when ?is_entity(Entity) ->
     S#{ stack := [ Entity | Stack ] };
+
+handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
+	     #{ stack := [ {invoke, _, _}=Invoke | Stack ] }=S) ->
+    S#{ stack := [ Invoke | Stack ] };
 
 handle_event({startElement, ?xsd_uri, "restriction", _QN, A}, _Pos,
 	     #{ stack := [ {attribute, _, _, _}=Attribute | Stack] }=S) ->
     Type = case attr("base", A) of
-	       "xs:string" -> {enum, []};
+	       <<"xs:string">> -> {enum, []};
 	       BaseType -> throw({invalid_attribute_type, BaseType})
 	   end,
     S#{ stack := [ Type, Attribute | Stack ] };
@@ -411,7 +442,7 @@ handle_event({endElement, ?xsd_uri, "restriction", _QN}, _,
 
 handle_event({startElement, ?xsd_uri, "enumeration", _QN, A}, _Pos,
 	     #{ stack := [ {enum, Enum} | Stack] }=S) ->
-    Value = list_to_atom(attr("value", A)),
+    Value = binary_to_atom(attr("value", A), utf8),
     S#{ stack := [ {enum, [ Value | Enum ]} | Stack ] };
 
 handle_event({endElement, ?xsd_uri, "enumeration", _QN}, _, S) ->
@@ -473,7 +504,7 @@ attr(_Name, [], Default) ->
     Default;
 
 attr(Name, [ {_URI, _Prefix, Name, Value} | _Attributes ], _Default) ->
-    Value;
+    list_to_binary(Value);
 
 attr(Name, [ _Attr | Attributes ], Default) ->
     attr(Name, Attributes, Default).
@@ -489,23 +520,28 @@ attr(Name, Attributes) ->
 type_(undefined, _NS) ->
     undefined;
 type_(QN, NS) ->
-    from_xml_type(string:tokens(QN, ":"), NS).
+    case binary:split(QN, [<<":">>]) of
+	[Prefix, Name] ->
+	    from_xml_type(binary_to_list(Prefix), Name, NS);
+	Else ->
+	    throw({invalid_type, Else})
+    end.
 
 
-from_xml_type([Prefix, "string"], #{ ?xsd_uri := Prefix }) ->
+from_xml_type(Prefix, <<"string">>, #{ ?xsd_uri := Prefix }) ->
     string;
-from_xml_type([Prefix, "integer"], #{ ?xsd_uri := Prefix }) ->
+from_xml_type(Prefix, <<"integer">>,  #{ ?xsd_uri := Prefix }) ->
     integer;
-from_xml_type([Prefix, "float"], #{ ?xsd_uri := Prefix }) ->
+from_xml_type(Prefix, <<"float">>, #{ ?xsd_uri := Prefix }) ->
     float;
-from_xml_type([Prefix, "anyURI"], #{ ?xsd_uri := Prefix }) ->
+from_xml_type(Prefix, <<"anyURI">>, #{ ?xsd_uri := Prefix }) ->
     uri;
-from_xml_type([Prefix, "kind"], #{ ?occi_uri := Prefix }) ->
+from_xml_type(Prefix, <<"kind">>, #{ ?occi_uri := Prefix }) ->
     kind;
-from_xml_type([Prefix, "resource"], #{ ?occi_uri := Prefix }) ->
+from_xml_type(Prefix, <<"resource">>, #{ ?occi_uri := Prefix }) ->
     resource;
-from_xml_type(Else, _) ->
-    throw({invalid_type, Else}).
+from_xml_type(Prefix, Name, _) ->
+    throw({invalid_type, << (list_to_binary(Prefix))/binary, Name >>}).
 
 
 build_resource(Id, Kind, Map, Check) ->

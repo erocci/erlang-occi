@@ -35,19 +35,13 @@
 %% @end
 -spec cast(term(), spec()) -> t() | {error, term()}.
 cast(V, {enum, Enum}) when is_binary(V) ->
-    cast(binary_to_list(V), {enum, Enum});
-
-cast(V, {enum, Enum}) ->
     case cast_enum(V, Enum) of
 	{ok, Atom} -> Atom;
 	error -> throw({invalid_value, {enum, Enum}, V})
     end;
 
-cast(V, string) when is_list(V) ->
-    lists:flatten(V);
-
 cast(V, string) when is_binary(V) ->
-    binary_to_list(V);
+    V;
 
 cast(V, string) ->
     throw({invalid_value, string, V});
@@ -87,7 +81,7 @@ cast(V, resource) ->
 cast_enum(_Val, []) ->
     error;
 cast_enum(Val, [ Head | Tail]) ->
-    case atom_to_list(Head) of
+    case atom_to_binary(Head, utf8) of
         Val -> {ok, Head};
         _ -> cast_enum(Val, Tail)
     end.
@@ -102,14 +96,6 @@ cast_integer(X) when is_binary(X) ->
     catch
         _:_ ->
             throw({invalid_value, integer, X})
-    end;
-
-cast_integer(X) when is_list(X) ->
-    try list_to_integer(X) of
-        I -> I
-    catch
-        _:_ ->
-	    throw({invalid_value, integer, X})
     end;
 
 cast_integer(X) ->
@@ -128,19 +114,6 @@ cast_float(X) when is_binary(X) ->
     catch 
         _:_ ->
             try binary_to_integer(X) of
-                V -> V+0.0
-            catch
-                _:_ -> 
-                    throw({invalid_value, float, X})
-            end
-    end;
-
-cast_float(X) when is_list(X) ->
-    try list_to_float(X) of
-        V -> V
-    catch 
-        _:_ ->
-            try list_to_integer(X) of
                 V -> V+0.0
             catch
                 _:_ -> 
