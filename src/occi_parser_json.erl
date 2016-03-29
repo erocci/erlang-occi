@@ -93,9 +93,9 @@ p_invoke(Map, _Ctx) ->
     Scheme = maps:get(<<"scheme">>, Map),
     Term = maps:get(<<"term">>, Map),
     Attributes = maps:fold(fun (K, V, Acc) ->
-				   Acc#{ binary_to_list(K) => V }
+				   Acc#{ K => V }
 			   end, #{}, maps:get(<<"attributes">>, Map, #{})),
-    I = occi_invoke:new({binary_to_list(Scheme), binary_to_list(Term)}, Attributes),
+    I = occi_invoke:new({Scheme, Term}, Attributes),
     case maps:get(<<"title">>, Map, undefined) of
 	undefined ->
 	    I;
@@ -105,14 +105,14 @@ p_invoke(Map, _Ctx) ->
 
 
 p_mixin(#{ <<"scheme">> := Scheme }=Map, Ctx) ->
-    p_mixin2(Map, binary_to_list(Scheme), Ctx);
+    p_mixin2(Map, Scheme, Ctx);
 
 p_mixin(_, _) ->
     throw({parse_error, {mixin, missing_scheme}}).
 
 
 p_mixin2(#{ <<"term">> := Term}=Map, Scheme, Ctx) ->
-    p_mixin3(Map, Scheme, binary_to_list(Term), Ctx);
+    p_mixin3(Map, Scheme, Term, Ctx);
 
 p_mixin2(_, _, _) ->
     throw({parse_error, {mixin, missing_term}}).
@@ -164,10 +164,10 @@ p_resource(Id, Kind, Mixins, Map, Ctx) ->
 		     end, R, Mixins),
     Attributes = maps:merge(
 		   maps:fold(fun (K, V, Acc) ->
-				     Acc#{ binary_to_list(K) => V }
+				     Acc#{ K => V }
 			     end, #{}, maps:get(<<"attributes">>, Map, #{})),
-		   #{ "occi.core.summary" => maps:get(<<"summary">>, Map, <<>>),
-		      "occi.core.title" => maps:get(<<"title">>, Map, <<>>) }),
+		   #{ <<"occi.core.summary">> => maps:get(<<"summary">>, Map, <<>>),
+		      <<"occi.core.title">> => maps:get(<<"title">>, Map, <<>>) }),
     R2 = occi_entity:set(Attributes, Ctx#parse_ctx.valid, R1),
     p_resource_links(maps:get(<<"links">>, Map, []), Ctx, R2).
 
@@ -218,9 +218,9 @@ p_link2(Id, Kind, Mixins, SourceLocation, Source,
 			end, Link, Mixins),
     Attributes = maps:merge(
 		   maps:fold(fun (K, V, Acc) ->
-				     Acc#{ binary_to_list(K) => V }
+				     Acc#{ K => V }
 			     end, #{}, maps:get(<<"attributes">>, Map, #{})),
-		   #{ "occi.core.title" => maps:get(<<"title">>, Map, <<>>) }),
+		   #{ <<"occi.core.title">> => maps:get(<<"title">>, Map, <<>>) }),
     occi_link:set(Attributes, Ctx#parse_ctx.valid, Link1);
 
 p_link2(_, _, _, _, _, _, _) ->

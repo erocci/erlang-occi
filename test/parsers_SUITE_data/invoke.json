@@ -1,0 +1,7 @@
+{
+    "scheme": "http://schemas.example.org/core#",
+    "term": "action0",
+    "attributes": {
+	"occi.example.attr1": "value"
+    }
+}

@@ -32,7 +32,7 @@
 -export_type([t/0, key/0]).
 
 -spec new(Category :: occi_category:id(), Name :: key(), Type :: type_t()) -> t().
-new(Category, Name, Type) ->
+new(Category, Name, Type) when is_binary(Name) ->
     #{ 
      name => Name,
      category => Category,
@@ -67,7 +67,7 @@ title(A) ->
 
 
 -spec title(binary(), t()) -> t().
-title(Title, A) ->
+title(Title, A) when is_binary(Title) ->
     A#{ title := Title }.
 
 
@@ -101,13 +101,13 @@ default(Value, #{ type := Type }=A) ->
     A#{ default := occi_base_type:cast(Value, Type) }.
 
 
--spec pattern(t()) -> string().
+-spec pattern(t()) -> binary().
 pattern(A) ->
     maps:get(pattern, A).
 
 
--spec pattern(string(), t()) -> t().
-pattern(Pattern, A) ->
+-spec pattern(binary(), t()) -> t().
+pattern(Pattern, A) when is_binary(Pattern) ->
     A#{ pattern := Pattern }.
 
 

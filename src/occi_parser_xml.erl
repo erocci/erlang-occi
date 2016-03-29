@@ -236,7 +236,7 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos,
 handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack, url := Ctx }=S) ->
     Term = attr("term", A),
     M0 = occi_mixin:new(attr("scheme", A), Term),
-    M1 = occi_mixin:title(attr("title", A, ""), M0),
+    M1 = occi_mixin:title(attr("title", A, <<>>), M0),
     Location = occi_uri:from_string(attr("location", A, Term), Ctx),
     M2 = occi_mixin:location(Location, M1),
     S#{ stack := [ {mixin, M2} | Stack ] };

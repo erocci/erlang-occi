@@ -4,7 +4,7 @@
 -define(is_extension(X),    element(1, X) =:= extension).
 -define(is_collection(X),   element(1, X) =:= collection).
 
--define(is_category_id(X), is_list(element(1, X)), is_list(element(2, X))). 
+-define(is_category_id(X), is_binary(element(1, X)), is_binary(element(2, X))). 
 
 -define(is_category(X), element(1, X) =:= category; element(1, X) =:= kind; element(1, X) =:= mixin; element(1, X) =:= action).
 -define(is_kind(X),     element(1, X) =:= kind).

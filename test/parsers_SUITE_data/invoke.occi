@@ -1,0 +1,2 @@
+category: action0; scheme="http://schemas.example.org/core#"; class=action
+x-occi-attribute: occi.example.attr1="value"

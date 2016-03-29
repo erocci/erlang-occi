@@ -14,7 +14,8 @@
 
 -export([parse_model/3,
 	 parse_entity/3,
-	 parse_collection/2]).
+	 parse_collection/2,
+	 parse_invoke/2]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -51,9 +52,32 @@ parse_collection(Bin, Ctx) ->
     occi_collection:append(Locations, C).
 
 
+-spec parse_invoke(iolist(), parse_ctx()) -> occi_invoke:t().
+parse_invoke(Bin, _Ctx) ->
+    Headers = parse_headers(Bin),
+    p_invoke(Headers).
+
 %%%
 %%% Parsers
 %%%
+p_invoke(Headers) ->
+    case p_categories(orddict:find('category', Headers)) of
+	[] ->
+	    throw({parse_error, {action, no_category}});
+	[{category, #{ class := action, scheme := Scheme, term := Term }}] ->
+	    p_invoke2({Scheme, Term}, p_attributes(orddict:find('x-occi-attribute', Headers)));
+	_ ->
+	    throw({parse_error, {action, multiple_categories}})
+    end.
+
+
+p_invoke2(Id, Attributes) ->
+    Map = lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
+			      Acc#{ Key => Value }
+		      end, #{}, Attributes),
+    occi_invoke:new(Id, Map).
+
+
 parse_mixin(H, Ctx) ->
     case p_categories(orddict:find('category', H)) of
 	[] ->
@@ -115,7 +139,7 @@ p_resource(Id, Kind, MixinIds, Attributes, Links, Ctx) ->
 			     occi_resource:add_link(p_resource_link(Id, Kind, Link, Ctx), Acc)
 		     end, R1, Links),
     occi_entity:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
-					Acc#{ binary_to_list(Key) => Value }
+					Acc#{ Key => Value }
 				end, #{}, Attributes), Ctx#parse_ctx.valid, R2).
 
 
@@ -177,7 +201,7 @@ p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, 
 			     occi_link:add_mixin(MixinId, Acc)
 		     end, L, MixinIds),
     occi_link:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
-				      Acc#{ binary_to_list(Key) => Value }
+				      Acc#{ Key => Value }
 			      end, #{}, Attributes), Ctx#parse_ctx.valid, L1).
     
 
@@ -226,11 +250,11 @@ p_category(undefined) ->
     throw({parse_error, {category, missing_term}});
 
 p_category({term, Term, Rest}) when is_binary(Term) ->
-    p_category_scheme(p_kv(Rest), #{ term => binary_to_list(Term) }).
+    p_category_scheme(p_kv(Rest), #{ term => Term }).
 
 
 p_category_scheme({scheme, Scheme, Rest}, Cat) ->
-    p_category_class(p_kv(Rest), Cat#{ scheme => binary_to_list(Scheme) });
+    p_category_class(p_kv(Rest), Cat#{ scheme => Scheme });
 
 p_category_scheme({Type, Else, _Rest}, _Cat) ->
     throw({parse_error, {scheme, {Type, Else}}}).
@@ -727,13 +751,13 @@ p_attributes_def3(<< C, _Rest/binary >>, _Acc) ->
 
 
 p_attribute_def(<< $", Rest/binary >>, Acc, Attr, AttrList) ->
-    {attributes, lists:reverse([ Attr#{ name => binary_to_list(Acc) } | AttrList ]), Rest};
+    {attributes, lists:reverse([ Attr#{ name => Acc } | AttrList ]), Rest};
 
 p_attribute_def(<< $\s, Rest/binary >>, Acc, Attr, AttrList) ->
-    p_attributes_def2(eat_ws(Rest), [ Attr#{ name => binary_to_list(Acc) } | AttrList ]);
+    p_attributes_def2(eat_ws(Rest), [ Attr#{ name => Acc } | AttrList ]);
 
 p_attribute_def(<< ${, Rest/binary >>, Acc, Attr, AttrList) ->
-    p_attribute_prop(eat_ws(Rest), Attr#{ name => binary_to_list(Acc) }, AttrList);
+    p_attribute_prop(eat_ws(Rest), Attr#{ name => Acc }, AttrList);
 
 p_attribute_def(<< C, Rest/binary >>, Acc, Attr, AttrList) when ?is_alpha(C);
 								?is_digit(C);
@@ -1022,25 +1046,25 @@ filter_categories([ Id | Tail ], KindAcc, MixinsAcc) ->
 attribute_test_() ->
     [
      ?_assertMatch({attributes, [
-				 #{ name := "occi.example.attr1", mutable := true, required := false },
-				 #{ name := "occi.example.attr2", mutable := true, required := false }
+				 #{ name := <<"occi.example.attr1">>, mutable := true, required := false },
+				 #{ name := <<"occi.example.attr2">>, mutable := true, required := false }
 				], <<"etc">>},
 		   p_attributes_def(<<"\"occi.example.attr1  occi.example.attr2 \"  ;   etc">>)),
      ?_assertMatch({attributes, [
-				 #{ name := "occi.example.attr", mutable := true, required := false }
+				 #{ name := <<"occi.example.attr">>, mutable := true, required := false }
 				], <<>>},
 		   p_attributes_def(<<"\"occi.example.attr\"">>)),
      ?_assertMatch({attributes, [
-				 #{ name := "occi.example.attr1", mutable := false, required := false },
-				 #{ name := "occi.example.attr2", mutable := true, required := false }
+				 #{ name := <<"occi.example.attr1">>, mutable := false, required := false },
+				 #{ name := <<"occi.example.attr2">>, mutable := true, required := false }
 				], <<>>},
 		   p_attributes_def(<<"\"occi.example.attr1{immutable} occi.example.attr2\"">>)),
      ?_assertMatch({attributes, [
-				 #{ name := "occi.example.attr", mutable := false, required := true }
+				 #{ name := <<"occi.example.attr">>, mutable := false, required := true }
 				], <<>>},
 		   p_attributes_def(<<"\"occi.example.attr{immutable required}\"">>)),
      ?_assertMatch({attributes, [
-				 #{ name := "occi.example.attr", mutable := false, required := true }
+				 #{ name := <<"occi.example.attr">>, mutable := false, required := true }
 				], <<>>},
 		   p_attributes_def(<<"\"occi.example.attr{  required   immutable  }\"">>))
     ].

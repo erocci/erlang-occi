@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<action xmlns="http://schemas.ogf.org/occi"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	scheme="http://schemas.example.org/core#"
+	term="action0" >
+  <attribute name="occi.example.attr1" value="value" />
+</action>

@@ -85,12 +85,12 @@ title(C) ->
 
 
 -spec title(binary(), t()) -> t().
-title(Title, C) ->
+title(Title, C) when is_binary(Title) ->
     ?s(title, Title, C).
 
 
 -spec attribute(occi_attribute:key(), t()) -> occi_attribute:t().
-attribute(Key, C) ->
+attribute(Key, C) when is_binary(Key) ->
     Attrs = ?g(attributes, C),
     maps:get(Key, Attrs, undefined).
 
