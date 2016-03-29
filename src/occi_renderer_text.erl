@@ -32,9 +32,7 @@
 render(T, Ctx) ->
     Headers = to_headers(occi_type:type(T), T, orddict:new(), Ctx),
     orddict:fold(fun (K, Values, Acc) ->
-			 [ ", " | Joined ] = lists:foldl(fun (V, Acc2) ->
-								 [ ", ", V | Acc2 ]
-							 end, [], lists:reverse(Values)),
+			 Joined = iolist_join(Values, ", "),
 			 [ Acc, "\n", K, ": ", Joined ]
 		 end, [], Headers).
 
@@ -93,7 +91,7 @@ to_headers(kind, Kind, Headers, Ctx) ->
 	     [] -> C2;
 	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
 	 end,
-    append("category", lists:flatten(C3), Headers);
+    append("category", C3, Headers);
 
 to_headers(mixin, Mixin, Headers, Ctx) ->
     {Scheme, Term} = occi_mixin:id(Mixin),
@@ -114,7 +112,7 @@ to_headers(mixin, Mixin, Headers, Ctx) ->
 	     [] -> C2;
 	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
 	 end,
-    append("category", lists:flatten(C3), Headers);
+    append("category", C3, Headers);
 
 to_headers(action, Action, Headers, _Ctx) ->
     {Scheme, Term} = occi_action:id(Action),
@@ -127,7 +125,7 @@ to_headers(action, Action, Headers, _Ctx) ->
 	     [] -> C0;
 	     Attributes -> [C0, "; attributes=\"", Attributes, "\""]
 	 end,
-    append("category", lists:flatten(C1), Headers);
+    append("category", C1, Headers);
 
 to_headers(resource, Resource, Headers, Ctx) ->
     Url = occi_uri:to_string(occi_resource:id(Resource), Ctx),
@@ -166,7 +164,7 @@ to_headers(link, Link, Headers, Ctx) ->
 
 
 r_attribute_defs([], Acc) ->
-    string:join(Acc, " ");
+    iolist_join(Acc, " ");
 
 r_attribute_defs([ Attr | Tail ], Acc) ->
     Def = occi_attribute:name(Attr),
@@ -182,7 +180,7 @@ r_attribute_defs([ Attr | Tail ], Acc) ->
 	       [] -> Def;
 	       _ -> [ Def, "{", string:join(Props1, " "), "}" ]
 	   end,
-    r_attribute_defs(Tail, [ lists:flatten(Def1) | Acc ]).
+    r_attribute_defs(Tail, [ Def1 | Acc ]).
 
 
 r_category_id(Class, {Scheme, Term}) ->
@@ -190,29 +188,29 @@ r_category_id(Class, {Scheme, Term}) ->
 
 
 r_resource_link(Link, Ctx) ->
-    Rel = case occi_link:get("occi.core.target.kind", Link) of
+    Rel = case occi_link:get(<<"occi.core.target.kind">>, Link) of
 	      undefined ->
-		  {"http://schemas.ogf.org/core/occi#", "entity"};
+		  {<<"http://schemas.ogf.org/core/occi#">>, <<"entity">>};
 	      TypeId ->
 		  TypeId
 	  end,
     Categories = [ r_type_id(occi_link:kind(Link)), 
 		   [ r_type_id(MixinId) || MixinId <- occi_link:mixins(Link) ]],
     L = [ 
-	  "<", occi_uri:to_string(occi_link:get("occi.core.target", Link), Ctx), ">; rel=\"", 
+	  "<", occi_uri:to_string(occi_link:get(<<"occi.core.target">>, Link), Ctx), ">; rel=\"", 
 	  r_type_id(Rel), "\"; self=\"", 
 	  occi_uri:to_string(occi_link:id(Link), Ctx) ,
 	  "\"; category=\"", Categories, "\""
 	], 
-    maps:fold(fun ("occi.core.id", _, Acc) ->
+    maps:fold(fun (<<"occi.core.id">>, _, Acc) ->
 		      Acc;
-		  ("occi.core.source", _, Acc) ->
+		  (<<"occi.core.source">>, _, Acc) ->
 		      Acc;
-		  ("occi.core.source.kind", _, Acc) ->
+		  (<<"occi.core.source.kind">>, _, Acc) ->
 		      Acc;
-		  ("occi.core.target", _, Acc) ->
+		  (<<"occi.core.target">>, _, Acc) ->
 		      Acc;
-		  ("occi.core.target.kind", _, Acc) ->
+		  (<<"occi.core.target.kind">>, _, Acc) ->
 		      Acc;
 		  (_, undefined, Acc) ->
 		      Acc;
@@ -252,7 +250,10 @@ r_attribute_value(V, _) ->
     [ "\"", V, "\"" ].
 
 
-append(Name, Value, Headers) ->
+append(Name, Value, Headers) when is_list(Value) ->
+    append(Name, iolist_to_binary(Value), Headers);
+
+append(Name, Value, Headers) when is_binary(Value) ->
     case orddict:is_key(Name, Headers) of
 	true ->
 	    orddict:append_list(Name, [Value], Headers);
@@ -260,9 +261,24 @@ append(Name, Value, Headers) ->
 	    orddict:store(Name, [Value], Headers)
     end.
 
+
+iolist_join([], _) ->
+    [];
+
+iolist_join(Values, Sep) ->
+    [ Sep | Joined ] = lists:foldl(fun (V, Acc) ->
+					   [ Sep, V | Acc ]
+				   end, [], lists:reverse(Values)),
+    Joined.
+
 %%%
 %%% eunit
 %%%
 -ifdef(TEST).
-
+iolist_join_test_() ->
+    [
+     ?_assertMatch([], iolist_join([], " ")),
+     ?_assertMatch([<<"un">>, " ", <<"deux">>], iolist_join([<<"un">>, <<"deux">>], " ")),
+     ?_assertMatch([<<"un">>, ", ", <<"deux">>], iolist_join([<<"un">>, <<"deux">>], ", "))
+    ].
 -endif.

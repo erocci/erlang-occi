@@ -160,7 +160,7 @@ to_xml(attribute, Attr, _Ctx) ->
 		       {A, [Restriction, C]}
 	       end,
     A1 = case occi_attribute:title(Attr) of
-	     [] -> A0;
+	     <<>> -> A0;
 	     Title -> [{title, Title} | A0]
 	 end,
     A2 = case occi_attribute:default(Attr) of
@@ -176,7 +176,7 @@ to_xml(attribute, Attr, _Ctx) ->
 	     false -> A3
 	 end,
     A5 = case occi_attribute:description(Attr) of
-	     "" -> A4;
+	     <<>> -> A4;
 	     Desc -> [{description, Desc} | A4]
 	 end,
     {attribute, lists:reverse(A5), lists:reverse(C0)};
@@ -184,7 +184,7 @@ to_xml(attribute, Attr, _Ctx) ->
 to_xml(resource, R, Ctx) ->
     Id = occi_resource:id(R),
     A = [{id, occi_uri:to_string(Id, Ctx)}],
-    A1 = case occi_resource:get("occi.core.title", R) of
+    A1 = case occi_resource:get(<<"occi.core.title">>, R) of
 	     undefined -> A;
 	     Title -> [{title, Title} | A]
 	 end,
@@ -192,7 +192,7 @@ to_xml(resource, R, Ctx) ->
     C0 = lists:foldl(fun (MixinId, Acc) ->
 			     [ category_id(mixin, MixinId) | Acc ]
 		     end, C, occi_resource:mixins(R)),
-    C1 = maps:fold(fun ("occi.core.title", _V, Acc) ->
+    C1 = maps:fold(fun (<<"occi.core.title">>, _V, Acc) ->
 			   Acc;
 		       (_K, undefined, Acc) ->
 			   Acc;
@@ -210,11 +210,11 @@ to_xml(resource, R, Ctx) ->
 to_xml(link, L, Ctx) ->
     Id = occi_link:id(L),
     A = [
-	 {target, occi_uri:to_string(occi_link:get("occi.core.target", L), Ctx)},
-	 {source, occi_uri:to_string(occi_link:get("occi.core.source", L), Ctx)},
+	 {target, occi_uri:to_string(occi_link:get(<<"occi.core.target">>, L), Ctx)},
+	 {source, occi_uri:to_string(occi_link:get(<<"occi.core.source">>, L), Ctx)},
 	 {id, occi_uri:to_string(Id, Ctx)}
 	],
-    A1 = case occi_link:get("occi.core.title", L) of
+    A1 = case occi_link:get(<<"occi.core.title">>, L) of
 	     undefined -> A;
 	     Title -> [{title, Title} | A]
 	 end,
@@ -225,9 +225,9 @@ to_xml(link, L, Ctx) ->
     C1 = lists:foldl(fun ({Scheme, Term}, Acc) ->
 			     [ {action, [{scheme, Scheme}, {term, Term}], []} | Acc ]
 		     end, C0, occi_link:actions(L)),
-    C2 = maps:fold(fun ("occi.core.title", _V, Acc) -> Acc;
-		       ("occi.core.source", _V, Acc) -> Acc;
-		       ("occi.core.target", _V, Acc) -> Acc;
+    C2 = maps:fold(fun (<<"occi.core.title">>, _V, Acc) -> Acc;
+		       (<<"occi.core.source">>, _V, Acc) -> Acc;
+		       (<<"occi.core.target">>, _V, Acc) -> Acc;
 		       (_K, undefined, Acc) -> Acc;
 		       (K, V, Acc) ->
 			   [ {attribute, [{name, K}, {value, attr_value(V)}], []} | Acc ]
@@ -251,8 +251,8 @@ category_id(Name, {Scheme, Term}) ->
 attr_value(V) when is_float(V) ->
     io_lib:format("~p", [V]);
 
-attr_value({Scheme, Term}) when is_list(Scheme), is_list(Term) ->
-    [Scheme ++ Term];
+attr_value({Scheme, Term}) when is_binary(Scheme), is_binary(Term) ->
+    [ binary_to_list(Scheme) ++ binary_to_list(Term) ];
 
 attr_value(V) -> 
     V.

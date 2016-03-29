@@ -14,7 +14,8 @@
 
 -export([parse_model/3,
 	 parse_entity/3,
-	 parse_collection/2]).
+	 parse_collection/2,
+	 parse_invoke/2]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -55,6 +56,10 @@ parse_collection(Bin, Ctx) ->
     p_collection(jsx:decode(Bin, [return_maps]), Ctx).
 
 
+-spec parse_invoke(iolist(), parse_ctx()) -> occi_collection:t().
+parse_invoke(Bin, Ctx) ->
+    p_invoke(jsx:decode(Bin, [return_maps]), Ctx).
+
 %%%
 %%% Parsers
 %%%
@@ -82,6 +87,21 @@ p_collection_entity2(Id, #{ <<"kind">> := _Kind }=Map, Ctx) ->
 
 p_collection_entity2(Id, _M, _Ctx) ->
     {Id, undefined}.
+
+
+p_invoke(Map, _Ctx) ->
+    Scheme = maps:get(<<"scheme">>, Map),
+    Term = maps:get(<<"term">>, Map),
+    Attributes = maps:fold(fun (K, V, Acc) ->
+				   Acc#{ binary_to_list(K) => V }
+			   end, #{}, maps:get(<<"attributes">>, Map, #{})),
+    I = occi_invoke:new({binary_to_list(Scheme), binary_to_list(Term)}, Attributes),
+    case maps:get(<<"title">>, Map, undefined) of
+	undefined ->
+	    I;
+	Title ->
+	    occi_invoke:title(Title, I)
+    end.
 
 
 p_mixin(#{ <<"scheme">> := Scheme }=Map, Ctx) ->

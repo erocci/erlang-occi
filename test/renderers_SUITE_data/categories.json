@@ -1,6 +1,38 @@
 {
   "actions": [
     {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "backup",
+      "title": "Set storage as backup"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "offline",
+      "title": "Set storage offline"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "online",
+      "title": "Set storage online"
+    },
+    {
+      "attributes": {
+        "size": {
+          "mutable": true,
+          "required": false,
+          "type": "number"
+        }
+      },
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "resize",
+      "title": "Resize storage"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "snapshot",
+      "title": "Take storage snapshot"
+    },
+    {
       "attributes": {
         "method": {
           "mutable": true,
@@ -50,63 +82,46 @@
       "scheme": "http://schemas.ogf.org/occi/infrastructure/action#",
       "term": "up",
       "title": "Set network up"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "backup",
-      "title": "Set storage as backup"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "offline",
-      "title": "Set storage offline"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "online",
-      "title": "Set storage online"
-    },
-    {
-      "attributes": {
-        "size": {
-          "mutable": true,
-          "required": false,
-          "type": "number"
-        }
-      },
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "resize",
-      "title": "Resize storage"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "snapshot",
-      "title": "Take storage snapshot"
     }
   ],
   "kinds": [
     {
       "attributes": {
-        "occi.storagelink.deviceid": {
-          "mutable": true,
-          "required": true,
-          "type": "string"
-        },
-        "occi.storagelink.mountpoint": {
+        "occi.core.summary": {
           "mutable": true,
           "required": false,
           "type": "string"
+        }
+      },
+      "parent": "http://schemas.ogf.org/occi/core#entity",
+      "scheme": "http://schemas.ogf.org/occi/core#",
+      "term": "resource",
+      "title": "Core Resource"
+    },
+    {
+      "actions": [
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#backup",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#offline",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#online",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#resize",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#snapshot"
+      ],
+      "attributes": {
+        "occi.storage.size": {
+          "mutable": true,
+          "required": true,
+          "type": "number"
         },
-        "occi.storagelink.state": {
+        "occi.storage.state": {
           "mutable": false,
           "required": true,
           "type": "array"
         }
       },
-      "parent": "http://schemas.ogf.org/occi/core#link",
+      "parent": "http://schemas.ogf.org/occi/core#resource",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
-      "term": "storagelink",
-      "title": "StorageLink Link"
+      "term": "storage",
+      "title": "Storage Resource"
     },
     {
       "actions": [
@@ -153,6 +168,50 @@
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "compute",
       "title": "Compute Resource"
+    },
+    {
+      "attributes": {
+        "occi.core.id": {
+          "mutable": true,
+          "required": false,
+          "type": "string"
+        },
+        "occi.core.title": {
+          "mutable": true,
+          "required": false,
+          "type": "string"
+        }
+      },
+      "scheme": "http://schemas.ogf.org/occi/core#",
+      "term": "entity",
+      "title": "Core Entity"
+    },
+    {
+      "actions": [
+        "http://schemas.ogf.org/occi/infrastructure/action#down",
+        "http://schemas.ogf.org/occi/infrastructure/action#up"
+      ],
+      "attributes": {
+        "occi.network.label": {
+          "mutable": true,
+          "required": false,
+          "type": "string"
+        },
+        "occi.network.state": {
+          "mutable": false,
+          "required": true,
+          "type": "array"
+        },
+        "occi.network.vlan": {
+          "mutable": true,
+          "required": false,
+          "type": "number"
+        }
+      },
+      "parent": "http://schemas.ogf.org/occi/core#resource",
+      "scheme": "http://schemas.ogf.org/occi/infrastructure#",
+      "term": "network",
+      "title": "Network Resource"
     },
     {
       "attributes": {
@@ -207,109 +266,41 @@
     },
     {
       "attributes": {
-        "occi.core.id": {
-          "mutable": true,
-          "required": false,
-          "type": "string"
-        },
-        "occi.core.title": {
-          "mutable": true,
-          "required": false,
-          "type": "string"
-        }
-      },
-      "scheme": "http://schemas.ogf.org/occi/core#",
-      "term": "entity",
-      "title": "Core Entity"
-    },
-    {
-      "actions": [
-        "http://schemas.ogf.org/occi/infrastructure/action#down",
-        "http://schemas.ogf.org/occi/infrastructure/action#up"
-      ],
-      "attributes": {
-        "occi.network.label": {
-          "mutable": true,
-          "required": false,
-          "type": "string"
-        },
-        "occi.network.state": {
-          "mutable": false,
-          "required": true,
-          "type": "array"
-        },
-        "occi.network.vlan": {
-          "mutable": true,
-          "required": false,
-          "type": "number"
-        }
-      },
-      "parent": "http://schemas.ogf.org/occi/core#resource",
-      "scheme": "http://schemas.ogf.org/occi/infrastructure#",
-      "term": "network",
-      "title": "Network Resource"
-    },
-    {
-      "actions": [
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#backup",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#offline",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#online",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#resize",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#snapshot"
-      ],
-      "attributes": {
-        "occi.storage.size": {
+        "occi.storagelink.deviceid": {
           "mutable": true,
           "required": true,
-          "type": "number"
+          "type": "string"
         },
-        "occi.storage.state": {
+        "occi.storagelink.mountpoint": {
+          "mutable": true,
+          "required": false,
+          "type": "string"
+        },
+        "occi.storagelink.state": {
           "mutable": false,
           "required": true,
           "type": "array"
         }
       },
-      "parent": "http://schemas.ogf.org/occi/core#resource",
+      "parent": "http://schemas.ogf.org/occi/core#link",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
-      "term": "storage",
-      "title": "Storage Resource"
-    },
-    {
-      "attributes": {
-        "occi.core.summary": {
-          "mutable": true,
-          "required": false,
-          "type": "string"
-        }
-      },
-      "parent": "http://schemas.ogf.org/occi/core#entity",
-      "scheme": "http://schemas.ogf.org/occi/core#",
-      "term": "resource",
-      "title": "Core Resource"
+      "term": "storagelink",
+      "title": "StorageLink Link"
     }
   ],
   "mixins": [
     {
-      "attributes": {
-        "occi.network.address": {
-          "mutable": true,
-          "required": false,
-          "type": "string"
-        },
-        "occi.network.allocation": {
-          "mutable": true,
-          "required": true,
-          "type": "array"
-        },
-        "occi.network.gateway": {
-          "mutable": true,
-          "required": false,
-          "type": "string"
-        }
-      },
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/network#",
-      "term": "ipnetwork",
-      "title": "IP Networking Mixin"
+      "scheme": "http://schemas.ogf.org/occi/infrastructure#",
+      "term": "os_tpl",
+      "title": "OS Template"
+    },
+    {
+      "depends": [
+        "http://schemas.ogf.org/occi/infrastructure#os_tpl"
+      ],
+      "scheme": "http://occi.example.org/occi/infrastructure/os_tpl#",
+      "term": "debian6",
+      "title": []
     },
     {
       "attributes": {
@@ -347,11 +338,26 @@
       "title": "Resource template"
     },
     {
-      "depends": [
-        "http://schemas.ogf.org/occi/infrastructure#os_tpl"
-      ],
-      "scheme": "http://occi.example.org/occi/infrastructure/os_tpl#",
-      "term": "debian6"
+      "attributes": {
+        "occi.network.address": {
+          "mutable": true,
+          "required": false,
+          "type": "string"
+        },
+        "occi.network.allocation": {
+          "mutable": true,
+          "required": true,
+          "type": "array"
+        },
+        "occi.network.gateway": {
+          "mutable": true,
+          "required": false,
+          "type": "string"
+        }
+      },
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/network#",
+      "term": "ipnetwork",
+      "title": "IP Networking Mixin"
     },
     {
       "attributes": {
@@ -374,11 +380,6 @@
       "scheme": "http://schemas.ogf.org/occi/infrastructure/networkinterface#",
       "term": "ipnetworkinterface",
       "title": "IP Network Interface Mixin"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure#",
-      "term": "os_tpl",
-      "title": "OS Template"
     }
   ]
 }

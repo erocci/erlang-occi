@@ -61,7 +61,7 @@ cast(V, uri) ->
 	    throw({invalid_value, uri, V})
     end;
 
-cast({Scheme, Term}=V, kind) when is_list(Scheme), is_list(Term) ->
+cast({Scheme, Term}=V, kind) when is_binary(Scheme), is_binary(Term) ->
     V;
 
 cast(V, kind) ->

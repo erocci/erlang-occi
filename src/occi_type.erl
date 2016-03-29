@@ -19,7 +19,8 @@
 	      | attribute
 	      | entity
 	      | resource
-	      | link.
+	      | link
+	      | invoke.
 
 -type t() :: occi_extension:t()
 	   | occi_collection:t()
@@ -30,7 +31,8 @@
 	   | occi_attribute:t()
 	   | occi_entity:t()
 	   | occi_resource:t()
-	   | occi_link:t().
+	   | occi_link:t()
+	   | occi_invoke:t().
 
 -export_type([name/0,
 	      t/0]).

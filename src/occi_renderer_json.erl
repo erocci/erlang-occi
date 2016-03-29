@@ -89,7 +89,7 @@ r_type(resource, R, Ctx) ->
 	     [] -> M;
 	     Links -> M#{ links => r_links(Links, [], Ctx) }
 	 end,
-    case occi_resource:get("occi.core.summary", R) of
+    case occi_resource:get(<<"occi.core.summary">>, R) of
 	undefined -> M1;
 	Summary -> M1#{ summary => r_string(Summary) }
     end;
@@ -126,17 +126,17 @@ r_mixin(Mixin, Ctx) ->
 
 r_action(Action) ->
     {Scheme, Term} = occi_action:id(Action),
-    M = #{ term => list_to_binary(Term), scheme => list_to_binary(Scheme) },
+    M = #{ term => Term, scheme => Scheme },
     M0 = case occi_action:title(Action) of
-	     "" -> M;
-	     Title -> M#{ title => list_to_binary(Title) }
+	     <<>> -> M;
+	     Title -> M#{ title => Title }
 	 end,
     case occi_action:attributes(Action) of
 	[] ->
 	    M0;
 	Attributes ->
 	    Defs = lists:foldl(fun (Def, Acc) ->
-				       Name = list_to_binary(occi_attribute:name(Def)),
+				       Name = occi_attribute:name(Def),
 				       Acc#{ Name => r_attr_def(Def) }
 			       end, #{}, Attributes),
 	    M0#{ attributes => Defs }
@@ -145,17 +145,17 @@ r_action(Action) ->
 
 r_category(Category, Ctx) ->
     {Scheme, Term} = occi_category:id(Category),
-    M = #{ term => list_to_binary(Term), scheme => list_to_binary(Scheme) },
+    M = #{ term => Term, scheme => Scheme },
     M0 = case occi_category:title(Category) of
-	     "" -> M;
-	     Title -> M#{ title => list_to_binary(Title) }
+	     <<>> -> M;
+	     Title -> M#{ title => Title }
 	 end,
     M1 = case occi_category:attributes(Category) of
 	     [] ->
 		 M0;
 	     Attributes ->
 		 Defs = lists:foldl(fun (Def, Acc) ->
-					    Name = list_to_binary(occi_attribute:name(Def)),
+					    Name = occi_attribute:name(Def),
 					    Acc#{ Name => r_attr_def(Def) }
 				    end, #{}, Attributes),
 		 M0#{ attributes => Defs }
@@ -192,10 +192,10 @@ r_attr_def(Def) ->
 		 M0#{ default => r_attribute_value(Default) }
 	 end,
     case occi_attribute:description(Def) of
-	"" ->
+	<<>> ->
 	    M1;
 	Desc ->
-	    M1#{ description => list_to_binary(Desc) }
+	    M1#{ description => Desc }
     end.
 
 
@@ -227,10 +227,10 @@ r_attr_type(resource) ->
 r_link(L, Ctx) ->
     M = r_entity(L, Ctx),
     M#{ id => occi_uri:to_string(occi_resource:id(L), Ctx),
-	source => r_link_end(occi_link:get("occi.core.source", L), 
-			     occi_link:get("occi.core.source.kind", L), Ctx),
-	target => r_link_end(occi_link:get("occi.core.target", L), 
-			     occi_link:get("occi.core.target.kind", L), Ctx) }.
+	source => r_link_end(occi_link:get(<<"occi.core.source">>, L), 
+			     occi_link:get(<<"occi.core.source.kind">>, L), Ctx),
+	target => r_link_end(occi_link:get(<<"occi.core.target">>, L), 
+			     occi_link:get(<<"occi.core.target.kind">>, L), Ctx) }.
 
 
 r_entity(E, Ctx) ->
@@ -251,14 +251,14 @@ r_entity(E, Ctx) ->
 		 M2#{ actions => [ r_type_id(Action) || Action <- Actions ] }
 	 end,
     M4 = M3#{ id => occi_uri:to_string(occi_entity:id(E), Ctx) },
-    case occi_link:get("occi.core.title", E) of
+    case occi_link:get(<<"occi.core.title">>, E) of
 	undefined -> M4;
 	Title -> M4#{ title => r_string(Title) }
     end.
 
 
 r_type_id({Scheme, Term}) ->
-    iolist_to_binary(Scheme ++ Term).
+    << Scheme/binary, Term/binary >>.
 
 
 r_links([], Acc, _) ->
@@ -277,13 +277,13 @@ r_link_end(Location, Kind, Ctx) ->
 
 r_attributes(Attributes) ->
     maps:fold(fun (_, undefined, Acc) ->	       Acc;
-		  ("occi.core.id", _, Acc) ->	       Acc;
-		  ("occi.core.summary", _, Acc) ->     Acc;
-		  ("occi.core.title", _, Acc) ->       Acc;
-		  ("occi.core.source", _, Acc) ->      Acc;
-		  ("occi.core.source.kind", _, Acc) -> Acc;
-		  ("occi.core.target", _, Acc) ->      Acc;
-		  ("occi.core.target.kind", _, Acc) -> Acc;
+		  (<<"occi.core.id">>, _, Acc) ->	       Acc;
+		  (<<"occi.core.summary">>, _, Acc) ->     Acc;
+		  (<<"occi.core.title">>, _, Acc) ->       Acc;
+		  (<<"occi.core.source">>, _, Acc) ->      Acc;
+		  (<<"occi.core.source.kind">>, _, Acc) -> Acc;
+		  (<<"occi.core.target">>, _, Acc) ->      Acc;
+		  (<<"occi.core.target.kind">>, _, Acc) -> Acc;
 		  (K, V, Acc) ->                       
 		      Acc#{ iolist_to_binary(K) => r_attribute_value(V) }
 	      end, #{}, Attributes).

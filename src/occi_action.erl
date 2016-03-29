@@ -1,6 +1,7 @@
 %%% @author Jean Parpaillon <jean.parpaillon@free.fr>
 %%% @copyright (C) 2016, Jean Parpaillon
-%%% @doc
+%%% @doc Implements action definition (category)
+%%% For action invocation, @see occi_invoke
 %%%
 %%% @end
 %%% Created :  9 Feb 2016 by Jean Parpaillon <jean.parpaillon@free.fr>

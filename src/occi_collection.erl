@@ -9,6 +9,7 @@
 
 -include("occi_uri.hrl").
 -include("occi_rendering.hrl").
+-include("occi_type.hrl").
 
 -export([new/0,
 	 new/1,
@@ -109,6 +110,5 @@ to_elem(E) when ?is_uri(E) ->
 to_elem({Id, _}=E) when ?is_uri(Id) ->
     E;
 
-to_elem(E) when element(1, E) =:= resource;
-		element(1, E) =:= link ->
+to_elem(E) when ?is_entity(E) ->
     {occi_entity:id(E), E}.

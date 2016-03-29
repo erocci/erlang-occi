@@ -40,50 +40,50 @@ init_per_group('categories', Config) ->
 
 init_per_group('core_resource', Config) ->
     Id = occi_uri:from_string(<<"myresource">>, ?ctx),
-    Object = occi_resource:new(Id, {"http://schemas.ogf.org/occi/core#", "resource"}),
+    Object = occi_resource:new(Id, {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>}),
     [ {object, Object}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_a', Config) ->
     Id = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
-    R = occi_resource:new(Id, {"http://schemas.ogf.org/occi/infrastructure#", "compute"}),
-    R0 = occi_resource:add_mixin({"http://occi.example.org/occi/infrastructure/os_tpl#", "debian6"}, R),
-    R1 = occi_resource:set(#{ "occi.core.title" => "My super compute",
-			      "occi.compute.cores" => 4,
-			      "occi.compute.hostname" => "mycompute",
-			      "occi.compute.speed" => 4.5,
-			      "occi.compute.memory" => 2.5 }, client, R0),
+    R = occi_resource:new(Id, {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}),
+    R0 = occi_resource:add_mixin({<<"http://occi.example.org/occi/infrastructure/os_tpl#">>, <<"debian6">>}, R),
+    R1 = occi_resource:set(#{ <<"occi.core.title">> => <<"My super compute">>,
+			      <<"occi.compute.cores">> => 4,
+			      <<"occi.compute.hostname">> => <<"mycompute">>,
+			      <<"occi.compute.speed">> => 4.5,
+			      <<"occi.compute.memory">> => 2.5 }, client, R0),
     [ {object, R1}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_b', Config) ->
     RId = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
-    RKind = {"http://schemas.ogf.org/occi/infrastructure#", "compute"},
+    RKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>},
     R = occi_resource:new(RId, RKind),
     LId = occi_uri:from_string(<<"myif0">>, ?ctx),
-    L = occi_link:new(LId, {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"}, 
+    L = occi_link:new(LId, {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>}, 
 		      RId, RKind, 
 		      occi_uri:from_string(<<"network0">>, ?ctx), undefined),
     R1 = occi_resource:add_link(L, R),
-    R2 = occi_resource:set(#{ "occi.compute.cores" => 4 }, client, R1),
+    R2 = occi_resource:set(#{ <<"occi.compute.cores">> => 4 }, client, R1),
     [ {object, R2}, {ctx, ?ctx} | Config ];
 
 init_per_group('netif', Config) ->
     Id = occi_uri:from_string(<<"myif">>, ?ctx),
-    Kind = {"http://schemas.ogf.org/occi/infrastructure#", "networkinterface"},
-    Mixin = {"http://schemas.ogf.org/occi/infrastructure/networkinterface#", "ipnetworkinterface"},
+    Kind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>},
+    Mixin = {<<"http://schemas.ogf.org/occi/infrastructure/networkinterface#">>, <<"ipnetworkinterface">>},
     Src = occi_uri:from_string(<<"mycompute">>, Id),
-    SrcKind = {"http://schemas.ogf.org/occi/infrastructure#", "compute"},
+    SrcKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>},
     Target = occi_uri:from_string(<<"mynetwork">>, Id),
-    TargetKind = {"http://schemas.ogf.org/occi/infrastructure#", "network"},
+    TargetKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"network">>},
     L = occi_link:new(Id, Kind, Src, SrcKind, Target, TargetKind),
     L0 = occi_link:add_mixin(Mixin, L),
-    L1 = occi_link:set(#{ "occi.networkinterface.interface" => "eth0",
-			  "occi.networkinterface.mac" => "00:11:22:33:44:55",
-			  "occi.networkinterface.address" => "192.168.0.1",
-			  "occi.networkinterface.allocation" => "static"}, client, L0),
+    L1 = occi_link:set(#{ <<"occi.networkinterface.interface">> => <<"eth0">>,
+			  <<"occi.networkinterface.mac">> => <<"00:11:22:33:44:55">>,
+			  <<"occi.networkinterface.address">> => <<"192.168.0.1">>,
+			  <<"occi.networkinterface.allocation">> => <<"static">>}, client, L0),
     [ {object, L1}, {ctx, ?ctx} | Config ];
 
 init_per_group('bounded_collection', Config) ->
-    Kind = {"http://schemas.ogf.org/occi/core#", "resource"},
+    Kind = {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>},
     C = occi_collection:new(Kind),
     R0 = occi_resource:new(occi_uri:from_string(<<"resource0">>, ?ctx)),
     R1 = occi_resource:new(occi_uri:from_string(<<"resource1">>, ?ctx)),
