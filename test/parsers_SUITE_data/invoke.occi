@@ -1,2 +1,2 @@
-category: action0; scheme="http://schemas.example.org/core#"; class=action
-x-occi-attribute: occi.example.attr1="value"
+category: stop; scheme="http://schemas.ogf.org/occi/infrastructure/compute/action#"; class=action
+x-occi-attribute: method="graceful"

@@ -133,9 +133,9 @@ init_per_group('collection', Config) ->
 
 init_per_group('invoke', Config) ->
     Fun = fun(Action)  ->
-		  ?assertMatch(#{ <<"occi.example.attr1">> := <<"value">> },
+		  ?assertMatch(#{ <<"method">> := <<"graceful">> },
 			       occi_invoke:attributes(Action)),
-		  ?assertMatch({<<"http://schemas.example.org/core#">>, <<"action0">>},
+		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"stop">>},
 			       occi_invoke:id(Action))
 	  end,
     Load = fun (Type, Bin) -> occi_invoke:load(Type, Bin, ?ctx) end,

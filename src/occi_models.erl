@@ -10,6 +10,7 @@
 -module(occi_models).
 
 -include("occi.hrl").
+-include("occi_type.hrl").
 -include("occi_rendering.hrl").
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
@@ -20,6 +21,7 @@
 	 categories/0,
 	 category/1,
 	 kind/2,
+	 action/1,
 	 add_category/1,
 	 attribute/2,
 	 attributes/1]).
@@ -68,10 +70,10 @@ categories() ->
 %% @throw {unknown_category, occi_category:id()}, {invalid_kind, occi_category:id()}
 %% @end
 -spec kind(link | resource, occi_category:id()) -> occi_category:t().
-kind(Parent, KindId) when is_list(KindId); is_binary(KindId) ->
+kind(Parent, KindId) when is_binary(KindId) ->
     kind(Parent, occi_category:parse_id(KindId));
 
-kind(Parent, KindId) ->
+kind(Parent, KindId) when ?is_category_id(KindId) ->
     case category(KindId) of
 	undefined ->
 	    throw({unknown_category, KindId});
@@ -83,16 +85,30 @@ kind(Parent, KindId) ->
     end.
 
 
+%% @doc Return an action definition
+%% @end
+-spec action(occi_category:id()) -> occi_action:t().
+action(ActionId) ->
+    case category(ActionId) of
+	undefined ->
+	    throw({unknown_action, ActionId});
+	Action when ?is_action(Action) ->
+	    Action;
+	_ ->
+	    throw({not_an_action, ActionId})
+    end.
+
+
 %% @doc Return a category
 %% Category references (parent, depend, etc) is resolved:
 %% attributes and actions from references are merged into the resulting category
 %%
 %% @end
--spec category(string() | binary() | occi_category:id()) -> occi_category:t() | undefined.
-category(Id) when is_list(Id); is_binary(Id) ->
+-spec category(binary() | occi_category:id()) -> occi_category:t() | undefined.
+category(Id) when is_binary(Id) ->
     category(occi_category:parse_id(Id));
 
-category(Id) ->
+category(Id) when ?is_category_id(Id) ->
     case mnesia:transaction(fun () -> category_t(Id) end) of
 	{aborted, Err} -> throw(Err);
 	{atomic, C} -> C

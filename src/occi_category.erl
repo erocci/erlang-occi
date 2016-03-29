@@ -101,7 +101,7 @@ add_attribute(Attr, C) ->
     ?s(attributes, Attrs#{ occi_attribute:name(Attr) => Attr }, C).
 
 
--spec attributes(t()) -> [occi_attribute:t()].
+-spec attributes(t()) -> maps:map().
 attributes(C) ->
     Attrs = ?g(attributes, C),
     maps:values(Attrs).
