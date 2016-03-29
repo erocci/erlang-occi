@@ -24,7 +24,7 @@
 
 -spec parse_model(extension | kind | mixin | action, binary(), parse_ctx()) -> occi_type:t().
 parse_model(mixin, Bin, Ctx) ->
-    parse_mixin(parse_headers(Bin), Ctx);
+    parse_mixin(occi_parser_http:parse(Bin), Ctx);
 
 parse_model(Type, _Bin, _Ctx) when Type =:= extension;
 				   Type =:= kind;
@@ -37,7 +37,7 @@ parse_model(Type, _Bin, _Ctx) when Type =:= extension;
 parse_entity(Type, Bin, Ctx) when Type =:= entity;
 				  Type =:= resource;
 				  Type =:= link ->
-    Entity = parse_entity2(parse_headers(Bin), Ctx),
+    Entity = parse_entity2(occi_parser_http:parse(Bin), Ctx),
     case occi_entity:is_subtype(Type, Entity) of
 	true -> Entity;
 	false -> throw({parse_error, {type, Entity}})
@@ -46,7 +46,7 @@ parse_entity(Type, Bin, Ctx) when Type =:= entity;
 
 -spec parse_collection(iolist(), parse_ctx()) -> occi_collection:t().
 parse_collection(Bin, Ctx) ->
-    Headers = parse_headers(Bin),
+    Headers = occi_parser_http:parse(Bin),
     Locations = p_locations(orddict:find('x-occi-location', Headers), Ctx),
     C = occi_collection:new(),
     occi_collection:append(Locations, C).
@@ -54,7 +54,7 @@ parse_collection(Bin, Ctx) ->
 
 -spec parse_invoke(iolist(), parse_ctx()) -> occi_invoke:t().
 parse_invoke(Bin, _Ctx) ->
-    Headers = parse_headers(Bin),
+    Headers = occi_parser_http:parse(Bin),
     p_invoke(Headers).
 
 %%%
@@ -209,8 +209,6 @@ p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, 
 %%% Parse functions
 %%%
 -define(is_alpha(C), C >= 65, C =< 90; C >= 97, C =< 122).
--define(is_lowercase(C), C >= 97, C =< 122).
--define(is_uppercase(C), C >= 65, C =< 90).
 -define(is_digit(C), C >= 48, C =< 57).
 
 p_locations(error, _Ctx) ->
@@ -887,135 +885,6 @@ eat_ws(<< $\s, Rest/binary >>) ->
 
 eat_ws(Rest) ->
     Rest.
-
-%% @doc Generates a dict from categories
-%% @end
-parse_headers(Bin) ->
-    p_headers(Bin, orddict:new()).
-
-
-p_headers(<<>>, Acc) ->
-    reverse(Acc);
-
-p_headers(<< $\r, $\n, Rest/binary >>, Acc) ->
-    p_headers(Rest, Acc);
-
-p_headers(<< $\r, Rest/binary >>, Acc) ->
-    p_headers(Rest, Acc);
-
-p_headers(<< $\n, Rest/binary >>, Acc) ->
-    p_headers(Rest, Acc);
-
-p_headers(<< $\s, Rest/binary >>, Acc) ->
-    p_headers(Rest, Acc);
-
-p_headers(Bin, Acc) ->
-    {Name, Values, Rest} = p_header(Bin),
-    p_headers(Rest, add_header_values(Name, Values, Acc)).
-
-
-reverse(H) ->
-    orddict:fold(fun (Key, Values, Acc) ->
-                         orddict:store(Key, lists:reverse(Values), Acc)
-                 end, orddict:new(), H).
-
-
-p_header(<< C, Rest/binary >>) when ?is_uppercase(C) ->
-    p_header_name(Rest, << (C+32) >>);
-
-p_header(<< C, Rest/binary >>) when ?is_lowercase(C) ->
-    p_header_name(Rest, << C >>);
-
-p_header(<< C, _Rest/binary >>) ->
-    throw({parse_error, {header_name, C}}).
-
-
-p_header_name(<<>>, _Acc) ->
-    throw({parse_error, {header_name, <<>>}});
-
-p_header_name(<< $\s, Rest/binary >>, Acc) ->
-    p_header_name2(Rest, Acc);
-
-p_header_name(<< $:, Rest/binary >>, Acc) ->
-    p_header_name3(eat_ws(Rest), Acc);
-
-p_header_name(<< C, Rest/binary >>, Acc) when ?is_uppercase(C) ->
-    p_header_name(Rest, << Acc/binary, (C+32) >>);
-
-p_header_name(<< C, Rest/binary >>, Acc) ->
-    p_header_name(Rest, << Acc/binary, C >>).
-
-
-p_header_name2(<<>>, _Acc) ->
-    throw({parse_error, {header_name, <<>>}});
-
-p_header_name2(<< $\s, Rest/binary >>, Acc) ->
-    p_header_name2(Rest, Acc);
-
-p_header_name2(<< $:, Rest/binary >>, Name) ->
-    p_header_name3(eat_ws(Rest), Name);
-
-p_header_name2(<< C, _Rest/binary >>, _Acc) ->
-    throw({parse_error, {header_name, C}}).
-
-
-p_header_name3(Bin, <<"category">>)         -> p_header_value(Bin, 'category');
-
-p_header_name3(Bin, <<"x-occi-location">>)  -> p_header_value(Bin, 'x-occi-location');
-
-p_header_name3(Bin, <<"x-occi-attribute">>) -> p_header_value(Bin, 'x-occi-attribute');
-
-p_header_name3(Bin, <<"link">>)             -> p_header_value(Bin, 'link');
-
-p_header_name3(Bin, <<"location">>)         -> p_header_value(Bin, 'location');
-
-p_header_name3(Bin, Name)                   -> p_header_value(Bin, Name).
-
-
-p_header_value(<< $\r, $\n, Rest/binary >>, Name) ->
-    {Name, [], Rest};
-
-p_header_value(<< $\r, Rest/binary >>, Name) ->
-    {Name, [], Rest};
-
-p_header_value(<< $\n, Rest/binary >>, Name) ->
-    {Name, [], Rest};
-
-p_header_value(<< $,, Rest/binary >>, Name) ->
-    p_header_value(eat_ws(Rest), Name);
-
-p_header_value(<< C, Rest/binary >>, Name) ->
-    p_header_value2(Rest, Name, [], << C >>).
-
-
-p_header_value2(<<>>, Name, Values, Acc) ->
-    {Name, [ Acc | Values ], <<>>};
-
-p_header_value2(<< $\r, $\n, Rest/binary >>, Name, Values, Acc) ->
-    {Name, [ Acc | Values ], Rest};
-
-p_header_value2(<< $\r, Rest/binary >>, Name, Values, Acc) ->
-    {Name, [ Acc | Values ], Rest};
-
-p_header_value2(<< $\n, Rest/binary >>, Name, Values, Acc) ->
-    {Name, [ Acc | Values ], Rest};
-
-p_header_value2(<< $,, Rest/binary >>, Name, Values, Acc) ->
-    p_header_value2(eat_ws(Rest), Name, [ Acc | Values ], <<>>);
-
-p_header_value2(<< C, Rest/binary >>, Name, Values, Acc) ->
-    p_header_value2(Rest, Name, Values, << Acc/binary, C >>).
-
-
-add_header_values(Name, Values, Acc) when is_binary(Name) ->
-    add_header_values(Name, Values, Acc);
-
-add_header_values(Name, Values, Acc) ->
-    Values0 = case orddict:find(Name, Acc) of
-		  {ok, V} -> V;
-		  error -> []
-	      end,
-    orddict:store(Name, Values ++ Values0, Acc).
 
 
 filter_categories([], undefined, Mixins) ->
