@@ -188,6 +188,9 @@ load_categories(_Scheme, []) ->
 load_categories(Scheme, [ Cat | Categories ]) ->
     ?debug("Add category: ~p", [occi_category:id(Cat)]),
     ok = add_category(Cat),
+    lists:foreach(fun (Action) ->
+			  ok = add_category(Action)
+		  end, occi_category:actions(Cat)),
     load_categories(Scheme, Categories).
 
 
@@ -241,7 +244,11 @@ resolve_t(kind, C) ->
     end;
 
 resolve_t(mixin, C) ->
+    C;
+
+resolve_t(action, C) ->
     C.
+
 
 %%%
 %%% eunit

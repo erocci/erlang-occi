@@ -82,6 +82,14 @@ load_extension(Config) ->
 		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"large">>}))),
     ?assertMatch(mixin,
 		 occi_category:class(occi_models:category({<<"http://occi.example.org/occi/infrastructure/os_tpl#">>, <<"debian6">>}))),
+    A0 = {<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"start">>},
+    ?assertMatch(action, occi_category:class(occi_models:category(A0))),
+    A1 = {<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"stop">>},
+    ?assertMatch(action, occi_category:class(occi_models:category(A1))),
+    A2 = {<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"restart">>},
+    ?assertMatch(action, occi_category:class(occi_models:category(A2))),
+    A3 = {<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"suspend">>},
+    ?assertMatch(action, occi_category:class(occi_models:category(A3))),
     ok.
 
 
