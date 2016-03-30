@@ -31,7 +31,7 @@ t() = #mixin{}
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_apply-2">add_apply/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_depend-2">add_depend/2</a></td><td></td></tr><tr><td valign="top"><a href="#applies-1">applies/1</a></td><td></td></tr><tr><td valign="top"><a href="#depends-1">depends/1</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_apply-2">add_apply/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_depend-2">add_depend/2</a></td><td></td></tr><tr><td valign="top"><a href="#applies-1">applies/1</a></td><td></td></tr><tr><td valign="top"><a href="#depends-1">depends/1</a></td><td></td></tr><tr><td valign="top"><a href="#load-3">load/3</a></td><td>Load mixin from iolist.</td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -43,7 +43,7 @@ t() = #mixin{}
 ### add_apply/2 ###
 
 <pre><code>
-add_apply(Apply::string() | binary() | <a href="occi_category.md#type-id">occi_category:id()</a>, Mixin::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+add_apply(Apply::binary() | <a href="occi_category.md#type-id">occi_category:id()</a>, Mixin::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -52,7 +52,7 @@ add_apply(Apply::string() | binary() | <a href="occi_category.md#type-id">occi_c
 ### add_depend/2 ###
 
 <pre><code>
-add_depend(Depend::string() | binary() | <a href="occi_category.md#type-id">occi_category:id()</a>, Mixin::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+add_depend(Depend::binary() | <a href="occi_category.md#type-id">occi_category:id()</a>, Mixin::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -74,12 +74,23 @@ depends(M::<a href="#type-t">t()</a>) -&gt; [<a href="occi_category.md#type-id">
 </code></pre>
 <br />
 
+<a name="load-3"></a>
+
+### load/3 ###
+
+<pre><code>
+load(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+Load mixin from iolist
+
 <a name="new-2"></a>
 
 ### new/2 ###
 
 <pre><code>
-new(Scheme::string(), Term::string()) -&gt; <a href="#type-t">t()</a>
+new(Scheme::binary(), Term::binary()) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 

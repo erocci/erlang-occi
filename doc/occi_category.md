@@ -33,7 +33,7 @@ class() = kind | mixin | action
 
 
 <pre><code>
-id() = {Scheme::string(), Term::string()}
+id() = {Scheme::binary(), Term::binary()}
 </code></pre>
 
 
@@ -51,7 +51,7 @@ t() = #category{}
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#actions-1">actions/1</a></td><td></td></tr><tr><td valign="top"><a href="#add_action-2">add_action/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_attribute-2">add_attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attribute-2">attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td></td></tr><tr><td valign="top"><a href="#class-1">class/1</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-1">location/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-2">location/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#parse_id-1">parse_id/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#actions-1">actions/1</a></td><td></td></tr><tr><td valign="top"><a href="#add_action-2">add_action/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_attribute-2">add_attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attribute-2">attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td></td></tr><tr><td valign="top"><a href="#class-1">class/1</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-1">location/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-2">location/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#parse_id-1">parse_id/1</a></td><td></td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td>Render category into given mimetype.</td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -99,7 +99,7 @@ attribute(Key::<a href="occi_attribute.md#type-key">occi_attribute:key()</a>, C:
 ### attributes/1 ###
 
 <pre><code>
-attributes(C::<a href="#type-t">t()</a>) -&gt; [<a href="occi_attribute.md#type-t">occi_attribute:t()</a>]
+attributes(C::<a href="#type-t">t()</a>) -&gt; <a href="maps.md#type-map">maps:map()</a>
 </code></pre>
 <br />
 
@@ -126,7 +126,7 @@ id(C::<a href="#type-t">t()</a>) -&gt; <a href="occi_category.md#type-id">occi_c
 ### location/1 ###
 
 <pre><code>
-location(C::<a href="#type-t">t()</a>) -&gt; string()
+location(C::<a href="#type-t">t()</a>) -&gt; <a href="uri.md#type-t">uri:t()</a>
 </code></pre>
 <br />
 
@@ -135,7 +135,7 @@ location(C::<a href="#type-t">t()</a>) -&gt; string()
 ### location/2 ###
 
 <pre><code>
-location(Location::string(), C::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+location(Location::<a href="uri.md#type-t">uri:t()</a>, C::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -155,7 +155,7 @@ throws `{invalid_cid, term()}`
 ### new/3 ###
 
 <pre><code>
-new(Scheme::string(), Term::string(), Cls::<a href="#type-class">class()</a>) -&gt; <a href="#type-t">t()</a>
+new(Scheme::binary(), Term::binary(), Cls::<a href="#type-class">class()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -164,18 +164,29 @@ new(Scheme::string(), Term::string(), Cls::<a href="#type-class">class()</a>) -&
 ### parse_id/1 ###
 
 <pre><code>
-parse_id(Id::string() | binary()) -&gt; <a href="#type-id">id()</a>
+parse_id(Id::binary()) -&gt; <a href="#type-id">id()</a>
 </code></pre>
 <br />
 
 throws `{invalid_cid, term()}`
+
+<a name="render-3"></a>
+
+### render/3 ###
+
+<pre><code>
+render(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, E::<a href="#type-t">t()</a>, Ctx::<a href="#type-render_ctx">render_ctx()</a>) -&gt; iolist()
+</code></pre>
+<br />
+
+Render category into given mimetype
 
 <a name="title-1"></a>
 
 ### title/1 ###
 
 <pre><code>
-title(C::<a href="#type-t">t()</a>) -&gt; string()
+title(C::<a href="#type-t">t()</a>) -&gt; binary()
 </code></pre>
 <br />
 
@@ -184,7 +195,7 @@ title(C::<a href="#type-t">t()</a>) -&gt; string()
 ### title/2 ###
 
 <pre><code>
-title(Title::string(), C::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+title(Title::binary(), C::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 

@@ -23,7 +23,7 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 
 
 <pre><code>
-spec() = {enum, [atom()]} | string | integer | float
+spec() = {enum, [atom()]} | string | integer | float | uri | kind | resource
 </code></pre>
 
 
@@ -41,7 +41,7 @@ t() = atom() | string() | integer() | float()
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#cast-2">cast/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#cast-2">cast/2</a></td><td>Return value casted as the specified OCCI base type.</td></tr></table>
 
 
 <a name="functions"></a>
@@ -53,7 +53,12 @@ t() = atom() | string() | integer() | float()
 ### cast/2 ###
 
 <pre><code>
-cast(V::term(), X2::<a href="#type-spec">spec()</a>) -&gt; {ok, <a href="#type-t">t()</a>} | {error, term()}
+cast(V::term(), X2::<a href="#type-spec">spec()</a>) -&gt; <a href="#type-t">t()</a> | {error, term()}
 </code></pre>
 <br />
+
+throws `{invalid_value, [spec()](#type-spec), any()}`
+
+Return value casted as the specified OCCI base type.
+Throw error if value can not be casted. Do only syntactic checking.
 

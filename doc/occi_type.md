@@ -23,7 +23,7 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 
 
 <pre><code>
-name() = extension | categories | category | kind | mixin | action | attribute | entity | resource | link
+name() = extension | categories | collection | category | kind | mixin | action | attribute | entity | resource | link | invoke
 </code></pre>
 
 
@@ -33,7 +33,7 @@ name() = extension | categories | category | kind | mixin | action | attribute |
 
 
 <pre><code>
-t() = <a href="occi_extension.md#type-t">occi_extension:t()</a> | <a href="occi_category.md#type-t">occi_category:t()</a> | <a href="occi_kind.md#type-t">occi_kind:t()</a> | <a href="occi_mixin.md#type-t">occi_mixin:t()</a> | <a href="occi_action.md#type-t">occi_action:t()</a> | <a href="occi_attribute.md#type-t">occi_attribute:t()</a> | <a href="occi_entity.md#type-t">occi_entity:t()</a> | <a href="occi_resource.md#type-t">occi_resource:t()</a> | <a href="occi_link.md#type-t">occi_link:t()</a>
+t() = <a href="occi_extension.md#type-t">occi_extension:t()</a> | <a href="occi_collection.md#type-t">occi_collection:t()</a> | <a href="occi_category.md#type-t">occi_category:t()</a> | <a href="occi_kind.md#type-t">occi_kind:t()</a> | <a href="occi_mixin.md#type-t">occi_mixin:t()</a> | <a href="occi_action.md#type-t">occi_action:t()</a> | <a href="occi_attribute.md#type-t">occi_attribute:t()</a> | <a href="occi_entity.md#type-t">occi_entity:t()</a> | <a href="occi_resource.md#type-t">occi_resource:t()</a> | <a href="occi_link.md#type-t">occi_link:t()</a> | <a href="occi_invoke.md#type-t">occi_invoke:t()</a>
 </code></pre>
 
 <a name="index"></a>
@@ -41,18 +41,12 @@ t() = <a href="occi_extension.md#type-t">occi_extension:t()</a> | <a href="occi_
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#render-2">render/2</a></td><td></td></tr><tr><td valign="top"><a href="#type-1">type/1</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#type-1">type/1</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
-
-<a name="render-2"></a>
-
-### render/2 ###
-
-`render(Mimetype, T) -> any()`
 
 <a name="type-1"></a>
 

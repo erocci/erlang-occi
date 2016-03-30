@@ -1,0 +1,161 @@
+
+
+# Module occi_collection #
+* [Description](#description)
+* [Data Types](#types)
+* [Function Index](#index)
+* [Function Details](#functions)
+
+.
+
+Copyright (c) (C) 2016, Jean Parpaillon
+
+__Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon@free.fr)).
+
+<a name="types"></a>
+
+## Data Types ##
+
+
+
+
+### <a name="type-elem">elem()</a> ###
+
+
+<pre><code>
+elem() = {<a href="occi_entity.md#type-id">occi_entity:id()</a>, <a href="occi_entity.md#type-t">occi_entity:t()</a> | undefined}
+</code></pre>
+
+
+
+
+### <a name="type-id">id()</a> ###
+
+
+<pre><code>
+id() = <a href="occi_uri.md#type-t">occi_uri:t()</a> | <a href="occi_category.md#type-id">occi_category:id()</a>
+</code></pre>
+
+
+
+
+### <a name="type-t">t()</a> ###
+
+
+<pre><code>
+t() = #collection{}
+</code></pre>
+
+<a name="index"></a>
+
+## Function Index ##
+
+
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#append-2">append/2</a></td><td>Append elements to the collection.</td></tr><tr><td valign="top"><a href="#elements-1">elements/1</a></td><td>Get all elements.</td></tr><tr><td valign="top"><a href="#elements-2">elements/2</a></td><td>Set elements or entities.</td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td>Return collection id.</td></tr><tr><td valign="top"><a href="#ids-1">ids/1</a></td><td>Get all entity ids.</td></tr><tr><td valign="top"><a href="#load-3">load/3</a></td><td>Load collection from iolist.</td></tr><tr><td valign="top"><a href="#new-0">new/0</a></td><td>Create a new collection.</td></tr><tr><td valign="top"><a href="#new-1">new/1</a></td><td>Create a new collection.</td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td>Render collection into given mimetype.</td></tr></table>
+
+
+<a name="functions"></a>
+
+## Function Details ##
+
+<a name="append-2"></a>
+
+### append/2 ###
+
+<pre><code>
+append(NewElements::[<a href="#type-elem">elem()</a>], Collection::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+Append elements to the collection
+
+<a name="elements-1"></a>
+
+### elements/1 ###
+
+<pre><code>
+elements(Collection::<a href="#type-t">t()</a>) -&gt; [<a href="#type-elem">elem()</a>]
+</code></pre>
+<br />
+
+Get all elements
+
+<a name="elements-2"></a>
+
+### elements/2 ###
+
+<pre><code>
+elements(Elements::[<a href="#type-elem">elem()</a> | <a href="occi_entity.md#type-id">occi_entity:id()</a> | <a href="occi_entity.md#type-t">occi_entity:t()</a>], Collection::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+Set elements or entities
+
+<a name="id-1"></a>
+
+### id/1 ###
+
+<pre><code>
+id(Collection::<a href="#type-t">t()</a>) -&gt; <a href="#type-id">id()</a>
+</code></pre>
+<br />
+
+Return collection id
+
+<a name="ids-1"></a>
+
+### ids/1 ###
+
+<pre><code>
+ids(Collection::<a href="#type-t">t()</a>) -&gt; [<a href="occi_entity.md#type-id">occi_entity:id()</a>]
+</code></pre>
+<br />
+
+Get all entity ids
+
+<a name="load-3"></a>
+
+### load/3 ###
+
+<pre><code>
+load(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+Load collection from iolist
+
+<a name="new-0"></a>
+
+### new/0 ###
+
+<pre><code>
+new() -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+Create a new collection
+
+<a name="new-1"></a>
+
+### new/1 ###
+
+<pre><code>
+new(Id::<a href="occi_uri.md#type-t">occi_uri:t()</a> | <a href="occi_category.md#type-id">occi_category:id()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+Create a new collection.
+If id is an uri, collection is unbounded.
+If id is a category id, collection is bounded
+
+<a name="render-3"></a>
+
+### render/3 ###
+
+<pre><code>
+render(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, E::<a href="#type-t">t()</a>, Ctx::<a href="#type-render_ctx">render_ctx()</a>) -&gt; iolist()
+</code></pre>
+<br />
+
+Render collection into given mimetype
+

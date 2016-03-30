@@ -1,6 +1,6 @@
 
 
-# Module occi_parser_xml #
+# Module occi_parser_json #
 * [Description](#description)
 * [Function Index](#index)
 * [Function Details](#functions)
@@ -28,7 +28,7 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 ### parse_collection/2 ###
 
 <pre><code>
-parse_collection(Xml::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_collection.md#type-t">occi_collection:t()</a>
+parse_collection(Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_collection.md#type-t">occi_collection:t()</a>
 </code></pre>
 <br />
 
@@ -37,7 +37,7 @@ parse_collection(Xml::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) 
 ### parse_entity/3 ###
 
 <pre><code>
-parse_entity(X1::entity | resource | link, Xml::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_type.md#type-t">occi_type:t()</a>
+parse_entity(Type::entity | resource | link, Bin::binary(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_type.md#type-t">occi_type:t()</a>
 </code></pre>
 <br />
 
@@ -46,7 +46,7 @@ parse_entity(X1::entity | resource | link, Xml::iolist(), Ctx::<a href="#type-pa
 ### parse_invoke/2 ###
 
 <pre><code>
-parse_invoke(Xml::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_invoke.md#type-t">occi_invoke:t()</a>
+parse_invoke(Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_collection.md#type-t">occi_collection:t()</a>
 </code></pre>
 <br />
 
@@ -55,7 +55,7 @@ parse_invoke(Xml::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt
 ### parse_model/3 ###
 
 <pre><code>
-parse_model(RootType::extension | kind | mixin | action, Xml::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_type.md#type-t">occi_type:t()</a>
+parse_model(Type::extension | kind | mixin | action, Bin::binary(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_type.md#type-t">occi_type:t()</a>
 </code></pre>
 <br />
 

@@ -1,7 +1,9 @@
 %% encoding: UTF-8
 {application,occi}.
 {modules,[logging,occi,occi_action,occi_attribute,occi_base_type,
-          occi_category,occi_dl,occi_entity,occi_extension,occi_kind,
-          occi_link,occi_mixin,occi_models,occi_parser_xml,occi_renderer_text,
-          occi_renderer_xml,occi_rendering,occi_resource,occi_sup,occi_test,
-          occi_type,occi_utils]}.
+          occi_category,occi_collection,occi_dl,occi_entity,occi_extension,
+          occi_invoke,occi_kind,occi_link,occi_mixin,occi_models,
+          occi_parser_http,occi_parser_json,occi_parser_text,occi_parser_xml,
+          occi_renderer_json,occi_renderer_text,occi_renderer_xml,
+          occi_rendering,occi_resource,occi_sup,occi_type,occi_uri,occi_utils,
+          occi_xml]}.

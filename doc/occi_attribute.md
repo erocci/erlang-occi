@@ -19,11 +19,21 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 
 
 
+### <a name="type-key">key()</a> ###
+
+
+<pre><code>
+key() = binary()
+</code></pre>
+
+
+
+
 ### <a name="type-name_t">name_t()</a> ###
 
 
 <pre><code>
-name_t() = string()
+name_t() = binary()
 </code></pre>
 
 
@@ -90,7 +100,7 @@ default(Value::<a href="occi_base_type.md#type-t">occi_base_type:t()</a>, A::<a 
 ### description/1 ###
 
 <pre><code>
-description(A::<a href="#type-t">t()</a>) -&gt; string()
+description(A::<a href="#type-t">t()</a>) -&gt; binary()
 </code></pre>
 <br />
 
@@ -99,7 +109,7 @@ description(A::<a href="#type-t">t()</a>) -&gt; string()
 ### description/2 ###
 
 <pre><code>
-description(Desc::string(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+description(Desc::binary(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -135,7 +145,7 @@ name(A::<a href="#type-t">t()</a>) -&gt; <a href="#type-name_t">name_t()</a>
 ### new/3 ###
 
 <pre><code>
-new(Category::<a href="occi_category.md#type-id">occi_category:id()</a>, Name::string(), Type::<a href="#type-type_t">type_t()</a>) -&gt; <a href="#type-t">t()</a>
+new(Category::<a href="occi_category.md#type-id">occi_category:id()</a>, Name::<a href="#type-key">key()</a>, Type::<a href="#type-type_t">type_t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -144,7 +154,7 @@ new(Category::<a href="occi_category.md#type-id">occi_category:id()</a>, Name::s
 ### pattern/1 ###
 
 <pre><code>
-pattern(A::<a href="#type-t">t()</a>) -&gt; string()
+pattern(A::<a href="#type-t">t()</a>) -&gt; binary()
 </code></pre>
 <br />
 
@@ -153,7 +163,7 @@ pattern(A::<a href="#type-t">t()</a>) -&gt; string()
 ### pattern/2 ###
 
 <pre><code>
-pattern(Pattern::string(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+pattern(Pattern::binary(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -180,7 +190,7 @@ required(Required::boolean(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type
 ### title/1 ###
 
 <pre><code>
-title(A::<a href="#type-t">t()</a>) -&gt; string()
+title(A::<a href="#type-t">t()</a>) -&gt; binary()
 </code></pre>
 <br />
 
@@ -189,7 +199,7 @@ title(A::<a href="#type-t">t()</a>) -&gt; string()
 ### title/2 ###
 
 <pre><code>
-title(Title::string(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+title(Title::binary(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 

@@ -31,39 +31,52 @@ t() = <a href="occi_entity.md#type-t">occi_entity:t()</a>
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#new-4">new/4</a></td><td></td></tr><tr><td valign="top"><a href="#source-1">source/1</a></td><td></td></tr><tr><td valign="top"><a href="#target-1">target/1</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#load-3">load/3</a></td><td>Load link from iolist.</td></tr><tr><td valign="top"><a href="#new-4">new/4</a></td><td>Equivalent to <a href="#new-5"><tt>new(Id, KindId, Src, Target, occi_resource:kind(Target))</tt></a>.</td></tr><tr><td valign="top"><a href="#new-6">new/6</a></td><td>Creates a new link.</td></tr><tr><td valign="top"><a href="#source-1">source/1</a></td><td></td></tr><tr><td valign="top"><a href="#target-1">target/1</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
 
-<a name="new-3"></a>
+<a name="load-3"></a>
 
-### new/3 ###
+### load/3 ###
 
 <pre><code>
-new(Id::string(), Src::string(), Target::string()) -&gt; <a href="#type-t">t()</a>
+load(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
+
+Load link from iolist
 
 <a name="new-4"></a>
 
 ### new/4 ###
 
 <pre><code>
-new(Id::string(), KindId::<a href="occi_category.md#type-id">occi_category:id()</a> | string() | binary(), Src::string(), Target::string()) -&gt; <a href="#type-t">t()</a>
+new(Id::<a href="uri.md#type-t">uri:t()</a>, KindId::<a href="occi_category.md#type-id">occi_category:id()</a> | binary(), Src::binary() | <a href="occi_resource.md#type-t">occi_resource:t()</a>, Target::binary() | <a href="occi_resource.md#type-t">occi_resource:t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
-throws `{unknown_category, term()}`
+Equivalent to [`new(Id, KindId, Src, Target, occi_resource:kind(Target))`](#new-5).
+
+<a name="new-6"></a>
+
+### new/6 ###
+
+<pre><code>
+new(Id::<a href="uri.md#type-t">uri:t()</a>, KindId::<a href="occi_category.md#type-id">occi_category:id()</a> | binary(), Src::binary(), SrcKind::<a href="occi_category.md#type-id">occi_category:id()</a>, Target::binary(), TargetKind::<a href="occi_category.md#type-id">occi_category:id()</a> | undefined) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+Creates a new link
 
 <a name="source-1"></a>
 
 ### source/1 ###
 
 <pre><code>
-source(E::<a href="#type-t">t()</a>) -&gt; string()
+source(E::<a href="#type-t">t()</a>) -&gt; <a href="occi_uri.md#type-t">occi_uri:t()</a>
 </code></pre>
 <br />
 
@@ -72,7 +85,7 @@ source(E::<a href="#type-t">t()</a>) -&gt; string()
 ### target/1 ###
 
 <pre><code>
-target(E::<a href="#type-t">t()</a>) -&gt; string()
+target(E::<a href="#type-t">t()</a>) -&gt; <a href="occi_uri.md#type-t">occi_uri:t()</a>
 </code></pre>
 <br />
 

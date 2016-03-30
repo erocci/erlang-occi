@@ -45,7 +45,7 @@ t() = #extension{}
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_category-2">add_category/2</a></td><td>Add a category (kind or mixin) to the extension.</td></tr><tr><td valign="top"><a href="#add_import-2">add_import/2</a></td><td>Declare an extension to import.</td></tr><tr><td valign="top"><a href="#imports-1">imports/1</a></td><td>Get list of imports.</td></tr><tr><td valign="top"><a href="#kinds-1">kinds/1</a></td><td>Get the list of kinds of this extension.</td></tr><tr><td valign="top"><a href="#load-2">load/2</a></td><td></td></tr><tr><td valign="top"><a href="#load_path-1">load_path/1</a></td><td></td></tr><tr><td valign="top"><a href="#mixins-1">mixins/1</a></td><td>Get the list of mixins of this extension.</td></tr><tr><td valign="top"><a href="#name-1">name/1</a></td><td>Get the name of the extension.</td></tr><tr><td valign="top"><a href="#name-2">name/2</a></td><td>Set (optional) name of the extension.</td></tr><tr><td valign="top"><a href="#new-1">new/1</a></td><td>Creates an extension with a given scheme.</td></tr><tr><td valign="top"><a href="#scheme-1">scheme/1</a></td><td>Get scheme of the extension.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_category-2">add_category/2</a></td><td>Add a category (kind or mixin) to the extension.</td></tr><tr><td valign="top"><a href="#add_import-2">add_import/2</a></td><td>Declare an extension to import.</td></tr><tr><td valign="top"><a href="#imports-1">imports/1</a></td><td>Get list of imports.</td></tr><tr><td valign="top"><a href="#kinds-1">kinds/1</a></td><td>Get the list of kinds of this extension.</td></tr><tr><td valign="top"><a href="#load-3">load/3</a></td><td>Load extension from iolist.</td></tr><tr><td valign="top"><a href="#mixins-1">mixins/1</a></td><td>Get the list of mixins of this extension.</td></tr><tr><td valign="top"><a href="#name-1">name/1</a></td><td>Get the name of the extension.</td></tr><tr><td valign="top"><a href="#name-2">name/2</a></td><td>Set (optional) name of the extension.</td></tr><tr><td valign="top"><a href="#new-1">new/1</a></td><td>Creates an extension with a given scheme.</td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td>Render extension into given mimetype.</td></tr><tr><td valign="top"><a href="#scheme-1">scheme/1</a></td><td>Get scheme of the extension.</td></tr></table>
 
 
 <a name="functions"></a>
@@ -99,17 +99,16 @@ kinds(Extension::<a href="#type-t">t()</a>) -&gt; [<a href="occi_category.md#typ
 
 Get the list of kinds of this extension
 
-<a name="load-2"></a>
+<a name="load-3"></a>
 
-### load/2 ###
+### load/3 ###
 
-`load(Mimetype, Bin) -> any()`
+<pre><code>
+load(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
 
-<a name="load_path-1"></a>
-
-### load_path/1 ###
-
-`load_path(Path) -> any()`
+Load extension from iolist
 
 <a name="mixins-1"></a>
 
@@ -159,6 +158,17 @@ Creates an extension with a given scheme.
 The scheme is used as namespace for categories.
 
 Throws extension if the scheme is not a valid URI.
+
+<a name="render-3"></a>
+
+### render/3 ###
+
+<pre><code>
+render(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, E::<a href="#type-t">t()</a>, Ctx::<a href="#type-render_ctx">render_ctx()</a>) -&gt; iolist()
+</code></pre>
+<br />
+
+Render extension into given mimetype
 
 <a name="scheme-1"></a>
 

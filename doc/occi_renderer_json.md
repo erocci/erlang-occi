@@ -1,6 +1,6 @@
 
 
-# Module occi_renderer_text #
+# Module occi_renderer_json #
 * [Description](#description)
 * [Function Index](#index)
 * [Function Details](#functions)
