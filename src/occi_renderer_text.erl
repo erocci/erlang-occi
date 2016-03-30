@@ -42,15 +42,15 @@ render(T, Ctx) ->
 %%%
 to_headers(categories, Categories, Headers, Ctx) ->
     {Kinds, Mixins} = lists:foldl(fun (Cat, {KindAcc, MixinsAcc}) ->
-					 case occi_category:class(Cat) of
-					     kind ->
-						 { [ Cat | KindAcc ], MixinsAcc };
-					     mixin ->
-						 { KindAcc, [ Cat | MixinsAcc ]};
-					     _ ->
-						 { KindAcc, MixinsAcc }
-					 end
-				 end, {[], []}, Categories),
+					  case occi_category:class(Cat) of
+					      kind ->
+						  { [ Cat | KindAcc ], MixinsAcc };
+					      mixin ->
+						  { KindAcc, [ Cat | MixinsAcc ]};
+					      _ ->
+						  { KindAcc, MixinsAcc }
+					  end
+				  end, {[], []}, Categories),
     H0 = lists:foldl(fun (Kind, Acc) ->
 			     to_headers(kind, Kind, Acc, Ctx)
 		     end, Headers, Kinds),
@@ -60,10 +60,10 @@ to_headers(categories, Categories, Headers, Ctx) ->
     CatActions = fun(Cat, Acc) ->
 			  occi_category:actions(Cat) ++ Acc
 		  end,
-    Actions = lists:foldl(CatActions, [], Categories),
+    Actions = lists:foldl(CatActions, [], Kinds ++ Mixins),
     lists:foldl(fun (A, Acc) ->
-			     to_headers(action, A, Acc, Ctx)
-		     end, H1, Actions);
+			to_headers(action, A, Acc, Ctx)
+		end, H1, Actions);
 
 to_headers(extension, Ext, Headers, Ctx) ->
     Categories = occi_extension:kinds(Ext) ++ occi_extension:mixins(Ext),

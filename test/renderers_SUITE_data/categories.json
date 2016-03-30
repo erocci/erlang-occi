@@ -1,36 +1,14 @@
 {
   "actions": [
     {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "backup",
-      "title": "Set storage as backup"
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/action#",
+      "term": "down",
+      "title": "Set network down"
     },
     {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "offline",
-      "title": "Set storage offline"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "online",
-      "title": "Set storage online"
-    },
-    {
-      "attributes": {
-        "size": {
-          "mutable": true,
-          "required": false,
-          "type": "number"
-        }
-      },
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "resize",
-      "title": "Resize storage"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "snapshot",
-      "title": "Take storage snapshot"
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/action#",
+      "term": "up",
+      "title": "Set network up"
     },
     {
       "attributes": {
@@ -74,14 +52,36 @@
       "title": "Suspend the system (hibernate or in RAM)"
     },
     {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/action#",
-      "term": "down",
-      "title": "Set network down"
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "backup",
+      "title": "Set storage as backup"
     },
     {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/action#",
-      "term": "up",
-      "title": "Set network up"
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "offline",
+      "title": "Set storage offline"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "online",
+      "title": "Set storage online"
+    },
+    {
+      "attributes": {
+        "size": {
+          "mutable": true,
+          "required": false,
+          "type": "number"
+        }
+      },
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "resize",
+      "title": "Resize storage"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "snapshot",
+      "title": "Take storage snapshot"
     }
   ],
   "kinds": [

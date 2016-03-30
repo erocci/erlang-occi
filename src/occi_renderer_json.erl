@@ -59,7 +59,7 @@ r_type(categories, Categories, Ctx) ->
 	 end,
     Actions = lists:foldl(fun (Category, Acc) ->
 				  occi_category:actions(Category) ++ Acc
-			  end, [], Categories),
+			  end, [], Kinds ++ Mixins),
     case Actions of
 	[] ->
 	    M1;
