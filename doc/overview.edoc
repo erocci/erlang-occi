@@ -5,7 +5,13 @@
 @version 0.0.1
 @title OCCI Core implementation
 
-@doc This application implements the OCCI Core meta-model and its
-renderings.
+@doc This application implements the OCCI Core meta-model and the following parsers/renderers:
+* `application/xml'
+* `application/json'
+* `text/occi'
+
+The Core model can be represented with the following figure.
+
+![OCCI Core Model](/doc/core_model.png)
 
 @end

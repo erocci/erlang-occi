@@ -8,8 +8,14 @@ __Version:__ 0.0.1
 
 __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon@free.fr)).
 
-This application implements the OCCI Core meta-model and its
-renderings.
+This application implements the OCCI Core meta-model and the following parsers/renderers:
+* `application/xml`
+* `application/json`
+* `text/occi`
+
+The Core model can be represented with the following figure.
+
+![OCCI Core Model](/doc/core_model.png)
 
 
 ## Modules ##
