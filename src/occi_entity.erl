@@ -17,6 +17,7 @@
 
 -include("occi_log.hrl").
 -include("occi_entity.hrl").
+-include("occi_type.hrl").
 -include("occi_rendering.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
@@ -30,6 +31,8 @@
 	 set/3,
 	 update/3,
 	 actions/1,
+	 do/3,
+	 do/4,
 	 is_subtype/2]).
 
 -export([load/3, 
@@ -179,6 +182,29 @@ update(Attrs, Validation, E) when is_map(Attrs) ->
 actions(E) ->
     Actions = element(?actions, E),
     maps:keys(Actions).
+
+
+%% @doc Execute an action
+%% `Fun = fun((ActionId :: occi_category:id(), Attributes :: maps:map(), Entity :: ()) -> {ok, t()} | {error, term()})`
+%% @throw {invalid_action, occi_category:id()}
+%% @end
+-spec do(occi_categoy:id(), maps:map(), fun(), t()) -> t().
+do(ActionId, Attributes, Fun, E) when ?is_category_id(ActionId) ->
+    Invoke = occi_action:new(ActionId, Attributes),
+    do(Invoke, Fun, E).
+
+
+%% @equiv do(occi_invoke:id(Invoke), occi_invoke:attributes(Invoke), Fun, E)
+%% @end
+-spec do(occi_invoke:t(), fun(), t()) -> t().
+do(Invoke, Fun, E) ->
+    ActionId = occi_invoke:id(Invoke),
+    case maps:is_key(ActionId, element(?actions, E)) of
+	true ->
+	    do_fun(ActionId, occi_invoke:attributes(Invoke), Fun, E);
+	false ->
+	    throw({invalid_action, ActionId})
+    end.
 
 
 %% @doc Returns true if the entity is of type Type or subtype of
@@ -380,3 +406,14 @@ merge_actions([ Action | Tail ], Acc, E) ->
     Category = occi_action:category(Action),
     Acc1 = maps:put(Id, [ Category | maps:get(Id, Acc, []) ], Acc),
     merge_actions(Tail, Acc1, E).
+
+
+do_fun(ActionId, Attributes, Fun, E) ->
+    try	Fun(ActionId, Attributes, E) of
+	{ok, E2} ->
+	    E2;
+	{error, Err} ->
+	    throw({do, Err})
+    catch _:Err ->
+	    throw({do, {internal, Err}})
+    end.
