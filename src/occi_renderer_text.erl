@@ -46,7 +46,9 @@ to_headers(categories, Categories, Headers, Ctx) ->
 					     kind ->
 						 { [ Cat | KindAcc ], MixinsAcc };
 					     mixin ->
-						 { KindAcc, [ Cat | MixinsAcc ]}
+						 { KindAcc, [ Cat | MixinsAcc ]};
+					     _ ->
+						 { KindAcc, MixinsAcc }
 					 end
 				 end, {[], []}, Categories),
     H0 = lists:foldl(fun (Kind, Acc) ->

@@ -27,12 +27,14 @@ render(T, Ctx) ->
 -spec to_xml(TypeName :: occi_type:name(), T :: occi_type:t(), Ctx :: uri:t()) -> tuple().
 to_xml(categories, Categories, Ctx) ->
     {Kinds, Mixins} = lists:foldl(fun (Cat, {KindAcc, MixinsAcc}) ->
-					 case occi_category:class(Cat) of
-					     kind ->
-						 { [ Cat | KindAcc ], MixinsAcc };
-					     mixin ->
-						 { KindAcc, [ Cat | MixinsAcc ]}
-					 end
+					  case occi_category:class(Cat) of
+					      kind ->
+						  { [ Cat | KindAcc ], MixinsAcc };
+					      mixin ->
+						  { KindAcc, [ Cat | MixinsAcc ]};
+					      _ ->
+						  { KindAcc, MixinsAcc }
+					  end
 				 end, {[], []}, Categories),
     C0 = lists:foldl(fun (Kind, Acc) ->
 			     [ to_xml(kind, Kind, Ctx) | Acc ]

@@ -41,7 +41,9 @@ r_type(categories, Categories, Ctx) ->
 					      kind ->
 						  { [ Cat | KindAcc ], MixinsAcc };
 					      mixin ->
-						  { KindAcc, [ Cat | MixinsAcc ]}
+						  { KindAcc, [ Cat | MixinsAcc ]};
+					      _ ->
+						  { KindAcc, MixinsAcc }
 					  end
 				  end, {[], []}, Categories),
     M0 = #{ kinds => lists:map(fun (Kind) -> 
