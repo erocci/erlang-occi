@@ -30,7 +30,7 @@
 -endif.
 
 
-%% @equiv new(Id, KindId, Src, Target, occi_resource:kind(Target) | undefined)
+%% @equiv new(Id, KindId, Src, Target, occi_resource:kind(Target))
 %% @end
 -spec new(uri:t(), occi_category:id() | binary(), 
 	  binary() | occi_resource:t(), 

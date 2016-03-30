@@ -67,7 +67,7 @@ categories() ->
 
 
 %% @doc Return a kind, checking it has specified parent 
-%% @throw {unknown_category, occi_category:id()}, {invalid_kind, occi_category:id()}
+%% @throws {unknown_category, occi_category:id()} | {invalid_kind, occi_category:id()}
 %% @end
 -spec kind(link | resource, occi_category:id()) -> occi_category:t().
 kind(Parent, KindId) when is_binary(KindId) ->
@@ -127,7 +127,6 @@ add_category(Cat) ->
 
 
 %% @throws {unknown_category, term()}
-%%-logging(debug).
 -spec attribute(occi_attribute:key(), [occi_category:id()]) -> occi_attribute:t() | undefined.
 attribute(_Key, []) ->
     undefined;

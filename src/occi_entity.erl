@@ -153,12 +153,8 @@ get(Key, E) ->
 %% @doc Set the full list of attributes for this resource
 %% 
 %% All required attributes must be set.
-%% @throws {invalid_keys, [occi_attribute:key()]} 
-%%       | {invalid_value, [occi_attribute:key(), occi_base_type:t()]}
-%%       | {immutable, [occi_attribute:key()]}
-%%       | {required, [occi_attribute:key()]}
+%% @throws {invalid_keys, [occi_attribute:key()]} | {invalid_value, [{occi_attribute:key(), occi_base_type:t()}]} | {immutable, [occi_attribute:key()]} | {required, [occi_attribute:key()]}
 %% @end
-%%-logging(debug).
 -spec set(map(), validation(), t()) -> t().
 set(Attrs, Validation, E) when is_map(Attrs) ->
     set_or_update(false, Attrs, Validation, E).
@@ -166,11 +162,8 @@ set(Attrs, Validation, E) when is_map(Attrs) ->
 
 %% @doc Update attributes values.
 %% 
-%% @throws {invalid_keys, [occi_attribute:key()]} 
-%%       | {invalid_value, [occi_attribute:key(), occi_base_type:t()]}
-%%       | {required, [occi_attribute:key()]}
+%% @throws {invalid_keys, [occi_attribute:key()]} | {invalid_value, [{occi_attribute:key(), occi_base_type:t()}]} | {required, [occi_attribute:key()]}
 %% @end
-%%-logging(debug).
 -spec update(map(), validation(), t()) -> t().
 update(Attrs, Validation, E) when is_map(Attrs) ->
     set_or_update(true, Attrs, Validation, E).
@@ -185,8 +178,8 @@ actions(E) ->
 
 
 %% @doc Execute an action
-%% `Fun = fun((ActionId :: occi_category:id(), Attributes :: maps:map(), Entity :: ()) -> {ok, t()} | {error, term()})`
-%% @throw {invalid_action, occi_category:id()}
+%% `Fun = fun((ActionId :: occi_category:id(), Attributes :: maps:map(), Entity :: ()) -> {ok, t()} | {error, term()})'
+%% @throws {invalid_action, occi_category:id()}
 %% @end
 -spec do(occi_categoy:id(), maps:map(), fun(), t()) -> t().
 do(ActionId, Attributes, Fun, E) when ?is_category_id(ActionId) ->
