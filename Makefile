@@ -1,6 +1,6 @@
 PROJECT = occi
 PROJECT_DESCRIPTION = OCCI Core implementation
-PROJECT_VERSION = 0.0.1
+PROJECT_VERSION = 0.1.0
 
 DEPS = uri uuid mixer annotations edown jsx
 DEP_PLUGINS = annotations
