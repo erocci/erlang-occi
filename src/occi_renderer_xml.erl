@@ -47,7 +47,9 @@ to_xml(collection, Coll, Ctx) ->
 	    Id when ?is_uri(Id) ->
 		[{id, occi_uri:to_string(Id)}];
 	    {Scheme, Term} ->
-		[{scheme, Scheme}, {term, Term}]
+		[{scheme, Scheme}, {term, Term}];
+	    undefined ->
+		[]
 	end,
     C = lists:map(fun ({Id, undefined}) ->
 			  {location, [{href, occi_uri:to_string(Id, Ctx)}], []};
