@@ -30,10 +30,16 @@
 %%% API
 %%%===================================================================
 -spec render(T :: occi:t(), Ctx :: occi_ctx:t()) -> iolist().
-render(T, Ctx) when ?is_collection(T) ->
+render(Categories, Ctx) when ?is_categories(Categories) ->
+    lists:map(fun (Category) ->
+		      Location = occi_category:location(Category),
+		      [ occi_uri:to_string(Location, Ctx), $\n ]
+	      end, Categories);
+
+render(Coll, Ctx) when ?is_collection(Coll) ->
     lists:map(fun ({Id, _}) ->
 		      [ occi_uri:to_string(Id, Ctx), $\n ]
-	      end, occi_collection:elements(T));
+	      end, occi_collection:elements(Coll));
 
 render(T, _Ctx) -> 
     throw({bad_type, occi_type:type(T)}).

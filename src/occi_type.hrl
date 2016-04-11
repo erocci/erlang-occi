@@ -2,6 +2,7 @@
 -define(occi_type_hrl, true).
 
 -define(is_extension(X),    element(1, X) =:= extension).
+-define(is_categories(X),   is_list(X)).
 -define(is_collection(X),   element(1, X) =:= collection).
 
 -define(is_category_id(X), is_binary(element(1, X)), is_binary(element(2, X))). 
