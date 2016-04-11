@@ -24,6 +24,8 @@
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"plain"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
@@ -53,6 +55,9 @@ load_entity(Mimetype, Bin, Ctx) ->
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"plain"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"uri-list"&gt;&gt;, []}</li>
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
@@ -75,6 +80,8 @@ load_entity(Type, MimeType, Bin, Ctx) ->
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"plain"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
@@ -98,6 +105,8 @@ load_collection(MimeType, Bin, Ctx) ->
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
 %%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"plain"&gt;&gt;, []}</li>
+%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
@@ -145,4 +154,6 @@ renderer(json)                                     -> occi_renderer_json;
 renderer({<<"text">>, <<"plain">>, []})            -> occi_renderer_text;
 renderer({<<"text">>, <<"occi+plain">>, []})       -> occi_renderer_text;
 renderer({<<"text">>, <<"occi">>, []})             -> occi_renderer_text;
-renderer(text)                                     -> occi_renderer_text.
+renderer(text)                                     -> occi_renderer_text;
+renderer({<<"text">>, <<"uri-list">>, []})         -> occi_renderer_uri;
+renderer('uri-list')                               -> occi_renderer_uri.

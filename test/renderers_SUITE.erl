@@ -111,7 +111,7 @@ groups() ->
     ,{'compute_a',           [], [render_xml, render_text, render_json]}
     ,{'compute_b',           [], [render_xml, render_text, render_json]}
     ,{'netif',               [], [render_xml, render_text, render_json]}
-    ,{'bounded_collection',  [], [render_xml, render_text, render_json]}
+    ,{'bounded_collection',  [], [render_xml, render_text, render_json, render_uri]}
     ].
 
 
@@ -130,6 +130,8 @@ all() ->
 %%% Tests
 %%%
 render_text(Config) -> render_test(text, ".occi", Config).
+
+render_uri(Config) -> render_test('uri-list', ".uri", Config).
 
 render_xml(Config) -> render_test(xml, ".xml", Config).
 
