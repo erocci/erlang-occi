@@ -8,7 +8,6 @@
 -module(occi_invoke).
 
 -include("occi_log.hrl").
--include("occi_rendering.hrl").
 -include("occi_type.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
@@ -72,7 +71,7 @@ load(Mimetype, Bin, Ctx) ->
 
 %% @doc Render action invocation into given mimetype
 %% @end
--spec render(occi_utils:mimetype(), t(), render_ctx()) -> iolist().
+-spec render(occi_utils:mimetype(), t(), occi_ctx:t()) -> iolist().
 render(Mimetype, I, Ctx) ->
     occi_rendering:render(Mimetype, I, Ctx).
 

@@ -8,7 +8,6 @@
 -module(occi_collection).
 
 -include("occi_uri.hrl").
--include("occi_rendering.hrl").
 -include("occi_type.hrl").
 
 -export([new/0,
@@ -90,14 +89,14 @@ append(NewElements, #collection{ elements=Elements }=C) ->
 
 %% @doc Load collection from iolist
 %% @end
--spec load(occi_utils:mimetype(), iolist(), parse_ctx()) -> t().
+-spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
 load(Mimetype, Bin, Ctx) ->
     occi_rendering:load_collection(Mimetype, Bin, Ctx).
 
 
 %% @doc Render collection into given mimetype
 %% @end
--spec render(occi_utils:mimetype(), t(), render_ctx()) -> iolist().
+-spec render(occi_utils:mimetype(), t(), occi_ctx:t()) -> iolist().
 render(Mimetype, E, Ctx) ->
     occi_rendering:render(Mimetype, E, Ctx).
 

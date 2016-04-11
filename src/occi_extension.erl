@@ -7,7 +7,6 @@
 
 -module(occi_extension).
 
--include("occi_rendering.hrl").
 -include("occi_log.hrl").
 
 -export([new/1,
@@ -127,14 +126,14 @@ imports(#extension{m=M}) ->
 
 %% @doc Load extension from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), parse_ctx()) -> t().
+-spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
 load(Mimetype, Bin, Ctx) -> 
     occi_rendering:load_model(extension, Mimetype, Bin, Ctx).
 
 
 %% @doc Render extension into given mimetype
 %% @end
--spec render(occi_utils:mimetype(), t(), render_ctx()) -> iolist().
+-spec render(occi_utils:mimetype(), t(), occi_ctx:t()) -> iolist().
 render(Mimetype, E, Ctx) ->
     occi_rendering:render(Mimetype, E, Ctx).
 

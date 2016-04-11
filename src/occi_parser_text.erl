@@ -7,7 +7,6 @@
 
 -module(occi_parser_text).
 
--include("occi_rendering.hrl").
 -include("occi.hrl").
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
@@ -22,7 +21,7 @@
 -endif.
 
 
--spec parse_model(extension | kind | mixin | action, binary(), parse_ctx()) -> occi_type:t().
+-spec parse_model(extension | kind | mixin | action, binary(), occi_ctx:t()) -> occi_type:t().
 parse_model(mixin, Bin, Ctx) ->
     parse_mixin(occi_parser_http:parse(Bin), Ctx);
 
@@ -33,7 +32,7 @@ parse_model(Type, _Bin, _Ctx) when Type =:= extension;
     throw({not_implemented, Type}).
 
 
--spec parse_entity(entity | resource | link, binary(), parse_ctx()) -> occi_type:t().
+-spec parse_entity(entity | resource | link, binary(), occi_ctx:t()) -> occi_type:t().
 parse_entity(Type, Bin, Ctx) when Type =:= entity;
 				  Type =:= resource;
 				  Type =:= link ->
@@ -44,7 +43,7 @@ parse_entity(Type, Bin, Ctx) when Type =:= entity;
     end.
 
 
--spec parse_collection(iolist(), parse_ctx()) -> occi_collection:t().
+-spec parse_collection(iolist(), occi_ctx:t()) -> occi_collection:t().
 parse_collection(Bin, Ctx) ->
     Headers = occi_parser_http:parse(Bin),
     Locations = p_locations(orddict:find('x-occi-location', Headers), Ctx),
@@ -52,7 +51,7 @@ parse_collection(Bin, Ctx) ->
     occi_collection:append(Locations, C).
 
 
--spec parse_invoke(iolist(), parse_ctx()) -> occi_invoke:t().
+-spec parse_invoke(iolist(), occi_ctx:t()) -> occi_invoke:t().
 parse_invoke(Bin, _Ctx) ->
     Headers = occi_parser_http:parse(Bin),
     p_invoke(Headers).
@@ -84,7 +83,7 @@ parse_mixin(H, Ctx) ->
 	    throw({parse_error, {mixin, no_mixin}});
 	[{category, #{ class := mixin, scheme := Scheme, term := Term }=Map }] ->
 	    M0 = occi_mixin:new(Scheme, Term),
-	    Location = occi_uri:from_string(maps:get(location, Map), Ctx#parse_ctx.url),
+	    Location = occi_uri:from_string(maps:get(location, Map), Ctx),
 	    M1 = occi_mixin:location(Location, M0),
 	    case maps:get(title, Map, undefined) of
 		undefined ->
@@ -114,7 +113,7 @@ parse_entity2(H, Ctx) ->
     Attributes = p_attributes(orddict:find('x-occi-attribute', H)),
     {Id, Attributes2} = case lists:keytake(<<"occi.core.id">>, 2, Attributes) of
 			    {value, {attribute, _, {string, SId}}, Rest} ->
-				{occi_uri:from_string(SId, Ctx#parse_ctx.url), Rest};
+				{occi_uri:from_string(SId, Ctx), Rest};
 			    {value, {attribute, _, {Type, _}}, _} ->
 				throw({parse_error, {entity, {<<"occi.core.id">>, Type}}});
 			    false ->
@@ -140,7 +139,7 @@ p_resource(Id, Kind, MixinIds, Attributes, Links, Ctx) ->
 		     end, R1, Links),
     occi_entity:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
 					Acc#{ Key => Value }
-				end, #{}, Attributes), Ctx#parse_ctx.valid, R2).
+				end, #{}, Attributes), Ctx, R2).
 
 
 p_resource_link(Source, SourceKind, Link, Ctx) ->
@@ -148,11 +147,11 @@ p_resource_link(Source, SourceKind, Link, Ctx) ->
 	     undefined ->
 		 occi_utils:urn(Source);
 	     Self ->
-		 occi_uri:from_string(Self, Ctx#parse_ctx.url)
+		 occi_uri:from_string(Self, Ctx)
 	 end,
     Categories = maps:get(categories, Link, [?link_kind_id]),
     {Kind, MixinIds} = filter_categories(Categories, undefined, []),
-    Target = occi_uri:from_string(maps:get(target, Link), Ctx#parse_ctx.url),
+    Target = occi_uri:from_string(maps:get(target, Link), Ctx),
     [ TargetKind | _ ] = maps:get(rel, Link),
     Attributes = maps:get(attributes, Link),
     p_link2(Id, Kind, MixinIds, Source, occi_kind:id(SourceKind), 
@@ -162,7 +161,7 @@ p_resource_link(Source, SourceKind, Link, Ctx) ->
 p_link(Id, Kind, MixinIds, Attributes, Ctx) ->
     {Source, Attrs2} = case lists:keytake(<<"occi.core.source">>, 2, Attributes) of
 			   {value, {attribute, _, {string, V}}, Rest} ->
-			       {occi_uri:from_string(V, Ctx#parse_ctx.url), Rest};
+			       {occi_uri:from_string(V, Ctx), Rest};
 			   {value, {attribute, _, {Type, _}}, _} ->
 			       throw({parse_error, {link, {<<"occi.core.source">>, Type}}});
 			   false ->
@@ -178,7 +177,7 @@ p_link(Id, Kind, MixinIds, Attributes, Ctx) ->
 			   end,
     {Target, Attrs4} = case lists:keytake(<<"occi.core.target">>, 2, Attrs3) of
 			   {value, {attribute, _, {string, V2}}, Rest2} ->
-			       {occi_uri:from_string(V2, Ctx#parse_ctx.url), Rest2};
+			       {occi_uri:from_string(V2, Ctx), Rest2};
 			   {value, {attribute, _, {Type2, _}}, _} ->
 			       throw({parse_error, {link, {<<"occi.core.target">>, Type2}}});
 			   false ->
@@ -202,7 +201,7 @@ p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, 
 		     end, L, MixinIds),
     occi_link:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
 				      Acc#{ Key => Value }
-			      end, #{}, Attributes), Ctx#parse_ctx.valid, L1).
+			      end, #{}, Attributes), Ctx, L1).
     
 
 %%%
@@ -224,7 +223,7 @@ p_locations([], Acc, _Ctx) ->
 p_locations([ Bin | Tail ], Acc, Ctx) ->
     case p_location_value(eat_ws(Bin)) of
 	{location, Location} ->
-	    p_locations(Tail, [ occi_uri:from_string(Location, Ctx#parse_ctx.url) | Acc ], Ctx);
+	    p_locations(Tail, [ occi_uri:from_string(Location, Ctx) | Acc ], Ctx);
 	Else ->
 	    throw({parse_error, {invalid_location, Else}})
     end.

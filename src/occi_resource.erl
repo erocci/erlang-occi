@@ -79,7 +79,7 @@ links(R) ->
 
 %% @doc Load resource from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), parse_ctx()) -> t().
+-spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
 load(Mimetype, Bin, Ctx) -> 
     occi_rendering:load_entity(resource, Mimetype, Bin, Ctx).
 

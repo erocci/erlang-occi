@@ -11,7 +11,6 @@
 
 -include("occi.hrl").
 -include("occi_type.hrl").
--include("occi_rendering.hrl").
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
@@ -48,7 +47,7 @@ start_link() ->
 %% @end
 -spec import(occi_extension:t()) -> ok.
 import(E) ->
-    Ctx = #parse_ctx{ valid = model },
+    Ctx = occi_ctx:model(),
     ok = load_imports(occi_extension:imports(E), Ctx),
     ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
     ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
@@ -166,7 +165,7 @@ init() ->
 	{aborted, {already_exists, category}} -> ok;
 	{aborted, _} = Err -> throw(Err)
     end,
-    ok = load_imports([?core_scheme], ?model_ctx),
+    ok = load_imports([?core_scheme], occi_ctx:model()),
     loop().
 
 

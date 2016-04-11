@@ -151,7 +151,7 @@ parse_id(Id) ->
 
 %% @doc Render category into given mimetype
 %% @end
--spec render(occi_utils:mimetype(), t(), render_ctx()) -> iolist().
+-spec render(occi_utils:mimetype(), t(), occi_ctx:t()) -> iolist().
 render(Mimetype, E, Ctx) ->
     occi_rendering:render(Mimetype, E, Ctx).
 

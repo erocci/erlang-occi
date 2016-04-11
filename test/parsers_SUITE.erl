@@ -10,12 +10,11 @@
 
 -compile(export_all).
 
--include_lib("../src/occi_rendering.hrl").
-
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
 
--define(ctx, #parse_ctx{ valid=client, url=uri:from_string("http://localhost:8080/path") }).
+-define(ctx, occi_ctx:client(<<"http://localhost:8080/path">>)).
+
 
 suite() ->
     [{timetrap,{seconds,30}}].

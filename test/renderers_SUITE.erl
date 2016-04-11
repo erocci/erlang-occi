@@ -10,12 +10,10 @@
 
 -compile(export_all).
 
--include("../src/occi_rendering.hrl").
-
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
 
--define(ctx, uri:from_string(<<"http://example.org:8080/">>)).
+-define(ctx, occi_ctx:new(model, <<"http://example.org:8080/">>)).
 
 suite() ->
     [{timetrap,{seconds,30}}].
@@ -24,7 +22,7 @@ init_per_suite(Config) ->
     {ok, _} = application:ensure_all_started(occi),
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Xml} = file:read_file(ExtFile),
-    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml, #parse_ctx{ valid = model })),
+    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml, ?ctx)),
     Config.
 
 
@@ -70,9 +68,9 @@ init_per_group('netif', Config) ->
     Id = occi_uri:from_string(<<"myif">>, ?ctx),
     Kind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>},
     Mixin = {<<"http://schemas.ogf.org/occi/infrastructure/networkinterface#">>, <<"ipnetworkinterface">>},
-    Src = occi_uri:from_string(<<"mycompute">>, Id),
+    Src = occi_uri:from_string(<<"mycompute">>, occi_ctx:client(Id)),
     SrcKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>},
-    Target = occi_uri:from_string(<<"mynetwork">>, Id),
+    Target = occi_uri:from_string(<<"mynetwork">>, occi_ctx:client(Id)),
     TargetKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"network">>},
     L = occi_link:new(Id, Kind, Src, SrcKind, Target, TargetKind),
     L0 = occi_link:add_mixin(Mixin, L),

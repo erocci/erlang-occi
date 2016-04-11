@@ -7,7 +7,6 @@
 
 -module(occi_parser_json).
 
--include("occi_rendering.hrl").
 -include("occi_log.hrl").
 -include("occi_entity.hrl").
 -include_lib("annotations/include/annotations.hrl").
@@ -22,7 +21,7 @@
 -endif.
 
 
--spec parse_model(extension | kind | mixin | action, binary(), parse_ctx()) -> occi_type:t().
+-spec parse_model(extension | kind | mixin | action, binary(), occi_ctx:t()) -> occi_type:t().
 parse_model(mixin, Bin, Ctx) ->
     Map = jsx:decode(Bin, [return_maps]),
     case maps:get(<<"mixins">>, Map, []) of
@@ -40,7 +39,7 @@ parse_model(Type, _Bin, _Ctx) when Type =:= extension;
     throw({not_implemented, Type}).
 
 
--spec parse_entity(entity | resource | link, binary(), parse_ctx()) -> occi_type:t().
+-spec parse_entity(entity | resource | link, binary(), occi_ctx:t()) -> occi_type:t().
 parse_entity(Type, Bin, Ctx) when Type =:= entity;
 				  Type =:= resource;
 				  Type =:= link ->
@@ -51,12 +50,12 @@ parse_entity(Type, Bin, Ctx) when Type =:= entity;
     end.
 
 
--spec parse_collection(iolist(), parse_ctx()) -> occi_collection:t().
+-spec parse_collection(iolist(), occi_ctx:t()) -> occi_collection:t().
 parse_collection(Bin, Ctx) ->
     p_collection(jsx:decode(Bin, [return_maps]), Ctx).
 
 
--spec parse_invoke(iolist(), parse_ctx()) -> occi_collection:t().
+-spec parse_invoke(iolist(), occi_ctx:t()) -> occi_collection:t().
 parse_invoke(Bin, Ctx) ->
     p_invoke(jsx:decode(Bin, [return_maps]), Ctx).
 
@@ -76,7 +75,7 @@ p_collection(Map, Ctx) ->
 
 
 p_collection_entity(#{ <<"id">> := Id }=M, Ctx) ->
-    p_collection_entity2(occi_uri:from_string(Id, Ctx#parse_ctx.url), M, Ctx);
+    p_collection_entity2(occi_uri:from_string(Id, Ctx), M, Ctx);
 
 p_collection_entity(_, _Ctx) ->
     throw({parse_error, {collection, missing_id}}).
@@ -120,7 +119,7 @@ p_mixin2(_, _, _) ->
 
 p_mixin3(#{ <<"location">> := Location}=Map, Scheme, Term, Ctx) ->
     M0 = occi_mixin:new(Scheme, Term),
-    AbsLoc = occi_uri:from_string(Location, Ctx#parse_ctx.url),
+    AbsLoc = occi_uri:from_string(Location, Ctx),
     M1 = occi_mixin:location(AbsLoc, M0),
     case maps:get(<<"title">>, Map, undefined) of
 	undefined ->
@@ -134,7 +133,7 @@ p_mixin3(_, _, _, _) ->
 
 
 p_entity(#{ <<"id">> := Id }=Map, Ctx) ->
-    Url = occi_uri:from_string(Id, Ctx#parse_ctx.url),
+    Url = occi_uri:from_string(Id, Ctx),
     p_entity2(Url, Map, Ctx);
 	
 p_entity(_Map, _Ctx) ->
@@ -168,7 +167,7 @@ p_resource(Id, Kind, Mixins, Map, Ctx) ->
 			     end, #{}, maps:get(<<"attributes">>, Map, #{})),
 		   #{ <<"occi.core.summary">> => maps:get(<<"summary">>, Map, <<>>),
 		      <<"occi.core.title">> => maps:get(<<"title">>, Map, <<>>) }),
-    R2 = occi_entity:set(Attributes, Ctx#parse_ctx.valid, R1),
+    R2 = occi_entity:set(Attributes, Ctx, R1),
     p_resource_links(maps:get(<<"links">>, Map, []), Ctx, R2).
 
 
@@ -183,7 +182,7 @@ p_resource_links([ Link | Tail ], Valid, R) ->
 
 
 p_resource_link(#{ <<"id">> := Id }=Link, Ctx) ->
-    Url = occi_uri:from_string(Id, Ctx#parse_ctx.url),
+    Url = occi_uri:from_string(Id, Ctx),
     p_resource_link2(Url, Link, Ctx);
 
 p_resource_link(_, _) ->
@@ -200,7 +199,7 @@ p_resource_link2(_, _, _) ->
 p_link(Id, Kind, Mixins,
        #{ <<"source">> := #{ <<"location">> := SourceLocation }=Source }=Map, Ctx) ->
     p_link2(Id, Kind, Mixins, 
-	    occi_uri:from_string(SourceLocation, Ctx#parse_ctx.url), Source, Map, Ctx);
+	    occi_uri:from_string(SourceLocation, Ctx), Source, Map, Ctx);
 
 p_link(_Id, _Kind, _Mixins, _Map, _Ctx) ->
     throw({parse_error, {link, missing_source}}).
@@ -212,7 +211,7 @@ p_link2(Id, Kind, Mixins, SourceLocation, Source,
     TargetKind = maps:get(<<"kind">>, Target, undefined),
     Link = occi_link:new(Id, Kind,
 			 SourceLocation, SourceKind, 
-			 occi_uri:from_string(TargetLocation, Ctx#parse_ctx.url), TargetKind),
+			 occi_uri:from_string(TargetLocation, Ctx), TargetKind),
     Link1 = lists:foldl(fun (MixinId, Acc) ->
 				occi_resource:add_mixin(MixinId, Acc)
 			end, Link, Mixins),
@@ -221,7 +220,7 @@ p_link2(Id, Kind, Mixins, SourceLocation, Source,
 				     Acc#{ K => V }
 			     end, #{}, maps:get(<<"attributes">>, Map, #{})),
 		   #{ <<"occi.core.title">> => maps:get(<<"title">>, Map, <<>>) }),
-    occi_link:set(Attributes, Ctx#parse_ctx.valid, Link1);
+    occi_link:set(Attributes, Ctx, Link1);
 
 p_link2(_, _, _, _, _, _, _) ->
     throw({parse_error, {link, missing_target}}).

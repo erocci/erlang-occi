@@ -6,8 +6,6 @@
 %%% Type checking is achieved with check/1. When setting an attribute,
 %%% only attribute existence is checked.
 %%%
-%%% @end
-%%%
 %%% @todo Should type check when setting attribute ? (see renderings 
 %%% where attributes can be set before categories declaration)
 %%% @end
@@ -18,7 +16,6 @@
 -include("occi_log.hrl").
 -include("occi_entity.hrl").
 -include("occi_type.hrl").
--include("occi_rendering.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
 -export([id/1,
@@ -55,7 +52,7 @@
 %% @doc opaque type representing an entity
 %% @end
 -type t() :: entity().
--export_type([t/0, validation/0]).
+-export_type([t/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -155,8 +152,11 @@ get(Key, E) ->
 %% All required attributes must be set.
 %% @throws {invalid_keys, [occi_attribute:key()]} | {invalid_value, [{occi_attribute:key(), occi_base_type:t()}]} | {immutable, [occi_attribute:key()]} | {required, [occi_attribute:key()]}
 %% @end
--spec set(map(), validation(), t()) -> t().
-set(Attrs, Validation, E) when is_map(Attrs) ->
+-spec set(map(), occi_ctx:t() | occi_ctx:validation(), t()) -> t().
+set(Attrs, #{ valid := Validation }, E) when is_map(Attrs) ->
+    set_or_update(false, Attrs, Validation, E);
+
+set(Attrs, Validation, E) when is_map(Attrs), is_atom(Validation) ->
     set_or_update(false, Attrs, Validation, E).
 
 
@@ -164,8 +164,8 @@ set(Attrs, Validation, E) when is_map(Attrs) ->
 %% 
 %% @throws {invalid_keys, [occi_attribute:key()]} | {invalid_value, [{occi_attribute:key(), occi_base_type:t()}]} | {required, [occi_attribute:key()]}
 %% @end
--spec update(map(), validation(), t()) -> t().
-update(Attrs, Validation, E) when is_map(Attrs) ->
+-spec update(map(), occi_ctx:t(), t()) -> t().
+update(Attrs, #{ valid := Validation }, E) when is_map(Attrs) ->
     set_or_update(true, Attrs, Validation, E).
 
 
@@ -214,7 +214,7 @@ is_subtype(_, _) -> false.
 
 %% @doc Load entity from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), parse_ctx()) -> t().
+-spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
 load(Mimetype, Bin, Ctx) -> 
     occi_rendering:load_entity(entity, Mimetype, Bin, Ctx).
 

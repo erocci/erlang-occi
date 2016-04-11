@@ -10,12 +10,10 @@
 
 -compile(export_all).
 
--include("../src/occi_rendering.hrl").
-
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
 
--define(ctx, #parse_ctx{ url = uri:from_string("http://localhost:8080/collections") } ).
+-define(ctx, occi_ctx:model(<<"http://localhost:8080/collections">>)).
 
 suite() ->
     [{timetrap,{seconds,30}}].
@@ -154,6 +152,6 @@ mixin_delete_resource2(_Config) ->
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({<<"http://schemas.example.org/occi#">>, <<"mixin2">>}, R),
     ?assertMatch(<<"Default value 1">>, occi_resource:get(<<"occi.mixin.attr1">>, R1)),
-    R2 = occi_resource:set(#{ <<"occi.mixin.attr1">> => <<"custom value">> }, client, R1),
+    R2 = occi_resource:set(#{ <<"occi.mixin.attr1">> => <<"custom value">> }, occi_ctx:client(<<"http://example.org">>), R1),
     R3 = occi_resource:rm_mixin({<<"http://schemas.example.org/occi#">>, <<"mixin2">>}, R2),
     ?assertMatch(<<"custom value">>, occi_resource:get(<<"occi.mixin.attr1">>, R3)).

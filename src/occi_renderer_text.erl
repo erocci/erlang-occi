@@ -28,7 +28,7 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
--spec render(T :: occi:t(), Ctx :: uri:t()) -> iolist().
+-spec render(T :: occi:t(), Ctx :: occi_ctx:t()) -> iolist().
 render(T, Ctx) ->
     Headers = to_headers(occi_type:type(T), T, orddict:new(), Ctx),
     orddict:fold(fun (K, Values, Acc) ->

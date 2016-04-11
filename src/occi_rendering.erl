@@ -7,13 +7,13 @@
 
 -module(occi_rendering).
 
--include("occi_rendering.hrl").
-
 -export([load_model/4,
+	 load_entity/3,
 	 load_entity/4,
 	 load_collection/3,
 	 load_invoke/3,
 	 render/3]).
+
 
 %% @doc Load the specified OCCI category or extension from an iolist()
 %% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
@@ -27,7 +27,7 @@
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_model(occi_type:name(), occi_utils:mimetype(), iolist(), parse_ctx()) -> occi_type:t().
+-spec load_model(occi_type:name(), occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_type:t().
 load_model(Type, MimeType, Bin, Ctx) ->
     case parser(MimeType) of
 	undefined -> 
@@ -35,6 +35,13 @@ load_model(Type, MimeType, Bin, Ctx) ->
 	Mod -> 
 	    Mod:parse_model(Type, Bin, Ctx)
     end.
+
+
+%% @equiv load_entity(entity, Mimetype, Bin, Ctx)
+%% @end
+-spec load_entity(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_type:t().
+load_entity(Mimetype, Bin, Ctx) ->
+    load_entity(entity, Mimetype, Bin, Ctx).
 
 
 %% @doc Load the specified OCCI entity (or sub-type thereof from an iolist()
@@ -49,7 +56,7 @@ load_model(Type, MimeType, Bin, Ctx) ->
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_entity(occi_type:name(), occi_utils:mimetype(), iolist(), parse_ctx()) -> occi_type:t().
+-spec load_entity(occi_type:name(), occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_type:t().
 load_entity(Type, MimeType, Bin, Ctx) ->
     case parser(MimeType) of
 	undefined -> 
@@ -71,7 +78,7 @@ load_entity(Type, MimeType, Bin, Ctx) ->
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_collection(occi_utils:mimetype(), iolist(), parse_ctx()) -> occi_collection:t().
+-spec load_collection(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_collection:t().
 load_collection(MimeType, Bin, Ctx) ->
     case parser(MimeType) of
 	undefined -> 
@@ -94,7 +101,7 @@ load_collection(MimeType, Bin, Ctx) ->
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_invoke(occi_utils:mimetype(), iolist(), parse_ctx()) -> occi_invoke:t().
+-spec load_invoke(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_invoke:t().
 load_invoke(MimeType, Bin, Ctx) ->
     case parser(MimeType) of
 	undefined -> 
@@ -104,7 +111,7 @@ load_invoke(MimeType, Bin, Ctx) ->
     end.
 
 
--spec render(occi_utils:mimetype(), occi_type:t(), render_ctx()) -> iolist().
+-spec render(occi_utils:mimetype(), occi_type:t(),occi_ctx:t()) -> iolist().
 render(MimeType, T, Ctx) ->
     case renderer(MimeType) of
 	undefined ->
@@ -112,6 +119,7 @@ render(MimeType, T, Ctx) ->
 	Mod ->
 	    Mod:render(T, Ctx)
     end.
+
 
 %%%
 %%% Priv
