@@ -42,14 +42,20 @@ resources_dir() ->
     end.
 
 
--spec mkdir(file:filename_all()) -> ok.
+%% @doc Recursively creates dir
+%% @end
+-spec mkdir(file:filename_all()) -> ok | {error, file:posix() | badarg}.
 mkdir(Dir) ->
     case filelib:is_dir(Dir) of
-	true ->
-	    ok;
+	true -> ok;
 	false ->
-	    ?debug("Creates directory: ~s", [Dir]),
-	    file:make_dir(Dir)
+	    case mkdir(filename:dirname(Dir)) of
+		ok ->
+		    ?debug("Creates directory: ~s", [Dir]),
+		    file:make_dir(Dir);
+		{error, _}=Err ->
+		    Err
+	    end
     end.
 
 

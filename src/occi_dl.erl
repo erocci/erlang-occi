@@ -50,7 +50,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 
--spec resource(term(), [{http_uri:uri(), file:filename_all()}]) -> {ok, file:filename_all()} | {error, term()}.
+-spec resource(term(), [http_uri:uri()]) -> {ok, file:filename_all()} | {error, term()}.
 resource(Id, Urls) ->
     case gen_server:call(?MODULE, {import, Id, Urls}) of
 	{imported, Res} ->
@@ -82,7 +82,7 @@ handle_info({http, {RequestID, stream_start, _Headers}}, S) ->
 		    {noreply, S}
 		end
 	    catch throw:Err ->
-		    ?error("Error, downloading extension ~s: ~p", [dl_id(Res), Err]),
+		    ?error("Error downloading extension ~s: ~p", [dl_id(Res), Err]),
 		    cancel_or_retry(Res, S)
 	    end
     end;
@@ -187,18 +187,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-maybe_request(Id, [{Url, _Local} | _]=Urls, {Pid, Tag}, S) ->
+maybe_request(Id, [ Url | _]=Urls, {Pid, Tag}, S) ->
     try begin
-	    Urls2 = fullnames(Urls),
-	    case dl_find(Urls2) of
+	    case dl_find(Urls) of
 		undefined ->
 		    RequestID = send_request(Url),
-		    Dl = dl_new_request(Id, Urls2, Pid, Tag, RequestID),
+		    Dl = dl_new_request(Id, Urls, Pid, Tag, RequestID),
 		    true = ets:insert(S, Dl),
 		    {reply, {pending, Tag}, S, 5000};
-		{Url, Path} ->
-		    true = ets:insert(S, dl_new_imported(Id, {Url, Path})),
-		    {reply, {imported, Path}, S}
+		Url ->
+		    Dl = dl_new_imported(Id, Url),
+		    true = ets:insert(S, Dl),
+		    {reply, {imported, dl_path(Dl)}, S}
 	    end
 	end
     catch throw:Err ->
@@ -214,7 +214,7 @@ send_request(Url) ->
 open_file(Path) ->
     case file:open(Path, [write]) of
 	{ok, Dev} -> Dev;
-	{error, Err} -> throw({io_error, Err})
+	{error, Err} -> throw({Err, Path})
     end.
 
 cancel_or_retry(Dl, S) ->
@@ -269,8 +269,8 @@ http_to_error(Other) -> Other.
 %% dl structure functions
 %% 
 -spec dl_new_imported(term(), file:filename_all()) -> dl().
-dl_new_imported(Id, {Url, Path}) ->
-    #dl{id=Id, status=imported, urls=[{Url, Path}]}.
+dl_new_imported(Id, Url) ->
+    #dl{id=Id, status=imported, urls=[Url]}.
 
 
 -spec dl_new_request(term(), [], pid(), reference(), reference()) -> dl().
@@ -284,13 +284,13 @@ dl_id(#dl{id=Scheme}) ->
 
 
 -spec dl_url(dl()) -> http_uri:uri().
-dl_url(#dl{urls=[{Url, _Local} | _]}) ->
+dl_url(#dl{urls=[Url | _]}) ->
     Url.
 
 
 -spec dl_path(dl()) -> file:filename_all().
-dl_path(#dl{urls=[ {_Url, Local} | _ ]}) ->
-    filename:join([occi_utils:resources_dir(), Local]).
+dl_path(#dl{urls=[ Url | _ ]}) ->
+    filename:join([occi_utils:resources_dir(), http_uri:decode(filename:basename(Url)) ]).
 
 
 -spec dl_status(dl()) -> dl_status_t().
@@ -351,21 +351,9 @@ dl_dev(#dl{dev=Dev}) ->
 dl_find([]) ->
     undefined;
 
-dl_find([{Url, Path} | Tail]) ->
+dl_find([Url | Tail]) ->
+    Path = filename:join([occi_utils:resources_dir(), http_uri:decode(filename:basename(Url))]),
     case filelib:wildcard(Path) of
-	[] ->
-	    dl_find(Tail);
-	[Path] ->
-	    {Url, Path}
+	[] -> dl_find(Tail);
+	[_] -> Url
     end.
-
-fullnames(Urls) ->
-    fullnames(Urls, []).
-
-
-fullnames([], Acc) ->
-    lists:reverse(Acc);
-
-fullnames([ {Url, Local} | Tail ], Acc) ->
-    Fullname = filename:join([occi_utils:resources_dir(), Local]),
-    fullnames(Tail, [ {Url, Fullname} | Acc ]).

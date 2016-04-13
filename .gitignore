@@ -25,6 +25,7 @@ erl_crash.dump
 /cover/
 /ct.coverdata
 /test/ct.cover.spec
+/eunit.coverdata
 
 # Dist
 /_rel

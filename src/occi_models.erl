@@ -223,7 +223,7 @@ load_categories(Scheme, [ Cat | Categories ]) ->
 
 dl_schema(Scheme) ->
     S = http_uri:encode(binary_to_list(Scheme)),
-    Urls = [{baseurl() ++ "/" ++ http_uri:encode(S) ++ ".xml", S ++ ".xml"}],
+    Urls = [baseurl() ++ "/" ++ http_uri:encode(S) ++ ".xml"],
     occi_dl:resource(Scheme, Urls).    
 
 
