@@ -11,24 +11,24 @@
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
--export([parse_model/3,
+-export([parse_model/2,
 	 parse_entity/3,
 	 parse_collection/2,
-	 parse_invoke/2]).
+	 parse_invoke/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
 
--spec parse_model(extension | kind | mixin | action, binary(), occi_ctx:t()) -> occi_type:t().
-parse_model(mixin, Bin, Ctx) ->
-    parse_mixin(occi_parser_http:parse(Bin), Ctx);
+-spec parse_model(extension | kind | mixin | action, binary()) -> occi_type:t().
+parse_model(mixin, Bin) ->
+    parse_mixin(occi_parser_http:parse(Bin));
 
-parse_model(Type, _Bin, _Ctx) when Type =:= extension;
-				   Type =:= kind;
-				   Type =:= mixin;
-				   Type =:= actin ->
+parse_model(Type, _Bin) when Type =:= extension;
+			     Type =:= kind;
+			     Type =:= mixin;
+			     Type =:= actin ->
     throw({not_implemented, Type}).
 
 
@@ -51,8 +51,8 @@ parse_collection(Bin, Ctx) ->
     occi_collection:append(Locations, C).
 
 
--spec parse_invoke(iolist(), occi_ctx:t()) -> occi_invoke:t().
-parse_invoke(Bin, _Ctx) ->
+-spec parse_invoke(iolist()) -> occi_invoke:t().
+parse_invoke(Bin) ->
     Headers = occi_parser_http:parse(Bin),
     p_invoke(Headers).
 
@@ -77,13 +77,13 @@ p_invoke2(Id, Attributes) ->
     occi_invoke:new(Id, Map).
 
 
-parse_mixin(H, Ctx) ->
+parse_mixin(H) ->
     case p_categories(orddict:find('category', H)) of
 	[] ->
 	    throw({parse_error, {mixin, no_mixin}});
 	[{category, #{ class := mixin, scheme := Scheme, term := Term }=Map }] ->
 	    M0 = occi_mixin:new(Scheme, Term),
-	    Location = occi_uri:from_string(maps:get(location, Map), Ctx),
+	    Location = maps:get(location, Map),
 	    M1 = occi_mixin:location(Location, M0),
 	    case maps:get(title, Map, undefined) of
 		undefined ->

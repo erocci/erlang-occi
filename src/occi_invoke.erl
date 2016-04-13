@@ -17,7 +17,7 @@
 	 title/2,
 	 attributes/1]).
 
--export([load/3,
+-export([load/2,
 	 render/3]).
 
 -record(invoke, {id         :: occi_category:id(),
@@ -65,8 +65,8 @@ attributes(#invoke{attributes=Attributes}) ->
 
 %% @doc Load an action invocation from iolist
 %% @end
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_invoke(Mimetype, Bin, Ctx).
+load(Mimetype, Bin) -> 
+    occi_rendering:load_invoke(Mimetype, Bin).
 
 
 %% @doc Render action invocation into given mimetype

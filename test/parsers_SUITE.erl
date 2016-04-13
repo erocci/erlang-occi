@@ -23,7 +23,7 @@ init_per_suite(Config) ->
     {ok, _} = application:ensure_all_started(occi),
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Xml} = file:read_file(ExtFile),
-    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml, ?ctx)),
+    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml)),
     Config.
 
 
@@ -117,9 +117,9 @@ init_per_group('user_mixin', Config) ->
 		  ?assertMatch({<<"http://schemas.example.org/occi#">>, <<"mymixin0">>},
 			       occi_mixin:id(M)),
 		  ?assertMatch(<<"http://localhost:8080/categories/mymixin0">>,
-			       occi_uri:to_string(occi_mixin:location(M)))
+			       occi_mixin:location(M))
 	  end,
-    Load = fun (Type, Bin) -> occi_mixin:load(Type, Bin, ?ctx) end,
+    Load = fun (Type, Bin) -> occi_mixin:load(Type, Bin) end,
     [ {check, Fun}, {load, Load} | Config ];
 
 init_per_group('collection', Config) ->
@@ -137,7 +137,7 @@ init_per_group('invoke', Config) ->
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"stop">>},
 			       occi_invoke:id(Action))
 	  end,
-    Load = fun (Type, Bin) -> occi_invoke:load(Type, Bin, ?ctx) end,
+    Load = fun (Type, Bin) -> occi_invoke:load(Type, Bin) end,
     [ {check, Fun}, {load, Load} | Config ];
 
 init_per_group(_, Config) ->

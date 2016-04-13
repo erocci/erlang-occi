@@ -80,8 +80,14 @@ to_string(U) ->
 to_string(#uri{ scheme = <<"urn">> }=Urn, _Ctx) ->
     to_string(Urn);
 
-to_string(Uri, #{ url := Ctx }) when ?is_uri(Ctx) ->
+to_string(Uri, #{ url := Ctx }) when ?is_uri(Uri), ?is_uri(Ctx) ->
     to_string(uri:path(Ctx, uri:path(Uri)));
+
+to_string(<< $/, Path/binary >>, #{ url := Ctx }) when ?is_uri(Ctx) ->
+    to_string(uri:path(Ctx, << $/, Path/binary >>));
+
+to_string(Path, #{ url := Ctx }) when is_binary(Path), ?is_uri(Ctx) ->
+    to_string(append_path(Ctx, Path));
 
 to_string(Uri, _) ->
     to_string(Uri).

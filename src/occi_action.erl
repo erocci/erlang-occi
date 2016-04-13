@@ -17,7 +17,7 @@
 -export([new/3,
 	 category/1]).
 
--export([load/3]).
+-export([load/2]).
 
 -record(action, { id :: occi_category:id(), m :: #{} }).
 -type t() :: #action{}.
@@ -43,6 +43,6 @@ category(A) ->
 
 %% @doc Load action from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_model(action, Mimetype, Bin, Ctx).
+-spec load(occi_utils:mimetype(), iolist()) -> t().
+load(Mimetype, Bin) -> 
+    occi_rendering:load_model(action, Mimetype, Bin).

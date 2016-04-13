@@ -15,6 +15,7 @@
   {env, [
 	 {resources_dir, {priv_dir, "resources"}},
 	 {schemas_baseurl, "http://raw.githubusercontent.com/occiware/occi-schemas/master/schemas"},
-	 {schemas_max_retry, 5}
+	 {schemas_max_retry, 5},
+	 {collections_prefix, <<"/categories">>}
 	]}
  ]}.

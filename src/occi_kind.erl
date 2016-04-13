@@ -21,7 +21,7 @@
 	 parents/2,
 	 has_parent/2]).
 
--export([load/3]).
+-export([load/2]).
 
 -mixin([occi_type]).
 
@@ -88,9 +88,9 @@ has_parent(Parent, Kind) ->
 
 %% @doc Load kind from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_model(kind, Mimetype, Bin, Ctx).
+-spec load(occi_utils:mimetype(), iolist()) -> t().
+load(Mimetype, Bin) -> 
+    occi_rendering:load_model(kind, Mimetype, Bin).
 
 
 %%%

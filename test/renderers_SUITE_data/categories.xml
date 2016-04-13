@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <capabilities xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <kind term="resource" scheme="http://schemas.ogf.org/occi/core#" title="Core Resource">
+  <kind term="resource" scheme="http://schemas.ogf.org/occi/core#" title="Core Resource" location="http://example.org:8080/categories/resource">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="entity"/>
     <attribute name="occi.core.summary" type="xs:string"/>
   </kind>
-  <kind term="storage" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Storage Resource">
+  <kind term="storage" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Storage Resource" location="http://example.org:8080/categories/storage">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
     <attribute name="occi.storage.size" type="xs:float"/>
     <attribute name="occi.storage.state">
@@ -22,7 +22,7 @@
     </action>
     <action term="snapshot" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Take storage snapshot"/>
   </kind>
-  <kind term="compute" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Compute Resource">
+  <kind term="compute" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Compute Resource" location="http://example.org:8080/categories/compute">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
     <attribute name="occi.compute.architecture">
       <xs:restriction base="xs:string">
@@ -53,11 +53,11 @@
       <attribute name="method" type="xs:string"/>
     </action>
   </kind>
-  <kind term="entity" scheme="http://schemas.ogf.org/occi/core#" title="Core Entity">
+  <kind term="entity" scheme="http://schemas.ogf.org/occi/core#" title="Core Entity" location="http://example.org:8080/categories/entity">
     <attribute name="occi.core.id" type="xs:string"/>
     <attribute name="occi.core.title" type="xs:string"/>
   </kind>
-  <kind term="network" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Network Resource">
+  <kind term="network" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Network Resource" location="http://example.org:8080/categories/network">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
     <attribute name="occi.network.label" type="xs:string"/>
     <attribute name="occi.network.state">
@@ -71,14 +71,14 @@
     <action term="down" scheme="http://schemas.ogf.org/occi/infrastructure/action#" title="Set network down"/>
     <action term="up" scheme="http://schemas.ogf.org/occi/infrastructure/action#" title="Set network up"/>
   </kind>
-  <kind term="link" scheme="http://schemas.ogf.org/occi/core#" title="Core Link">
+  <kind term="link" scheme="http://schemas.ogf.org/occi/core#" title="Core Link" location="http://example.org:8080/categories/link">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="entity"/>
     <attribute name="occi.core.source" type="resource"/>
     <attribute name="occi.core.source.kind" type="kind"/>
     <attribute name="occi.core.target" type="xs:anyURI"/>
     <attribute name="occi.core.target.kind" type="kind"/>
   </kind>
-  <kind term="networkinterface" scheme="http://schemas.ogf.org/occi/infrastructure#" title="NetworkInterface Link">
+  <kind term="networkinterface" scheme="http://schemas.ogf.org/occi/infrastructure#" title="NetworkInterface Link" location="http://example.org:8080/categories/networkinterface">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="link"/>
     <attribute name="occi.networkinterface.interface" type="xs:string"/>
     <attribute name="occi.networkinterface.mac" type="xs:string"/>
@@ -90,7 +90,7 @@
       </xs:restriction>
     </attribute>
   </kind>
-  <kind term="storagelink" scheme="http://schemas.ogf.org/occi/infrastructure#" title="StorageLink Link">
+  <kind term="storagelink" scheme="http://schemas.ogf.org/occi/infrastructure#" title="StorageLink Link" location="http://example.org:8080/categories/storagelink">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="link"/>
     <attribute name="occi.storagelink.deviceid" type="xs:string"/>
     <attribute name="occi.storagelink.mountpoint" type="xs:string"/>
@@ -102,19 +102,19 @@
       </xs:restriction>
     </attribute>
   </kind>
-  <mixin term="os_tpl" scheme="http://schemas.ogf.org/occi/infrastructure#" title="OS Template"/>
-  <mixin term="debian6" scheme="http://occi.example.org/occi/infrastructure/os_tpl#">
+  <mixin term="os_tpl" scheme="http://schemas.ogf.org/occi/infrastructure#" title="OS Template" location="http://example.org:8080/categories/os_tpl"/>
+  <mixin term="debian6" scheme="http://occi.example.org/occi/infrastructure/os_tpl#" location="http://example.org:8080/categories/debian6">
     <depends scheme="http://schemas.ogf.org/occi/infrastructure#" term="os_tpl"/>
   </mixin>
-  <mixin term="large" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Large Instance - 4 cores and 8 GB RAM">
+  <mixin term="large" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Large Instance - 4 cores and 8 GB RAM" location="http://example.org:8080/categories/large">
     <depends scheme="http://schemas.ogf.org/occi/infrastructure#" term="resource_tpl"/>
     <attribute name="occi.compute.architecture" type="xs:string" title="CPU Architecture" immutable="true"/>
     <attribute name="occi.compute.cores" type="xs:integer" title="CPU cores number" immutable="true"/>
     <attribute name="occi.compute.memory" type="xs:float" title="System RAM (GB)" immutable="true"/>
     <attribute name="occi.compute.speed" type="xs:float" title="CPU speed (GHz)" immutable="true"/>
   </mixin>
-  <mixin term="resource_tpl" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Resource template"/>
-  <mixin term="ipnetwork" scheme="http://schemas.ogf.org/occi/infrastructure/network#" title="IP Networking Mixin">
+  <mixin term="resource_tpl" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Resource template" location="http://example.org:8080/categories/resource_tpl"/>
+  <mixin term="ipnetwork" scheme="http://schemas.ogf.org/occi/infrastructure/network#" title="IP Networking Mixin" location="http://example.org:8080/categories/ipnetwork">
     <attribute name="occi.network.address" type="xs:string"/>
     <attribute name="occi.network.allocation" use="required">
       <xs:restriction base="xs:string">
@@ -124,7 +124,7 @@
     </attribute>
     <attribute name="occi.network.gateway" type="xs:string"/>
   </mixin>
-  <mixin term="ipnetworkinterface" scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#" title="IP Network Interface Mixin">
+  <mixin term="ipnetworkinterface" scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#" title="IP Network Interface Mixin" location="http://example.org:8080/categories/ipnetworkinterface">
     <attribute name="occi.networkinterface.address" type="xs:string" use="required"/>
     <attribute name="occi.networkinterface.allocation" use="required">
       <xs:restriction base="xs:string">

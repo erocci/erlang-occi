@@ -93,6 +93,7 @@
           "type": "string"
         }
       },
+      "location": "http://example.org:8080/categories/resource",
       "parent": "http://schemas.ogf.org/occi/core#entity",
       "scheme": "http://schemas.ogf.org/occi/core#",
       "term": "resource",
@@ -118,6 +119,7 @@
           "type": "array"
         }
       },
+      "location": "http://example.org:8080/categories/storage",
       "parent": "http://schemas.ogf.org/occi/core#resource",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "storage",
@@ -164,6 +166,7 @@
           "type": "array"
         }
       },
+      "location": "http://example.org:8080/categories/compute",
       "parent": "http://schemas.ogf.org/occi/core#resource",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "compute",
@@ -182,6 +185,7 @@
           "type": "string"
         }
       },
+      "location": "http://example.org:8080/categories/entity",
       "scheme": "http://schemas.ogf.org/occi/core#",
       "term": "entity",
       "title": "Core Entity"
@@ -208,6 +212,7 @@
           "type": "number"
         }
       },
+      "location": "http://example.org:8080/categories/network",
       "parent": "http://schemas.ogf.org/occi/core#resource",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "network",
@@ -236,6 +241,7 @@
           "type": "string"
         }
       },
+      "location": "http://example.org:8080/categories/link",
       "parent": "http://schemas.ogf.org/occi/core#entity",
       "scheme": "http://schemas.ogf.org/occi/core#",
       "term": "link",
@@ -259,6 +265,7 @@
           "type": "array"
         }
       },
+      "location": "http://example.org:8080/categories/networkinterface",
       "parent": "http://schemas.ogf.org/occi/core#link",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "networkinterface",
@@ -282,6 +289,7 @@
           "type": "array"
         }
       },
+      "location": "http://example.org:8080/categories/storagelink",
       "parent": "http://schemas.ogf.org/occi/core#link",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "storagelink",
@@ -290,6 +298,7 @@
   ],
   "mixins": [
     {
+      "location": "http://example.org:8080/categories/os_tpl",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "os_tpl",
       "title": "OS Template"
@@ -298,6 +307,7 @@
       "depends": [
         "http://schemas.ogf.org/occi/infrastructure#os_tpl"
       ],
+      "location": "http://example.org:8080/categories/debian6",
       "scheme": "http://occi.example.org/occi/infrastructure/os_tpl#",
       "term": "debian6",
       "title": []
@@ -328,11 +338,13 @@
       "depends": [
         "http://schemas.ogf.org/occi/infrastructure#resource_tpl"
       ],
+      "location": "http://example.org:8080/categories/large",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "large",
       "title": "Large Instance - 4 cores and 8 GB RAM"
     },
     {
+      "location": "http://example.org:8080/categories/resource_tpl",
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "resource_tpl",
       "title": "Resource template"
@@ -355,6 +367,7 @@
           "type": "string"
         }
       },
+      "location": "http://example.org:8080/categories/ipnetwork",
       "scheme": "http://schemas.ogf.org/occi/infrastructure/network#",
       "term": "ipnetwork",
       "title": "IP Networking Mixin"
@@ -377,6 +390,7 @@
           "type": "string"
         }
       },
+      "location": "http://example.org:8080/categories/ipnetworkinterface",
       "scheme": "http://schemas.ogf.org/occi/infrastructure/networkinterface#",
       "term": "ipnetworkinterface",
       "title": "IP Network Interface Mixin"

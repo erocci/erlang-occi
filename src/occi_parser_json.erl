@@ -11,29 +11,29 @@
 -include("occi_entity.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
--export([parse_model/3,
+-export([parse_model/2,
 	 parse_entity/3,
 	 parse_collection/2,
-	 parse_invoke/2]).
+	 parse_invoke/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
 
--spec parse_model(extension | kind | mixin | action, binary(), occi_ctx:t()) -> occi_type:t().
-parse_model(mixin, Bin, Ctx) ->
+-spec parse_model(extension | kind | mixin | action, binary()) -> occi_type:t().
+parse_model(mixin, Bin) ->
     Map = jsx:decode(Bin, [return_maps]),
     case maps:get(<<"mixins">>, Map, []) of
 	[] ->
 	    throw({parse_error, {mixin, no_mixin}});
 	[Mixin] ->
-	    p_mixin(Mixin, Ctx);
+	    p_mixin(Mixin);
 	_Else ->
 	    throw({parse_error, {mixin, multiple_mixin}})
     end;
 
-parse_model(Type, _Bin, _Ctx) when Type =:= extension;
+parse_model(Type, _Bin) when Type =:= extension;
 			     Type =:= kind;
 			     Type =:= action ->
     throw({not_implemented, Type}).
@@ -55,9 +55,9 @@ parse_collection(Bin, Ctx) ->
     p_collection(jsx:decode(Bin, [return_maps]), Ctx).
 
 
--spec parse_invoke(iolist(), occi_ctx:t()) -> occi_collection:t().
-parse_invoke(Bin, Ctx) ->
-    p_invoke(jsx:decode(Bin, [return_maps]), Ctx).
+-spec parse_invoke(iolist()) -> occi_collection:t().
+parse_invoke(Bin) ->
+    p_invoke(jsx:decode(Bin, [return_maps])).
 
 %%%
 %%% Parsers
@@ -88,7 +88,7 @@ p_collection_entity2(Id, _M, _Ctx) ->
     {Id, undefined}.
 
 
-p_invoke(Map, _Ctx) ->
+p_invoke(Map) ->
     Scheme = maps:get(<<"scheme">>, Map),
     Term = maps:get(<<"term">>, Map),
     Attributes = maps:fold(fun (K, V, Acc) ->
@@ -103,23 +103,23 @@ p_invoke(Map, _Ctx) ->
     end.
 
 
-p_mixin(#{ <<"scheme">> := Scheme }=Map, Ctx) ->
-    p_mixin2(Map, Scheme, Ctx);
+p_mixin(#{ <<"scheme">> := Scheme }=Map) ->
+    p_mixin2(Map, Scheme);
 
-p_mixin(_, _) ->
+p_mixin(_) ->
     throw({parse_error, {mixin, missing_scheme}}).
 
 
-p_mixin2(#{ <<"term">> := Term}=Map, Scheme, Ctx) ->
-    p_mixin3(Map, Scheme, Term, Ctx);
+p_mixin2(#{ <<"term">> := Term}=Map, Scheme) ->
+    p_mixin3(Map, Scheme, Term);
 
-p_mixin2(_, _, _) ->
+p_mixin2(_, _) ->
     throw({parse_error, {mixin, missing_term}}).
 
 
-p_mixin3(#{ <<"location">> := Location}=Map, Scheme, Term, Ctx) ->
+p_mixin3(#{ <<"location">> := Location}=Map, Scheme, Term) ->
     M0 = occi_mixin:new(Scheme, Term),
-    AbsLoc = occi_uri:from_string(Location, Ctx),
+    AbsLoc = Location,
     M1 = occi_mixin:location(AbsLoc, M0),
     case maps:get(<<"title">>, Map, undefined) of
 	undefined ->
@@ -128,7 +128,7 @@ p_mixin3(#{ <<"location">> := Location}=Map, Scheme, Term, Ctx) ->
 	    occi_mixin:title(binary_to_list(Title), M1)
     end;
 
-p_mixin3(_, _, _, _) ->
+p_mixin3(_, _, _) ->
     throw({parse_error, {mixin, missing_location}}).
 
 

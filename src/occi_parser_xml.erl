@@ -13,10 +13,10 @@
 -include_lib("annotations/include/annotations.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
 
--export([parse_model/3,
+-export([parse_model/2,
 	 parse_entity/3,
 	 parse_collection/2,
-	 parse_invoke/2]).
+	 parse_invoke/1]).
 
 -type state() :: #{}.
 
@@ -25,12 +25,12 @@
 -endif.
 
 
--spec parse_model(extension | kind | mixin | action, iolist(), occi_ctx:t()) -> occi_type:t().
-parse_model(RootType, Xml, Ctx) when RootType =:= extension;
-				     RootType =:= kind;
-				     RootType =:= mixin;
-				     RootType =:= action ->
-    case parse(Xml, Ctx) of
+-spec parse_model(extension | kind | mixin | action, iolist()) -> occi_type:t().
+parse_model(RootType, Xml) when RootType =:= extension;
+				RootType =:= kind;
+				RootType =:= mixin;
+				RootType =:= action ->
+    case parse(Xml, #{}) of
 	{RootType, Type} ->
 	    Type;
 	{Other, _Type} ->
@@ -68,9 +68,9 @@ parse_collection(Xml, Ctx) ->
     end.
 
 
--spec parse_invoke(iolist(), occi_ctx:t()) -> occi_invoke:t().
-parse_invoke(Xml, Ctx) ->
-    case parse(Xml, Ctx) of
+-spec parse_invoke(iolist()) -> occi_invoke:t().
+parse_invoke(Xml) ->
+    case parse(Xml, #{}) of
 	{invoke, I} -> I;
 	{Other, _} -> throw({parse_error, {invalid_type, Other}})
     end.
@@ -218,11 +218,11 @@ handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos,
     S#{ stack := [ {link, Id, Kind, Source, Target, Map1} | Stack ] };
 
 %% mixin is a root node
-handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack, ctx := Ctx }=S) ->
+handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack }=S) ->
     Term = attr("term", A),
     M0 = occi_mixin:new(attr("scheme", A), Term),
     M1 = occi_mixin:title(attr("title", A, <<>>), M0),
-    Location = occi_uri:from_string(attr("location", A, Term), Ctx),
+    Location = attr("location", A, Term),
     M2 = occi_mixin:location(Location, M1),
     S#{ stack := [ {mixin, M2} | Stack ] };
 

@@ -21,6 +21,7 @@
 	 category/1,
 	 kind/2,
 	 action/1,
+	 location/1,
 	 add_category/1,
 	 attribute/2,
 	 attributes/1]).
@@ -29,6 +30,7 @@
 -define(core_scheme, <<"http://schemas.ogf.org/occi/core#">>).
 
 -record category, {id        :: occi_category:id(),
+		   location  :: binary(),
 		   value     :: occi_category:t()}.
 
 -ifdef(TEST).
@@ -47,8 +49,7 @@ start_link() ->
 %% @end
 -spec import(occi_extension:t()) -> ok.
 import(E) ->
-    Ctx = occi_ctx:model(),
-    ok = load_imports(occi_extension:imports(E), Ctx),
+    ok = load_imports(occi_extension:imports(E)),
     ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
     ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
 
@@ -98,6 +99,21 @@ action(ActionId) ->
     end.
 
 
+%% @doc If any, return a category given a location.
+%% Otherwise, returns 'undefined
+%% @end
+-spec location(binary()) -> occi_category:t() | undefined.
+location(Path) ->
+    Fun = fun () ->
+		  mnesia:match_object(#category{_='_', location=Path})
+	  end,		  
+    case mnesia:transaction(Fun) of
+	{aborted, Err} -> throw(Err);
+	{atomic, []} -> undefined;
+	{atomic, [#category{value=Category}]} -> Category
+    end.		  
+
+
 %% @doc Return a category
 %% Category references (parent, depend, etc) is resolved:
 %% attributes and actions from references are merged into the resulting category
@@ -116,12 +132,9 @@ category(Id) when ?is_category_id(Id) ->
 
 -spec add_category(occi_category:t()) -> ok.
 add_category(Cat) ->
-    C = #category{id=occi_category:id(Cat), value=Cat},
-    case mnesia:transaction(fun() -> mnesia:write(C) end) of
-	{atomic, ok} ->
-	    ok;
-	{aborted, Err} ->
-	    throw(Err)
+    case mnesia:transaction(fun () -> add_category_t(Cat) end) of
+	{atomic, ok} -> ok;
+	{aborted, Err} -> throw(Err)
     end.
 
 
@@ -165,7 +178,7 @@ init() ->
 	{aborted, {already_exists, category}} -> ok;
 	{aborted, _} = Err -> throw(Err)
     end,
-    ok = load_imports([?core_scheme], occi_ctx:model()),
+    ok = load_imports([?core_scheme]),
     loop().
 
 
@@ -177,20 +190,20 @@ loop() ->
 
 
 %% Check extension exists in the database, throw error if not
-load_imports([], _Ctx) ->
+load_imports([]) ->
     ok;
 
-load_imports([ Scheme | Imports ], Ctx) ->
+load_imports([ Scheme | Imports ]) ->
     ?debug("Import extension: ~s", [Scheme]),
     case dl_schema(Scheme) of
 	{ok, Path} ->
 	    case file:read_file(Path) of
 		{ok, Bin} ->
-		    import(occi_extension:load(occi_utils:mimetype(Path), Bin, Ctx));
+		    import(occi_extension:load(occi_utils:mimetype(Path), Bin));
 		{error, Err} ->
 		    throw({import, Err})
 	    end,
-	    load_imports(Imports, Ctx);
+	    load_imports(Imports);
 	{error, Err} ->
 	    throw({import, Err})
     end.
@@ -223,6 +236,28 @@ baseurl() ->
 	Dir when is_list(Dir) ->
 	    Dir
     end.
+
+
+hash_location(Term) ->
+    Prefix = application:get_env(occi, collections_prefix, <<"/">>),
+    Loc = filename:join([Prefix, Term]),
+    hash_location2(exists_location(Loc), Loc, 0).
+
+
+hash_location2(false, Loc, _I) ->
+    Loc;
+
+hash_location2(true, Loc, I) ->
+    Loc2 = << Loc/binary, (integer_to_binary(I))/binary >>,
+    hash_location2(exists_location(Loc2), Loc2, I+1).
+
+
+exists_location(Loc) ->
+    case mnesia:dirty_match_object(#category{_='_', location=Loc}) of
+	[] ->  false;
+	_ -> true
+    end.
+
 
 %%%
 %%% Requests functions
@@ -262,6 +297,25 @@ resolve_t(mixin, C) ->
 
 resolve_t(action, C) ->
     C.
+
+
+add_category_t(Cat) ->
+    case mnesia:read(category, occi_category:id(Cat)) of
+	[] -> 
+	    mnesia:write(category_record_t(Cat));
+	_ ->
+	    %% Ignore duplicate category
+	    ok
+    end.
+
+
+category_record_t(Cat) when ?is_action(Cat) ->
+    #category{id=occi_category:id(Cat), location=undefined, value=Cat};
+
+category_record_t(Cat) ->
+    {_Scheme, Term} = occi_category:id(Cat),
+    Location = hash_location(Term),
+    #category{id=occi_category:id(Cat), location=Location, value=occi_category:location(Location, Cat)}.
 
 
 %%%

@@ -20,7 +20,7 @@
 	 imports/1]).
 
 -export([render/3,
-	 load/3]).
+	 load/2]).
 
 -mixin([occi_type]).
 
@@ -126,9 +126,9 @@ imports(#extension{m=M}) ->
 
 %% @doc Load extension from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_model(extension, Mimetype, Bin, Ctx).
+-spec load(occi_utils:mimetype(), iolist()) -> t().
+load(Mimetype, Bin) -> 
+    occi_rendering:load_model(extension, Mimetype, Bin).
 
 
 %% @doc Render extension into given mimetype

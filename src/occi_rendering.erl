@@ -7,11 +7,11 @@
 
 -module(occi_rendering).
 
--export([load_model/4,
+-export([load_model/3,
 	 load_entity/3,
 	 load_entity/4,
 	 load_collection/3,
-	 load_invoke/3,
+	 load_invoke/2,
 	 render/3]).
 
 
@@ -29,13 +29,13 @@
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_model(occi_type:name(), occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_type:t().
-load_model(Type, MimeType, Bin, Ctx) ->
+-spec load_model(occi_type:name(), occi_utils:mimetype(), iolist()) -> occi_type:t().
+load_model(Type, MimeType, Bin) ->
     case parser(MimeType) of
 	undefined -> 
 	    throw({unknown_mimetype, MimeType});
 	Mod -> 
-	    Mod:parse_model(Type, Bin, Ctx)
+	    Mod:parse_model(Type, Bin)
     end.
 
 
@@ -110,13 +110,13 @@ load_collection(MimeType, Bin, Ctx) ->
 %% </ul>
 %% @end
 %% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_invoke(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_invoke:t().
-load_invoke(MimeType, Bin, Ctx) ->
+-spec load_invoke(occi_utils:mimetype(), iolist()) -> occi_invoke:t().
+load_invoke(MimeType, Bin) ->
     case parser(MimeType) of
 	undefined -> 
 	    throw({unknown_mimetype, MimeType});
 	Mod -> 
-	    Mod:parse_invoke(Bin, Ctx)
+	    Mod:parse_invoke(Bin)
     end.
 
 

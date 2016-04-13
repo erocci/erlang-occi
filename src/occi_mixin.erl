@@ -19,7 +19,7 @@
 	 add_depend/2,
 	 depends/1]).
 
--export([load/3]).
+-export([load/2]).
 
 -mixin([occi_type]).
 
@@ -68,6 +68,6 @@ depends(M) ->
 
 %% @doc Load mixin from iolist 
 %% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_model(mixin, Mimetype, Bin, Ctx).
+-spec load(occi_utils:mimetype(), iolist()) -> t().
+load(Mimetype, Bin) -> 
+    occi_rendering:load_model(mixin, Mimetype, Bin).

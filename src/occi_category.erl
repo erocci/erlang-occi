@@ -119,13 +119,13 @@ actions(C) ->
     maps:values(Actions).
 
 
--spec location(t()) -> uri:t().
+-spec location(t()) -> binary().
 location(C) ->
     ?g(location, C).
 
 
--spec location(uri:t(), t()) -> t().
-location(Location, C) when ?is_uri(Location) ->
+-spec location(binary(), t()) -> t().
+location(Location, C) when is_binary(Location) ->
     ?s(location, Location, C).
 
 
