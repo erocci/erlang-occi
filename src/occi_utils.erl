@@ -9,7 +9,9 @@
 
 -include("occi_log.hrl").
 
--export([mkdir/1,
+-export([is_absolute/1,
+	 normalize/1,
+	 mkdir/1,
 	 priv_dir/0,
 	 resources_dir/0,
 	 mimetype/1]).
@@ -18,6 +20,19 @@
 		  | undefined.
 
 -export_type([mimetype/0]).
+
+
+%% @doc Normalize path: remove duplicate and trailing '/'
+%% @end
+-spec normalize(binary()) -> binary().
+normalize(Path) ->
+    << <<$/, Segment/binary >> || Segment <- (binary:split(Path, [<<$/>>], [global, trim_all]))/binary >>.
+
+
+-spec is_absolute(binary()) -> boolean().
+is_absolute(<< $/, _ >>) -> true;
+
+is_absolute(Path) when is_binary(Path) -> false.
 
 
 -spec priv_dir() -> file:filename_all().
