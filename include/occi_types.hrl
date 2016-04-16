@@ -5,14 +5,14 @@
 -define(is_categories(X),   is_list(X)).
 -define(is_collection(X),   element(1, X) =:= collection).
 
--define(is_category_id(X), is_binary(element(1, X)), is_binary(element(2, X))). 
+-define(is_category_id(X), is_binary(element(1, X)) andalso is_binary(element(2, X))). 
 
--define(is_category(X), element(1, X) =:= category; element(1, X) =:= kind; element(1, X) =:= mixin; element(1, X) =:= action).
+-define(is_category(X), element(1, X) =:= category orelse element(1, X) =:= kind orelse element(1, X) =:= mixin orelse element(1, X) =:= action).
 -define(is_kind(X),     element(1, X) =:= kind).
 -define(is_mixin(X),    element(1, X) =:= mixin).
 -define(is_action(X),   element(1, X) =:= action).
 
--define(is_entity(X),   element(1, X) =:= entity; element(1, X) =:= resource; element(1, X) =:= link).
+-define(is_entity(X),   element(1, X) =:= entity orelse element(1, X) =:= resource orelse element(1, X) =:= link).
 -define(is_resource(X), element(1, X) =:= resource).
 -define(is_link(X),     element(1, X) =:= link).
 
