@@ -11,6 +11,38 @@
       "title": "Set network up"
     },
     {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "backup",
+      "title": "Set storage as backup"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "offline",
+      "title": "Set storage offline"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "online",
+      "title": "Set storage online"
+    },
+    {
+      "attributes": {
+        "size": {
+          "mutable": true,
+          "required": false,
+          "type": "number"
+        }
+      },
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "resize",
+      "title": "Resize storage"
+    },
+    {
+      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
+      "term": "snapshot",
+      "title": "Take storage snapshot"
+    },
+    {
       "attributes": {
         "method": {
           "mutable": true,
@@ -50,38 +82,6 @@
       "scheme": "http://schemas.ogf.org/occi/infrastructure/compute/action#",
       "term": "suspend",
       "title": "Suspend the system (hibernate or in RAM)"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "backup",
-      "title": "Set storage as backup"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "offline",
-      "title": "Set storage offline"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "online",
-      "title": "Set storage online"
-    },
-    {
-      "attributes": {
-        "size": {
-          "mutable": true,
-          "required": false,
-          "type": "number"
-        }
-      },
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "resize",
-      "title": "Resize storage"
-    },
-    {
-      "scheme": "http://schemas.ogf.org/occi/infrastructure/storage/action#",
-      "term": "snapshot",
-      "title": "Take storage snapshot"
     }
   ],
   "kinds": [
@@ -98,32 +98,6 @@
       "scheme": "http://schemas.ogf.org/occi/core#",
       "term": "resource",
       "title": "Core Resource"
-    },
-    {
-      "actions": [
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#backup",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#offline",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#online",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#resize",
-        "http://schemas.ogf.org/occi/infrastructure/storage/action#snapshot"
-      ],
-      "attributes": {
-        "occi.storage.size": {
-          "mutable": true,
-          "required": true,
-          "type": "number"
-        },
-        "occi.storage.state": {
-          "mutable": false,
-          "required": true,
-          "type": "array"
-        }
-      },
-      "location": "http://example.org:8080/categories/storage",
-      "parent": "http://schemas.ogf.org/occi/core#resource",
-      "scheme": "http://schemas.ogf.org/occi/infrastructure#",
-      "term": "storage",
-      "title": "Storage Resource"
     },
     {
       "actions": [
@@ -171,6 +145,32 @@
       "scheme": "http://schemas.ogf.org/occi/infrastructure#",
       "term": "compute",
       "title": "Compute Resource"
+    },
+    {
+      "actions": [
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#backup",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#offline",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#online",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#resize",
+        "http://schemas.ogf.org/occi/infrastructure/storage/action#snapshot"
+      ],
+      "attributes": {
+        "occi.storage.size": {
+          "mutable": true,
+          "required": true,
+          "type": "number"
+        },
+        "occi.storage.state": {
+          "mutable": false,
+          "required": true,
+          "type": "array"
+        }
+      },
+      "location": "http://example.org:8080/categories/storage",
+      "parent": "http://schemas.ogf.org/occi/core#resource",
+      "scheme": "http://schemas.ogf.org/occi/infrastructure#",
+      "term": "storage",
+      "title": "Storage Resource"
     },
     {
       "attributes": {

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<link id="http://example.org:8080/myif" source="http://example.org:8080/myif/mycompute" target="http://example.org:8080/myif/mynetwork" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<link id="http://example.org:8080/myif" source="http://example.org:8080/mycompute" target="http://example.org:8080/mynetwork" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="networkinterface"/>
   <mixin scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#" term="ipnetworkinterface"/>
   <attribute name="occi.core.source.kind" value="http://schemas.ogf.org/occi/infrastructure#compute"/>

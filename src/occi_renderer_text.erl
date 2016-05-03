@@ -70,7 +70,7 @@ to_headers(extension, Ext, Headers, Ctx) ->
     to_headers(categories, Categories, Headers, Ctx);
 
 to_headers(collection, Coll, Headers, Ctx) ->
-    lists:foldl(fun ({Id, _}, Acc) ->
+    sets:fold(fun ({Id, _}, Acc) ->
 			append("x-occi-location", occi_uri:to_string(Id, Ctx), Acc)
 		end, Headers, occi_collection:elements(Coll));
 

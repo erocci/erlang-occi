@@ -298,14 +298,16 @@ handle_end_el(occi, import, _, S) ->
 
 handle_end_el(occi, kind, _, #{ kind := Kind, extension := Ext, 
 				parents := [ {occi, extension } | _ ] }=S) ->
-    S#{ extension := Ext#{ kinds => [ Kind | maps:get(kinds, Ext, []) ] } };
+    S1 = maps:remove(kind, S),
+    S1#{ extension := Ext#{ kinds => [ Kind | maps:get(kinds, Ext, []) ] } };
 
 handle_end_el(occi, kind, _, S) ->
     S;
 
 handle_end_el(occi, mixin, _, #{ mixin := Mixin, extension := Ext,
 				 parents := [ {occi, extension} | _ ] }=S) ->
-    S#{ extension := Ext#{ mixins => [ Mixin | maps:get(mixins, Ext, []) ] } };
+    S1 = maps:remove(mixin, S),
+    S1#{ extension := Ext#{ mixins => [ Mixin | maps:get(mixins, Ext, []) ] } };
 
 %% mixin is a root node
 handle_end_el(occi, mixin, _, #{ mixin := Mixin, parents := [ document ] }=S) ->
@@ -316,21 +318,24 @@ handle_end_el(occi, mixin, _, S) ->
 
 handle_end_el(occi, resource, _, #{ resource := Res, collection := Coll,
 				    parents := [ {occi, collection} | _ ] }=S) ->
-    S#{ collection := Coll#{ resources => [ Res | maps:get(resources, Coll, []) ] } };
+    S1 = maps:remove(resource, S),
+    S1#{ collection := Coll#{ resources => [ Res | maps:get(resources, Coll, []) ] } };
 
 handle_end_el(occi, resource, _, #{ resource := Res, parents := [ document ] }=S) ->
     S#{ doc => Res };
 
 handle_end_el(occi, link, _, #{ link := Link, collection := Coll,
 				parents := [ {occi, collection} | _ ] }=S) ->
-    S#{ collection := Coll#{ links => [ Link | maps:get(links, Coll, []) ] } };
+    S1 = maps:remove(link, S),
+    S1#{ collection := Coll#{ links => [ Link | maps:get(links, Coll, []) ] } };
 
 handle_end_el(occi, link, _, #{ link := Link, parents := [ document ] }=S) ->
     S#{ doc => Link };
 
 handle_end_el(occi, link, _, #{ link := Link, resource := Res,
 				parents := [ {occi, resource} | _ ] }=S) ->
-    S#{ resource := Res#{ links => [ Link | maps:get(links, Res, []) ] } };
+    S1 = maps:remove(link, S),
+    S1#{ resource := Res#{ links => [ Link | maps:get(links, Res, []) ] } };
 
 handle_end_el(occi, depends, _, S) ->
     S;
@@ -343,11 +348,13 @@ handle_end_el(occi, action, _, #{ invoke := Invoke, parents := [ document ] }=S)
 
 handle_end_el(occi, action, _, #{ action := Action, kind := Kind,
 				  parents := [ {occi, kind} | _ ]}=S) ->
-    S#{ kind := Kind#{ actions => [ Action | maps:get(actions, Kind, []) ] } };
+    S1 = maps:remove(action, S),
+    S1#{ kind := Kind#{ actions => [ Action | maps:get(actions, Kind, []) ] } };
 
 handle_end_el(occi, action, _, #{ action := Action, mixin := Mixin,
 				  parents := [ {occi, mixin} | _ ]}=S) ->
-    S#{ mixin := Mixin#{ actions => [ Action | maps:get(actions, Mixin, []) ] } };
+    S1 = maps:remove(action, S),
+    S1#{ mixin := Mixin#{ actions => [ Action | maps:get(actions, Mixin, []) ] } };
 
 handle_end_el(occi, parent, _, S) ->
     S;
@@ -356,17 +363,20 @@ handle_end_el(occi, attribute, _, #{ attribute := { Name, Spec }, action := Acti
 				     parents := [ {occi, action}, {occi, Cls} | _ ] }=S) 
   when kind =:= Cls; mixin =:= mixin ->
     Attrs = maps:put(Name, Spec, maps:get(attributes, Action, #{})),
-    S#{ action := Action#{ attributes => Attrs } };
+    S1 = maps:remove(attribute, S),
+    S1#{ action := Action#{ attributes => Attrs } };
 
 handle_end_el(occi, attribute, _, #{ attribute := { Name, Spec }, kind := Kind,
 				     parents := [ {occi, kind} | _ ] }=S) ->
     Attrs = maps:put(Name, Spec, maps:get(attributes, Kind, #{})),
-    S#{ kind := Kind#{ attributes => Attrs } };
+    S1 = maps:remove(attribute, S),
+    S1#{ kind := Kind#{ attributes => Attrs } };
 
 handle_end_el(occi, attribute, _, #{ attribute := { Name, Spec }, mixin := Mixin,
 				     parents := [ {occi, mixin} | _ ] }=S) ->
     Attrs = maps:put(Name, Spec, maps:get(attributes, Mixin, #{})),
-    S#{ mixin := Mixin#{ attributes => Attrs } };
+    S1 = maps:remove(attribute, S),
+    S1#{ mixin := Mixin#{ attributes => Attrs } };
 
 handle_end_el(occi, attribute, _, #{ parents := [ {occi, resource} | _ ] }=S) ->
     S;
@@ -377,12 +387,13 @@ handle_end_el(occi, attribute, _, #{ parents := [ {occi, link} | _ ] }=S) ->
 handle_end_el(occi, attribute, _, #{ parents := [ {occi, action} | _ ] }=S) ->
     S;
 
-handle_end_el(xsd, restriction, _, S) ->
-    S;
-
-handle_end_el(xsd, enumeration, _, #{ attribute := {Name, Spec},
+handle_end_el(xsd, restriction, _, #{ attribute := {Name, Spec},
 				      enum := Values }=S) ->
-    S#{ attribute := {Name, Spec#{ type := {enum, Values} } } };
+    S1 = maps:remove(enum, S),
+    S1#{ attribute := {Name, Spec#{ type := {enum, Values} } } };
+
+handle_end_el(xsd, enumeration, _, S) ->
+    S;
 
 handle_end_el(Ns, El, _, S) ->
     Error = iolist_to_binary(io_lib:format("Invalid end tag: ~s:~s", [Ns, El])),

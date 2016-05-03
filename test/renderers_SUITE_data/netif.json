@@ -12,10 +12,10 @@
   ],
   "source": {
     "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
-    "location": "http://example.org:8080/myif/mycompute"
+    "location": "http://example.org:8080/mycompute"
   },
   "target": {
     "kind": "http://schemas.ogf.org/occi/infrastructure#network",
-    "location": "http://example.org:8080/myif/mynetwork"
+    "location": "http://example.org:8080/mynetwork"
   }
 }

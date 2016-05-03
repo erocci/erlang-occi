@@ -21,8 +21,9 @@ suite() ->
 init_per_suite(Config) ->
     {ok, _} = application:ensure_all_started(occi),
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
-    {ok, Xml} = file:read_file(ExtFile),
-    ok = occi_models:import(occi_parser_xml:parse_model(extension, Xml)),
+    {ok, Bin} = file:read_file(ExtFile),
+    Ext = occi_extension:from_map(occi_rendering:parse(xml, Bin)),
+    ok = occi_models:import(Ext),
     Config.
 
 
@@ -42,7 +43,7 @@ init_per_group('core_resource', Config) ->
     [ {object, Object}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_a', Config) ->
-    Id = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
+    Id = <<"ns1/mycompute0">>,
     R = occi_resource:new(Id, {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}),
     R0 = occi_resource:add_mixin({<<"http://occi.example.org/occi/infrastructure/os_tpl#">>, <<"debian6">>}, R),
     R1 = occi_resource:set(#{ <<"occi.core.title">> => <<"My super compute">>,
@@ -53,24 +54,24 @@ init_per_group('compute_a', Config) ->
     [ {object, R1}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_b', Config) ->
-    RId = occi_uri:from_string(<<"ns1/mycompute0">>, ?ctx),
+    RId = <<"ns1/mycompute0">>,
     RKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>},
     R = occi_resource:new(RId, RKind),
-    LId = occi_uri:from_string(<<"myif0">>, ?ctx),
+    LId = <<"myif0">>,
     L = occi_link:new(LId, {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>}, 
 		      RId, RKind, 
-		      occi_uri:from_string(<<"network0">>, ?ctx), undefined),
+		      <<"network0">>, undefined),
     R1 = occi_resource:add_link(L, R),
     R2 = occi_resource:set(#{ <<"occi.compute.cores">> => 4 }, client, R1),
     [ {object, R2}, {ctx, ?ctx} | Config ];
 
 init_per_group('netif', Config) ->
-    Id = occi_uri:from_string(<<"myif">>, ?ctx),
+    Id = <<"myif">>,
     Kind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>},
     Mixin = {<<"http://schemas.ogf.org/occi/infrastructure/networkinterface#">>, <<"ipnetworkinterface">>},
-    Src = occi_uri:from_string(<<"mycompute">>, occi_ctx:client(Id)),
+    Src = <<"mycompute">>,
     SrcKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>},
-    Target = occi_uri:from_string(<<"mynetwork">>, occi_ctx:client(Id)),
+    Target = <<"mynetwork">>,
     TargetKind = {<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"network">>},
     L = occi_link:new(Id, Kind, Src, SrcKind, Target, TargetKind),
     L0 = occi_link:add_mixin(Mixin, L),
@@ -83,8 +84,8 @@ init_per_group('netif', Config) ->
 init_per_group('bounded_collection', Config) ->
     Kind = {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>},
     C = occi_collection:new(Kind),
-    R0 = occi_resource:new(occi_uri:from_string(<<"resource0">>, ?ctx)),
-    R1 = occi_resource:new(occi_uri:from_string(<<"resource1">>, ?ctx)),
+    R0 = occi_resource:new(<<"resource0">>),
+    R1 = occi_resource:new(<<"resource1">>),
     C1 = occi_collection:append([R0, R1], C),
     [ {object, C1}, {ctx, ?ctx} | Config ];
 

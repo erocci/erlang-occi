@@ -4,24 +4,6 @@
     <parent scheme="http://schemas.ogf.org/occi/core#" term="entity"/>
     <attribute name="occi.core.summary" type="xs:string"/>
   </kind>
-  <kind term="storage" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Storage Resource" location="http://example.org:8080/categories/storage">
-    <parent scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
-    <attribute name="occi.storage.size" type="xs:float"/>
-    <attribute name="occi.storage.state">
-      <xs:restriction base="xs:string">
-        <xs:enumeration value="error"/>
-        <xs:enumeration value="offline"/>
-        <xs:enumeration value="online"/>
-      </xs:restriction>
-    </attribute>
-    <action term="backup" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Set storage as backup"/>
-    <action term="offline" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Set storage offline"/>
-    <action term="online" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Set storage online"/>
-    <action term="resize" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Resize storage">
-      <attribute name="size" type="xs:float"/>
-    </action>
-    <action term="snapshot" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Take storage snapshot"/>
-  </kind>
   <kind term="compute" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Compute Resource" location="http://example.org:8080/categories/compute">
     <parent scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
     <attribute name="occi.compute.architecture">
@@ -52,6 +34,24 @@
     <action term="suspend" scheme="http://schemas.ogf.org/occi/infrastructure/compute/action#" title="Suspend the system (hibernate or in RAM)">
       <attribute name="method" type="xs:string"/>
     </action>
+  </kind>
+  <kind term="storage" scheme="http://schemas.ogf.org/occi/infrastructure#" title="Storage Resource" location="http://example.org:8080/categories/storage">
+    <parent scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
+    <attribute name="occi.storage.size" type="xs:float"/>
+    <attribute name="occi.storage.state">
+      <xs:restriction base="xs:string">
+        <xs:enumeration value="error"/>
+        <xs:enumeration value="offline"/>
+        <xs:enumeration value="online"/>
+      </xs:restriction>
+    </attribute>
+    <action term="backup" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Set storage as backup"/>
+    <action term="offline" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Set storage offline"/>
+    <action term="online" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Set storage online"/>
+    <action term="resize" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Resize storage">
+      <attribute name="size" type="xs:float"/>
+    </action>
+    <action term="snapshot" scheme="http://schemas.ogf.org/occi/infrastructure/storage/action#" title="Take storage snapshot"/>
   </kind>
   <kind term="entity" scheme="http://schemas.ogf.org/occi/core#" title="Core Entity" location="http://example.org:8080/categories/entity">
     <attribute name="occi.core.id" type="xs:string"/>
