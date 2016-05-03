@@ -19,10 +19,12 @@
 -export([import/1,
 	 categories/0,
 	 category/1,
+	 kind/1,
 	 kind/2,
 	 action/1,
 	 location/1,
 	 add_category/1,
+	 rm_category/1,
 	 attribute/2,
 	 attributes/1]).
 
@@ -66,22 +68,34 @@ categories() ->
     end.
 
 
-%% @doc Return a kind, checking it has specified parent 
-%% @throws {unknown_category, occi_category:id()} | {invalid_kind, occi_category:id()}
+%% @doc Return a kind
+%% @throws {unknown_category, occi_category:id()}
 %% @end
--spec kind(link | resource, occi_category:id()) -> occi_category:t().
-kind(Parent, KindId) when is_binary(KindId) ->
-    kind(Parent, occi_category:parse_id(KindId));
+-spec kind(occi_category:id() | binary()) -> occi_category:id().
+kind(KindId) when is_binary(KindId) ->
+    kind(occi_category:parse_id(KindId));
 
-kind(Parent, KindId) when ?is_category_id(KindId) ->
+kind(KindId) when ?is_category_id(KindId) ->
     case category(KindId) of
 	undefined ->
 	    throw({unknown_category, KindId});
 	Category ->
-	    case occi_kind:has_parent(Parent, Category) of
-		true -> Category;
-		false -> throw({invalid_kind, KindId})
+	    case occi_category:class(Category) of
+		kind -> Category;
+		_ -> throw({unknown_category, KindId})
 	    end
+    end.
+
+
+%% @doc Return a kind, checking it has specified parent 
+%% @throws {unknown_category, occi_category:id()} | {invalid_kind, occi_category:id()}
+%% @end
+-spec kind(link | resource, occi_category:id()) -> occi_category:t().
+kind(Parent, KindId) when ?is_category_id(KindId) ->
+    Kind = kind(KindId),
+    case occi_kind:has_parent(Parent, Kind) of
+	true -> Kind;
+	false -> throw({invalid_kind, KindId})
     end.
 
 
@@ -131,8 +145,19 @@ category(Id) when ?is_category_id(Id) ->
 
 
 -spec add_category(occi_category:t()) -> ok.
-add_category(Cat) ->
+add_category(Cat) when ?is_category(Cat) ->
     case mnesia:transaction(fun () -> add_category_t(Cat) end) of
+	{atomic, ok} -> ok;
+	{aborted, Err} -> throw(Err)
+    end.
+
+
+-spec rm_category(occi_category:id()) -> ok.
+rm_category(Id) when ?is_category_id(Id) ->
+    Fun = fun () ->
+		  mnesia:delete({category, Id})
+	  end,
+    case mnesia:transaction(Fun) of
 	{atomic, ok} -> ok;
 	{aborted, Err} -> throw(Err)
     end.
@@ -199,7 +224,7 @@ load_imports([ Scheme | Imports ]) ->
 	{ok, Path} ->
 	    case file:read_file(Path) of
 		{ok, Bin} ->
-		    import(occi_extension:load(occi_utils:mimetype(Path), Bin));
+		    import(occi_extension:from_map(occi_rendering:parse(occi_utils:mimetype(Path), Bin)));
 		{error, Err} ->
 		    throw({import, Err})
 	    end,
@@ -213,7 +238,7 @@ load_categories(_Scheme, []) ->
     ok;
 
 load_categories(Scheme, [ Cat | Categories ]) ->
-    ?debug("Add category: ~p", [occi_category:id(Cat)]),
+    ?debug("Add category ~p", [occi_category:id(Cat)]),
     ok = add_category(Cat),
     lists:foreach(fun (Action) ->
 			  ok = add_category(Action)
@@ -239,7 +264,7 @@ baseurl() ->
 
 
 hash_location(Term) ->
-    Prefix = application:get_env(occi, collections_prefix, <<"/">>),
+    Prefix = occi_utils:normalize(application:get_env(occi, collections_prefix, <<"/">>)),
     Loc = filename:join([Prefix, Term]),
     hash_location2(exists_location(Loc), Loc, 0).
 

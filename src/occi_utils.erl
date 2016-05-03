@@ -26,7 +26,7 @@
 %% @end
 -spec normalize(binary()) -> binary().
 normalize(Path) ->
-    << <<$/, Segment/binary >> || Segment <- (binary:split(Path, [<<$/>>], [global, trim_all]))/binary >>.
+    << <<$/, Segment/binary >> || Segment <- (binary:split(Path, [<<$/>>], [global, trim_all])) >>.
 
 
 -spec is_absolute(binary()) -> boolean().

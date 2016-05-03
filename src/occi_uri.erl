@@ -8,7 +8,7 @@
 -module(occi_uri).
 
 -include("occi_uri.hrl").
--include_lib("annotations/include/annotations.hrl").
+-include_lib("mixer/include/mixer.hrl").
 
 -mixin({uri, except, [from_string/1,
 		      to_string/1,

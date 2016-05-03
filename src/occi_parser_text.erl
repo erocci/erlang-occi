@@ -11,198 +11,106 @@
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
--export([parse_model/2,
-	 parse_entity/3,
-	 parse_collection/2,
-	 parse_invoke/1]).
+-export([parse/1]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
 
--spec parse_model(extension | kind | mixin | action, binary()) -> occi_type:t().
-parse_model(mixin, Bin) ->
-    parse_mixin(occi_parser_http:parse(Bin));
-
-parse_model(Type, _Bin) when Type =:= extension;
-			     Type =:= kind;
-			     Type =:= mixin;
-			     Type =:= actin ->
-    throw({not_implemented, Type}).
-
-
--spec parse_entity(entity | resource | link, binary(), occi_ctx:t()) -> occi_type:t().
-parse_entity(Type, Bin, Ctx) when Type =:= entity;
-				  Type =:= resource;
-				  Type =:= link ->
-    Entity = parse_entity2(occi_parser_http:parse(Bin), Ctx),
-    case occi_entity:is_subtype(Type, Entity) of
-	true -> Entity;
-	false -> throw({parse_error, {type, Entity}})
-    end.
-
-
--spec parse_collection(iolist(), occi_ctx:t()) -> occi_collection:t().
-parse_collection(Bin, Ctx) ->
-    Headers = occi_parser_http:parse(Bin),
-    Locations = p_locations(orddict:find('x-occi-location', Headers), Ctx),
-    C = occi_collection:new(),
-    occi_collection:append(Locations, C).
-
-
--spec parse_invoke(iolist()) -> occi_invoke:t().
-parse_invoke(Bin) ->
-    Headers = occi_parser_http:parse(Bin),
-    p_invoke(Headers).
+-spec parse(binary()) -> occi_rendering:ast().
+parse(Bin) ->
+    orddict:fold(fun validate/3, #{}, occi_parser_http:parse(Bin)).
 
 %%%
 %%% Parsers
 %%%
-p_invoke(Headers) ->
-    case p_categories(orddict:find('category', Headers)) of
-	[] ->
-	    throw({parse_error, {action, no_category}});
-	[{category, #{ class := action, scheme := Scheme, term := Term }}] ->
-	    p_invoke2({Scheme, Term}, p_attributes(orddict:find('x-occi-attribute', Headers)));
-	_ ->
-	    throw({parse_error, {action, multiple_categories}})
-    end.
+validate('category', V, Acc) ->
+    lists:foldl(fun val_category/2, Acc, p_categories(V, []));
+
+validate('x-occi-attribute', V, Acc) ->
+    lists:foldl(fun val_attribute/2, Acc, p_attributes(V, []));
+
+validate('link', V, Acc) ->
+    lists:foldl(fun ({link, Link}, Acc1) ->
+			Acc#{ links => [ maps:fold(fun val_link/3, #{}, Link) | maps:get(links, Acc1, []) ] }
+		end, Acc, p_links(V, []));
+
+validate('x-occi-location', V, Acc) ->
+    lists:foldl(fun val_location/2, Acc, p_locations(V, [])).
 
 
-p_invoke2(Id, Attributes) ->
-    Map = lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
-			      Acc#{ Key => Value }
-		      end, #{}, Attributes),
-    occi_invoke:new(Id, Map).
+val_category({category, #{ class := action }=Cat}, Acc) ->
+    %% action invocation
+    Acc#{ term => maps:get(term, Cat),
+	  scheme => maps:get(scheme, Cat),
+	  title => maps:get(title, Cat, undefined) };
+
+val_category({category, #{ class := kind }=Cat}, Acc)  ->
+    %% entity
+    Acc#{ kind => { maps:get(scheme, Cat), maps:get(term, Cat) } };
+
+val_category({category, #{ class := mixin }=Cat}, Acc) ->
+    %% mixin 
+    %% entity
+    Scheme = maps:get(scheme, Cat),
+    Term = maps:get(term, Cat),
+    Acc#{ mixins => [ { Scheme, Term } | maps:get(mixins, Acc, []) ],
+	  scheme => Scheme,
+	  term => Term }.
 
 
-parse_mixin(H) ->
-    case p_categories(orddict:find('category', H)) of
-	[] ->
-	    throw({parse_error, {mixin, no_mixin}});
-	[{category, #{ class := mixin, scheme := Scheme, term := Term }=Map }] ->
-	    M0 = occi_mixin:new(Scheme, Term),
-	    Location = maps:get(location, Map),
-	    M1 = occi_mixin:location(Location, M0),
-	    case maps:get(title, Map, undefined) of
-		undefined ->
-		    M1;
-		Title ->
-		    occi_mixin:title(Title, M1)
-	    end;    
-	_ ->
-	    throw({parse_error, {mixin, multiple_mixin}})
-    end.
+val_attribute({attribute, <<"occi.core.id">>, {_Type, Value}}, Acc) ->
+    Acc#{ id => Value };
+
+val_attribute({attribute, <<"occi.core.summary">>, {_Type, Value}}, Acc) ->
+    Acc#{ summary => Value };
+
+val_attribute({attribute, <<"occi.core.title">>, {_Type, Value}}, Acc) ->
+    Acc#{ title => Value };
+
+val_attribute({attribute, <<"occi.core.source">>, {_Type, Value}}, Acc) ->
+    Source = maps:get(source, Acc, #{}),
+    Acc#{ source => Source#{ location => Value } };
+
+val_attribute({attribute, <<"occi.core.source.kind">>, {_Type, Value}}, Acc) ->
+    Source = maps:get(source, Acc, #{}),
+    Acc#{ source => Source#{ kind => Value } };
+
+val_attribute({attribute, <<"occi.core.target">>, {_Type, Value}}, Acc) ->
+    Target = maps:get(target, Acc, #{}),
+    Acc#{ target => Target#{ location => Value } };
+
+val_attribute({attribute, <<"occi.core.target.kind">>, {_Type, Value}}, Acc) ->
+    Target = maps:get(target, Acc, #{}),
+    Acc#{ target => Target#{ kind => Value } };
+
+val_attribute({attribute, Key, {_Type, Value}}, Acc) ->
+    Attrs = maps:get(attributes, Acc, #{}),
+    Acc#{ attributes => Attrs#{ Key => Value } }.
 
 
-parse_entity2(H, Ctx) ->
-    Filter = fun ({category, #{ class := kind, scheme := Scheme, term := Term }},
-		  {undefined, Mixins}) ->
-		     { {Scheme, Term}, Mixins };
-		 ({category, #{ class := kind}}, _Acc) ->
-		     throw({parse_error, {entity, kind_already_defined}});
-		 ({category, #{ class := mixin, scheme := Scheme, term := Term }},
-		  {Kind, Mixins}) ->
-		     { Kind, [ {Scheme, Term} | Mixins ]};
-		 ({category, # { class := action }}, Acc) ->
-		     %% ignore ??
-		     Acc
-	     end,
-    {KindId, MixinIds} = lists:foldl(Filter, {undefined, []}, p_categories(orddict:find('category', H))),
-    Attributes = p_attributes(orddict:find('x-occi-attribute', H)),
-    {Id, Attributes2} = case lists:keytake(<<"occi.core.id">>, 2, Attributes) of
-			    {value, {attribute, _, {string, SId}}, Rest} ->
-				{occi_uri:from_string(SId, Ctx), Rest};
-			    {value, {attribute, _, {Type, _}}, _} ->
-				throw({parse_error, {entity, {<<"occi.core.id">>, Type}}});
-			    false ->
-				throw({parse_error, {entity, {<<"occi.core.id">>, <<>>}}})
-			end,
-    Kind = occi_models:category(KindId),
-    case occi_kind:has_parent(resource, Kind) of
-	true ->
-	    Links = p_links(orddict:find('link', H)),
-	    p_resource(Id, Kind, MixinIds, Attributes2, Links, Ctx);
-	false ->
-	    p_link(Id, Kind, MixinIds, Attributes2, Ctx)
-    end.
+val_link(self, Self, Acc) ->
+    Acc#{ id => Self };
+
+val_link(categories, Categories, Acc) ->
+    {Kind, Mixins} = filter_categories(Categories, undefined, []),
+    Acc#{ kind => Kind, mixins => Mixins };
+
+val_link(target, Location, Acc) ->
+    Target = maps:get(target, Acc, #{}),
+    Acc#{ target => Target#{ location => Location } };
+
+val_link(rel, Kind, Acc) ->
+    Target = maps:get(target, Acc, #{}),
+    Acc#{ target => Target#{ kind => Kind } };
+
+val_link(attributes, Attributes, Acc) ->
+    lists:foldl(fun val_attribute/2, Acc, Attributes).
 
 
-p_resource(Id, Kind, MixinIds, Attributes, Links, Ctx) ->
-    R = occi_resource:new(Id, Kind),
-    R1 = lists:foldl(fun (Mixin, Acc) ->
-			     occi_entity:add_mixin(Mixin, Acc)
-		     end, R, MixinIds),
-    R2 = lists:foldl(fun ({link, Link}, Acc) ->
-			     occi_resource:add_link(p_resource_link(Id, Kind, Link, Ctx), Acc)
-		     end, R1, Links),
-    occi_entity:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
-					Acc#{ Key => Value }
-				end, #{}, Attributes), Ctx, R2).
-
-
-p_resource_link(Source, SourceKind, Link, Ctx) ->
-    Id = case maps:get(self, Link, undefined) of
-	     undefined ->
-		 occi_utils:urn(Source);
-	     Self ->
-		 occi_uri:from_string(Self, Ctx)
-	 end,
-    Categories = maps:get(categories, Link, [?link_kind_id]),
-    {Kind, MixinIds} = filter_categories(Categories, undefined, []),
-    Target = occi_uri:from_string(maps:get(target, Link), Ctx),
-    [ TargetKind | _ ] = maps:get(rel, Link),
-    Attributes = maps:get(attributes, Link),
-    p_link2(Id, Kind, MixinIds, Source, occi_kind:id(SourceKind), 
-	    Target, TargetKind, Attributes, Ctx).
-
-
-p_link(Id, Kind, MixinIds, Attributes, Ctx) ->
-    {Source, Attrs2} = case lists:keytake(<<"occi.core.source">>, 2, Attributes) of
-			   {value, {attribute, _, {string, V}}, Rest} ->
-			       {occi_uri:from_string(V, Ctx), Rest};
-			   {value, {attribute, _, {Type, _}}, _} ->
-			       throw({parse_error, {link, {<<"occi.core.source">>, Type}}});
-			   false ->
-			       throw({parse_error, {link, {<<"occi.core.source">>, <<>>}}})
-		       end,
-    {SourceKind, Attrs3} = case lists:keytake(<<"occi.core.source.kind">>, 2, Attrs2) of
-			       {value, {attribute, _, {string, V1}}, Rest1} ->
-				   {V1, Rest1};
-			       {value, {attribute, _, {Type1, _}}, _} ->
-				   throw({parse_error, {link, {<<"occi.core.source.kind">>, Type1}}});
-			       false ->
-				   {undefined, Attrs2}
-			   end,
-    {Target, Attrs4} = case lists:keytake(<<"occi.core.target">>, 2, Attrs3) of
-			   {value, {attribute, _, {string, V2}}, Rest2} ->
-			       {occi_uri:from_string(V2, Ctx), Rest2};
-			   {value, {attribute, _, {Type2, _}}, _} ->
-			       throw({parse_error, {link, {<<"occi.core.target">>, Type2}}});
-			   false ->
-			       throw({parse_error, {link, {<<"occi.core.target">>, <<>>}}})
-		       end,
-    {TargetKind, Attrs5} = case lists:keytake(<<"occi.core.target.kind">>, 2, Attrs4) of
-			       {value, {attribute, _, {string, V3}}, Rest3} ->
-				   {V3, Rest3};
-			       {value, {attribute, _, {Type3, _}}, _} ->
-				   throw({parse_error, {link, {<<"occi.core.target.kind">>, Type3}}});
-			       false ->
-				   {undefined, Attrs4}
-			   end,
-    p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attrs5, Ctx).
-
-
-p_link2(Id, Kind, MixinIds, Source, SourceKind, Target, TargetKind, Attributes, Ctx) ->
-    L = occi_link:new(Id, Kind, Source, SourceKind, Target, TargetKind),
-    L1 = lists:foldl(fun (MixinId, Acc) ->
-			     occi_link:add_mixin(MixinId, Acc)
-		     end, L, MixinIds),
-    occi_link:set(lists:foldl(fun ({attribute, Key, {_, Value}}, Acc) ->
-				      Acc#{ Key => Value }
-			      end, #{}, Attributes), Ctx, L1).
-    
+val_location(Location, Acc) ->
+    Acc#{ entities => [ Location | maps:get(entities, Acc, []) ] }.
 
 %%%
 %%% Parse functions
@@ -227,13 +135,6 @@ p_locations([ Bin | Tail ], Acc, Ctx) ->
 	Else ->
 	    throw({parse_error, {invalid_location, Else}})
     end.
-
-
-p_categories(error) -> 
-    [];
-
-p_categories({ok, Values}) -> 
-    p_categories(Values, []).
 
 
 p_categories([], Acc) ->
@@ -289,13 +190,6 @@ p_category2(Else, _Cat) ->
     throw({parse_error, {category, Else}}).
 
 
-p_attributes(error) ->
-    [];
-
-p_attributes({ok, Values}) ->
-    p_attributes(Values, []).
-
-
 p_attributes([], Acc) ->
     lists:reverse(Acc);
 
@@ -316,13 +210,6 @@ p_attribute({kv, {Key, {Type, Value}}, <<>>}) ->
 
 p_attribute({kv, _, Rest}) ->
     throw({parse_error, {attribute, Rest}}).
-
-
-p_links(error) ->
-    [];
-
-p_links({ok, Values}) ->
-    p_links(Values, []).
 
 
 p_links([], Acc) ->

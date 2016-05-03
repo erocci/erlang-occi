@@ -19,9 +19,10 @@
 	 parent/2,
 	 parents/1,
 	 parents/2,
-	 has_parent/2]).
+	 has_parent/2,
+	 known_parent/1]).
 
--export([load/2]).
+-export([from_map/1]).
 
 -mixin([occi_type]).
 
@@ -86,11 +87,39 @@ has_parent(Parent, Kind) ->
     has_parents2([ id(Kind) | parents(Kind) ], Parent).
 
 
-%% @doc Load kind from iolist 
+%% @doc Return first known parent
 %% @end
--spec load(occi_utils:mimetype(), iolist()) -> t().
-load(Mimetype, Bin) -> 
-    occi_rendering:load_model(kind, Mimetype, Bin).
+-spec known_parent(t()) -> resource | entity.
+known_parent(Kind) ->
+    known_parent2([ id(Kind) | parents(Kind) ]).
+
+
+%% @doc Build kind from AST
+%% @end
+-spec from_map(occi_rendering:ast()) -> t().
+from_map(Map) -> 
+    try begin
+	    Scheme = maps:get(scheme, Map),
+	    Term = maps:get(term, Map),
+	    K = new(Scheme, Term),
+	    K1 = case maps:get(title, Map, undefined) of
+		     undefined -> K;
+		     Title -> title(Title, K)
+		 end,
+	    K2 = maps:fold(fun (Name, Spec, Acc1) ->
+				   add_attribute(occi_attribute:from_map(Name, {Scheme, Term}, Spec), Acc1)
+			   end, K1, maps:get(attributes, Map, [])),
+	    K3 = lists:foldl(fun (Map2, Acc2) ->
+				     add_action(occi_action:from_map({Scheme, Term}, Map2), Acc2)
+			     end, K2, maps:get(actions, Map, [])),
+	    case maps:get(parent, Map, undefined) of
+		undefined -> K3;
+		Parent -> parent(Parent, K3)
+	    end
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.
 
 
 %%%
@@ -105,3 +134,15 @@ has_parents2([ Parent | _Tail ], Parent) ->
 has_parents2([ _ | Tail ], Parent) ->
     has_parents2(Tail, Parent).
 
+
+known_parent2([]) ->
+    throw(unknown_parent);
+
+known_parent2([ ?resource_kind_id | _ ]) ->
+    resource;
+
+known_parent2([ ?link_kind_id | _ ]) ->
+    link;
+
+known_parent2([ _ | Tail ]) ->
+    known_parent2(Tail).

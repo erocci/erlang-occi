@@ -12,7 +12,7 @@
 -include("occi_entity.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [load/3]},
+-mixin([{occi_entity, except, [from_map/2]},
 	occi_type]).
 
 -export([new/4,
@@ -20,7 +20,7 @@
 	 source/1,
 	 target/1]).
 
--export([load/3]).
+-export([from_map/2]).
 
 -type t() :: occi_entity:t().
 -export_type([t/0]).
@@ -78,8 +78,22 @@ target(E) ->
     get(<<"occi.core.target">>, E).
 
 
-%% @doc Load link from iolist 
-%% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_entity(link, Mimetype, Bin, Ctx).
+-spec from_map(occi_kind:t(), occi_rendering:ast()) -> t().
+from_map(Kind, Map) ->
+    try begin
+	    Id = maps:get(id, Map, undefined),
+	    Src = maps:get(source, Map),
+	    Target = maps:get(target, Map),
+	    L = new(Id, Kind,
+		    maps:get(location, Src), maps:get(kind, Src, undefined), 
+		    maps:get(location, Target), maps:get(kind, Target, undefined)),
+	    L1 = lists:foldl(fun (M, Acc1) ->
+				     add_mixin(M, Acc1)
+			     end, L, maps:get(mixins, Map, [])),
+	    Attrs0 = maps:get(attributes, Map, #{}),
+	    Attrs1 = Attrs0#{ <<"occi.core.title">> => maps:get(title, Map, undefined) },
+	    occi_entity:set(Attrs1, client, L1)
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.

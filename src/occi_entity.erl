@@ -32,7 +32,9 @@
 	 do/4,
 	 is_subtype/2]).
 
--export([load/3, 
+-export([from_map/1,
+	 from_map/2,
+	 update_from_map/2,
 	 render/3]).
 
 %% Internal (for subtypes)
@@ -40,7 +42,7 @@
 
 -type entity() :: {
 	      Class      :: occi_type:name(),
-	      Id         :: uri:t(),
+	      Id         :: binary(),
 	      Kind       :: occi_category:id(),
 	      Mixins     :: [occi_category:id()],
 	      Attributes :: maps:map(),
@@ -48,6 +50,7 @@
 	      Actions    :: maps:map()
 	     }.
 
+-type validation() :: internal | client | server.
 
 %% @doc opaque type representing an entity
 %% @end
@@ -58,7 +61,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--spec id(t()) -> uri:t().
+-spec id(t()) -> binary().
 id(E) ->
     element(?id, E).
 
@@ -152,11 +155,8 @@ get(Key, E) ->
 %% All required attributes must be set.
 %% @throws {invalid_keys, [occi_attribute:key()]} | {invalid_value, [{occi_attribute:key(), occi_base_type:t()}]} | {immutable, [occi_attribute:key()]} | {required, [occi_attribute:key()]}
 %% @end
--spec set(map(), occi_ctx:t() | occi_ctx:validation(), t()) -> t().
-set(Attrs, #{ valid := Validation }, E) when is_map(Attrs) ->
-    set_or_update(false, Attrs, Validation, E);
-
-set(Attrs, Validation, E) when is_map(Attrs), is_atom(Validation) ->
+-spec set(map(), validation(), t()) -> t().
+set(Attrs, Validation, E) when is_map(Attrs) ->
     set_or_update(false, Attrs, Validation, E).
 
 
@@ -164,8 +164,8 @@ set(Attrs, Validation, E) when is_map(Attrs), is_atom(Validation) ->
 %% 
 %% @throws {invalid_keys, [occi_attribute:key()]} | {invalid_value, [{occi_attribute:key(), occi_base_type:t()}]} | {required, [occi_attribute:key()]}
 %% @end
--spec update(map(), occi_ctx:t(), t()) -> t().
-update(Attrs, #{ valid := Validation }, E) when is_map(Attrs) ->
+-spec update(map(), validation(), t()) -> t().
+update(Attrs, Validation, E) when is_map(Attrs) ->
     set_or_update(true, Attrs, Validation, E).
 
 
@@ -212,11 +212,53 @@ is_subtype(entity, _) -> true;
 is_subtype(_, _) -> false.
 
 
-%% @doc Load entity from iolist 
+-spec from_map(occi_rendering:ast()) -> t().
+from_map(Map) ->
+    try begin
+	    Kind = occi_models:kind(maps:get(kind, Map)),
+	    from_map(Kind, Map)
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.
+
+
+%% @doc New entity from AST
 %% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_entity(entity, Mimetype, Bin, Ctx).
+-spec from_map(occi_category:t() | binary(), occi_rendering:ast()) -> t().
+from_map(Kind, Map) when ?is_kind(Kind) ->
+    case occi_kind:known_parent(Kind) of
+	resource -> occi_resource:from_map(Kind, rel_id(Map));
+	link -> occi_link:from_map(Kind, rel_id(Map))
+    end;
+
+from_map(Path, Map) when is_binary(Path) ->
+    try begin
+	    Kind = occi_models:kind(maps:get(kind, Map)),
+	    from_map(Kind, rel_id(Map#{ id => Path }))
+	end
+    catch throw:{badkey, _}=Err ->
+	    throw(Err)
+    end.
+
+
+-spec update_from_map(occi_rendering:ast(), t()) -> t().
+update_from_map(Map, Entity) ->
+    try begin
+	    Attrs0 = maps:get(attributes, Map, #{}),
+	    Attrs1 = case maps:get(title, Map, undefined) of
+			 undefined -> Attrs0;
+			 Title -> Attrs0#{ <<"occi.core.title">> => Title }
+		     end,
+	    Attrs2 = case maps:get(summary, Map, undefined) of
+			 undefined -> Attrs1;
+			 Summary -> Attrs1#{ <<"occi.core.summary">> => Summary }
+		     end,
+	    update(Attrs2, client, Entity)
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.
 
 
 %% @doc Render entity into given mimetype
@@ -410,3 +452,24 @@ do_fun(ActionId, Attributes, Fun, E) ->
     catch _:Err ->
 	    throw({do, {internal, Err}})
     end.
+
+
+rel_id(#{ id := <<"/", _/binary >> =Path }=Map) ->
+    << "/", Path1/binary >> = occi_utils:normalize(Path),
+    Map#{ id  := Path1 };
+
+rel_id(#{ id := << "http://", _/binary >> =Url }=Map) when is_binary(Url) ->
+    url_id(Url, Map);
+
+rel_id(#{ id := << "https://", _/binary >> =Url }=Map) when is_binary(Url) ->
+    url_id(Url, Map);
+
+rel_id(#{ id := << "urn:", _/binary >> =Url }=Map) when is_binary(Url) ->
+    url_id(Url, Map);
+
+rel_id(Map) ->
+    Map.
+
+
+url_id(Url, Map) ->
+    Map#{ id := occi_uri:path(occi_uri:from_string(Url)) }.

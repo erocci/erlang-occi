@@ -24,6 +24,8 @@
 	 description/1,
 	 description/2]).
 
+-export([from_map/3]).
+
 -type name_t() :: binary().
 -type type_t() :: occi_base_type:t().
 -type key() :: binary().
@@ -37,12 +39,12 @@ new(Category, Name, Type) when is_binary(Name) ->
      name => Name,
      category => Category,
      type => Type,
-     title => "",
+     title => <<>>,
      required => false,
      mutable => true,
      default => undefined,
      pattern => undefined,
-     description => ""
+     description => <<>>
     }.
 
 
@@ -119,3 +121,21 @@ description(A) ->
 -spec description(binary(), t()) -> t().
 description(Desc, A) when is_binary(Desc) ->
     A#{ description := Desc }.
+
+-spec from_map(Name :: binary(), CatId :: occi_category:id(), occi_rendering:ast()) -> t().
+from_map(Name, CatId, Map) ->
+    try begin
+	    #{ name => Name,
+	       category => CatId,
+	       type => maps:get(type, Map),
+	       title => maps:get(title, Map, <<>>),
+	       required => maps:get(required, Map, false),
+	       mutable => maps:get(mutable, Map, true),
+	       default => maps:get(default, Map, undefined),
+	       pattern => maps:get(pattern, Map, undefined),
+	       description => maps:get(description, Map, <<>>)
+	     }
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.

@@ -17,7 +17,7 @@
 -export([new/3,
 	 category/1]).
 
--export([load/2]).
+-export([from_map/2]).
 
 -record(action, { id :: occi_category:id(), m :: #{} }).
 -type t() :: #action{}.
@@ -41,8 +41,22 @@ category(A) ->
     ?g(category, A).
 
 
-%% @doc Load action from iolist 
+%% @doc Load action from ast
 %% @end
--spec load(occi_utils:mimetype(), iolist()) -> t().
-load(Mimetype, Bin) -> 
-    occi_rendering:load_model(action, Mimetype, Bin).
+-spec from_map(occi_category:id(), occi_rendering:ast()) -> t().
+from_map(Related, Map) -> 
+    try begin
+	    Scheme = maps:get(scheme, Map),
+	    Term = maps:get(term, Map),
+	    A = new(Scheme, Term, Related),
+	    A0 = case maps:get(title, Map, undefined) of
+		     undefined -> A;
+		     Title -> title(Title, A)
+		 end,
+	    maps:fold(fun (Name, Spec, Acc1) ->
+			      add_attribute(occi_attribute:from_map(Name, {Scheme, Term}, Spec), Acc1)
+		      end, A0, maps:get(attributes, Map, #{}))
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.

@@ -12,7 +12,7 @@
 -include("occi_uri.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [load/3]},
+-mixin([{occi_entity, except, [from_map/2]},
 	occi_type]).
 
 -export([new/1,
@@ -20,13 +20,13 @@
 	 add_link/2,
 	 links/1]).
 
--export([load/3]).
+-export([from_map/2]).
 
 -define(links, 8).
 
 -type resource() :: {
 		Class      :: occi_type:name(),
-		Id         :: uri:t(),
+		Id         :: binary(),
 		Kind       :: occi_category:id(),
 		Mixins     :: [occi_category:id()],
 		Attributes :: maps:map(),
@@ -45,20 +45,20 @@
 
 %% @doc Creates a resource with given id, of kind ...core#resource
 %% @end
--spec new(uri:t()) -> t().
+-spec new(binary()) -> t().
 new(Id) ->
     occi_resource:new(Id, ?resource_kind_id).
 
 
 %% @throws {unknown_category, term()}
--spec new(uri:t(), occi_category:t() | occi_category:id() | string() | binary()) -> t().
+-spec new(binary(), occi_category:t() | occi_category:id() | string() | binary()) -> t().
 new(Id, KindId) when is_list(KindId); is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId));
 
 new(Id, {_Scheme, _Term}=KindId) ->
     new(Id, occi_models:kind(resource, KindId));
 
-new(Id, Kind) when ?is_uri(Id) ->
+new(Id, Kind) ->
     occi_entity:merge_parents(Kind, {resource, Id, occi_kind:id(Kind), [], #{}, #{}, #{}, []}).
 
 
@@ -77,11 +77,27 @@ links(R) ->
     element(?links, R).
 
 
-%% @doc Load resource from iolist 
+%% @doc New resource from AST
 %% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) -> 
-    occi_rendering:load_entity(resource, Mimetype, Bin, Ctx).
+-spec from_map(occi_kind:t(), occi_rendering:ast()) -> t().
+from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
+    try begin
+	    Id = maps:get(id, Map, undefined),
+	    R = new(Id, Kind),
+	    R1 = lists:foldl(fun (M, Acc1) ->
+				     add_mixin(M, Acc1)
+			     end, R, maps:get(mixins, Map, [])),
+	    R2 = lists:foldl(fun (Map2, Acc2) ->
+				     add_link(occi_link:from_map(Map2), Acc2)
+			     end, R1, maps:get(links, Map, [])),
+	    Attrs0 = maps:get(attributes, Map, #{}),
+	    Attrs1 = Attrs0#{ <<"occi.core.summary">> => maps:get(summary, Map, undefined),
+			      <<"occi.core.title">> => maps:get(title, Map, undefined) },
+	    occi_entity:set(Attrs1, client, R2)
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.
 
 %%%
 %%% eunit

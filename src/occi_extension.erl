@@ -20,7 +20,7 @@
 	 imports/1]).
 
 -export([render/3,
-	 load/2]).
+	 from_map/1]).
 
 -mixin([occi_type]).
 
@@ -41,13 +41,13 @@
 %% @end
 %% @throws {invalid_uri, string() | binary()}
 -spec new(Scheme :: string() | binary()) -> t().
-new(Scheme) when is_list(Scheme); is_binary(Scheme) ->
+new(Scheme) when is_binary(Scheme) ->
     try uri:from_string(Scheme) of
 	_ ->
 	    #extension{
 	       id = Scheme,
 	       m = #{ 
-		 name => "",
+		 name => <<>>,
 		 kinds => [],
 		 mixins => [],
 		 imports => []
@@ -60,14 +60,14 @@ new(Scheme) when is_list(Scheme); is_binary(Scheme) ->
 
 %% @doc Get the name of the extension.
 %% @end
--spec name(t()) -> string().
+-spec name(t()) -> binary().
 name(#extension{m=M}) ->
     maps:get(name, M).
 
 
 %% @doc Set (optional) name of the extension
 %% @end
--spec name(string(), t()) -> t().
+-spec name(binary(), t()) -> t().
 name(Name, #extension{m=M}=E) ->
     E#extension{ m=M#{ name := Name } }.
 
@@ -124,11 +124,23 @@ imports(#extension{m=M}) ->
     maps:get(imports, M).
 
 
-%% @doc Load extension from iolist 
+%% @doc Load extension from ast
 %% @end
--spec load(occi_utils:mimetype(), iolist()) -> t().
-load(Mimetype, Bin) -> 
-    occi_rendering:load_model(extension, Mimetype, Bin).
+-spec from_map(occi_rendering:ast()) -> t().
+from_map(Map) -> 
+    try begin
+	    E = new(maps:get(scheme, Map)),
+	    E1 = name(maps:get(name, Map, <<>>), E),
+	    E2 = lists:foldl(fun (Map1, Acc1) ->
+				     add_category(occi_kind:from_map(Map1), Acc1)
+			     end, E1, maps:get(kinds, Map, [])),
+	    lists:foldl(fun (Map2, Acc2) ->
+				add_category(occi_mixin:from_map(Map2), Acc2)
+			end, E2, maps:get(mixins, Map, []))
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.
 
 
 %% @doc Render extension into given mimetype
@@ -142,10 +154,10 @@ render(Mimetype, E, Ctx) ->
 %%%
 -ifdef(TEST).
 new_test_() ->
-    E = new("http://example.org"),
+    E = new(<<"http://example.org">>),
     [
-     ?_assertMatch("", name(E)),
-     ?_assertMatch("http://example.org", scheme(E))
+     ?_assertMatch(<<>>, name(E)),
+     ?_assertMatch(<<"http://example.org">>, scheme(E))
     ].
 
 -endif.

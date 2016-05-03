@@ -12,20 +12,23 @@
 
 -export([new/0,
 	 new/1,
+	 new/2,
 	 id/1,
 	 ids/1,
 	 elements/1,
 	 elements/2,
+	 size/1,
 	 append/2]).
 
--export([load/3,
+-export([from_map/2,
+	 load/3,
 	 render/3]).
 
--type id() :: occi_uri:t() | occi_category:id().
+-type id() :: binary() | occi_category:id().
 -type elem() :: {occi_entity:id(), occi_entity:t() | undefined}.
 
--record(collection, {id            :: id(),
-		     elements = [] :: [elem()]}).
+-record(collection, {id                    :: id(),
+		     elements = sets:new() :: sets:set()}).
 
 -type t() :: #collection{}.
 
@@ -34,19 +37,26 @@
 %% @end
 -spec new() -> t().
 new() ->
-    #collection{id=undefined}.
+    #collection{id=undefined, elements=sets:new()}.
 
 
 %% @doc Create a new collection.
 %% If id is an uri, collection is unbounded.
 %% If id is a category id, collection is bounded
 %% @end
--spec new(occi_uri:t() | occi_category:id()) -> t().
-new(Id) when ?is_uri(Id) ->
+-spec new(binary() | occi_category:id()) -> t().
+new(Id) when is_binary(Id) ->
     #collection{id=Id};
 
 new({_Scheme, _Term}=Id) ->
     #collection{id=Id}.
+
+
+%% @doc Creates a new bounded collection
+%% @end
+-spec new(occi_category:id(), [occi_entity:t() | occi_entity:id()]) -> t().
+new(Id, Elements) ->
+    elements(Elements, new(Id)).
 
 
 %% @doc Return collection id
@@ -58,16 +68,16 @@ id(#collection{id=Id}) ->
 
 %% @doc Get all entity ids
 %% @end
--spec ids(t()) -> [occi_entity:id()].
+-spec ids(t()) -> sets:set().
 ids(#collection{ elements=Elements }) ->
-    lists:map(fun ({Id, _}) ->
-		      Id
-	      end, Elements).
+    sets:fold(fun ({Id, _}, Acc) ->
+		      sets:add_element(Id, Acc)
+	      end, sets:new(), Elements).
 
 
 %% @doc Get all elements
 %% @end
--spec elements(t()) -> [elem()].
+-spec elements(t()) -> sets:set().
 elements(#collection{ elements=Elements }) ->
     Elements.
 
@@ -76,15 +86,26 @@ elements(#collection{ elements=Elements }) ->
 %% @end
 -spec elements([elem() | occi_entity:id() | occi_entity:t()], t()) -> t().
 elements(Elements, #collection{}=C) ->
-    L = lists:map(fun to_elem/1, Elements),
-    C#collection{ elements=L }.
+    Elements2 = sets:fold(fun to_elem/2, sets:new(), Elements),
+    C#collection{ elements=Elements2 }.
 
 
 %% @doc Append elements to the collection
 %% @end
--spec append([elem()], t()) -> t().
+-spec append([elem()] | sets:set(), t()) -> t().
+append(NewElements, Coll) when is_list(NewElements) ->
+    append(sets:from_list(NewElements), Coll);
+
 append(NewElements, #collection{ elements=Elements }=C) ->
-    C#collection{ elements=lists:map(fun to_elem/1, NewElements) ++ Elements }.
+    Elements2 = sets:union(sets:fold(fun to_elem/2, sets:new(), NewElements), Elements),
+    C#collection{ elements=Elements2 }.
+
+
+%% @doc Collection size
+%% @end
+-spec size(t()) -> integer().
+size(#collection{ elements=Elements }) ->
+    sets:size(Elements).
 
 
 %% @doc Load collection from iolist
@@ -92,6 +113,16 @@ append(NewElements, #collection{ elements=Elements }=C) ->
 -spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
 load(Mimetype, Bin, Ctx) ->
     occi_rendering:load_collection(Mimetype, Bin, Ctx).
+
+%% @doc Build collecton from AST
+%% @end
+-spec from_map(occi_category:id() | binary(), occi_rendering:ast()) -> t().
+from_map(Id, Map) ->
+    C = new(Id),
+    Elements = maps:get(entities, Map, []) 
+	++ maps:get(resources, Map, [])
+	++ maps:get(links, Map, []),
+    append(Elements, C).
 
 
 %% @doc Render collection into given mimetype
@@ -103,11 +134,11 @@ render(Mimetype, E, Ctx) ->
 %%%
 %%% Priv
 %%%
-to_elem(E) when ?is_uri(E) ->
-    {E, undefined};
+to_elem(E, Acc) when is_binary(E) ->
+    sets:add_element(E, Acc);
 
-to_elem({Id, _}=E) when ?is_uri(Id) ->
-    E;
+to_elem({Id, _}=E, Acc) when is_binary(Id) ->
+    sets:add_element(E, Acc);
 
-to_elem(E) when ?is_entity(E) ->
-    {occi_entity:id(E), E}.
+to_elem(E, Acc) when ?is_entity(E) ->
+    sets:add_element(E, Acc).

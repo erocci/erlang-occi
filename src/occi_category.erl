@@ -7,6 +7,7 @@
 
 -module(occi_category).
 
+-include("occi_log.hrl").
 -include("occi_uri.hrl").
 -include("occi_category.hrl").
 
@@ -26,7 +27,7 @@
 
 -export([render/3]).
 
--export([parse_id/1]).
+-export([parse_id/1, id_from_map/1]).
 
 -type class() :: kind | mixin | action.
 -type id() :: {Scheme :: binary(), Term :: binary()}.
@@ -132,21 +133,28 @@ location(Location, C) when is_binary(Location) ->
 %% @throws {invalid_cid, term()}
 -spec parse_id(binary()) -> id().
 parse_id(Id) when is_binary(Id) ->
-    try uri:from_string(Id) of
-	Uri ->
-	    Scheme = << (uri:to_string(uri:frag(Uri, <<>>)))/binary, "#" >>,
-	    Term = case uri:frag(Uri) of
-		       <<>> -> throw({invalid_cid, Id});
-		       T -> T
-		   end,
-	    {Scheme, Term}
-    catch
-	error:{badmatch, _} ->
+    case binary:split(Id, [<<$#>>], [global, trim_all]) of
+	[Scheme, Term] ->
+	    {<< Scheme/binary, $# >>, Term};
+	_ ->
 	    throw({invalid_cid, Id})
     end;
 
 parse_id(Id) ->
     throw({invalid_cid, Id}).
+
+
+%% @doc Return a category id from an AST
+%% @end
+-spec id_from_map(occi_rendering:ast()) -> id().
+id_from_map(Map) ->
+    try begin
+	    Category = maps:get(category, Map),
+	    {maps:get(scheme, Category), maps:get(term, Category)}
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.
 
 
 %% @doc Render category into given mimetype

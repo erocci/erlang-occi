@@ -7,16 +7,34 @@
 
 -module(occi_rendering).
 
--export([load_model/3,
-	 load_entity/3,
-	 load_entity/4,
-	 load_collection/3,
-	 load_invoke/2,
+-export([parse/2,
 	 render/3]).
 
+-type errors() :: {parse_error, term()}
+		| {unknown_mimetype, term()}
+		| {badkey, atom()}.
 
-%% @doc Load the specified OCCI category or extension from an iolist()
-%% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
+-type ast_key() :: categories
+		 | attributes
+		 | actions
+		 | id
+		 | links
+		 | summary
+		 | title
+		 | action
+		 | source
+		 | target
+		 | parent
+		 | location
+		 | depends
+		 | applies.
+-type ast_link_end() :: #{ location | kind => binary() }.
+-type ast_value() :: binary() | list() | maps:map() | ast_link_end().
+-type ast() :: #{ ast_key() => ast_value() }.
+
+-export_type([ast/0, errors/0]).
+
+%% @doc Parse an OCCI object and returns it as a map.
 %%
 %% Supported mimetypes are:
 %% <ul>
@@ -28,106 +46,15 @@
 %%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
 %% </ul>
 %% @end
-%% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_model(occi_type:name(), occi_utils:mimetype(), iolist()) -> occi_type:t().
-load_model(Type, MimeType, Bin) ->
-    case parser(MimeType) of
-	undefined -> 
-	    throw({unknown_mimetype, MimeType});
-	Mod -> 
-	    Mod:parse_model(Type, Bin)
-    end.
-
-
-%% @equiv load_entity(entity, Mimetype, Bin, Ctx)
-%% @end
--spec load_entity(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_type:t().
-load_entity(Mimetype, Bin, Ctx) ->
-    load_entity(entity, Mimetype, Bin, Ctx).
-
-
-%% @doc Load the specified OCCI entity (or sub-type thereof from an iolist()
-%% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
-%%
-%% Supported mimetypes are:
-%% <ul>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"xml"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"plain"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"uri-list"&gt;&gt;, []}</li>
-%% </ul>
-%% @end
-%% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_entity(occi_type:name(), occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_type:t().
-load_entity(Type, MimeType, Bin, Ctx) ->
-    case parser(MimeType) of
-	undefined -> 
-	    throw({unknown_mimetype, MimeType});
-	Mod -> 
-	    Mod:parse_entity(Type, Bin, Ctx)
-    end.
-
-
-%% @doc Load the specified OCCI collection
-%% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
-%%
-%% Supported mimetypes are:
-%% <ul>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"xml"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"plain"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
-%% </ul>
-%% @end
-%% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_collection(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> occi_collection:t().
-load_collection(MimeType, Bin, Ctx) ->
-    case parser(MimeType) of
-	undefined -> 
-	    throw({unknown_mimetype, MimeType});
-	Mod -> 
-	    Mod:parse_collection(Bin, Ctx)
-    end.
-
-
-
-%% @doc Load the specified OCCI action invocation
-%% Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
-%%
-%% Supported mimetypes are:
-%% <ul>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"xml"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+xml"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"json"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"application"&gt;&gt;, &lt;&lt;"occi+json"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"plain"&gt;&gt;, []}</li>
-%%   <li>{&lt;&lt;"text"&gt;&gt;, &lt;&lt;"occi"&gt;&gt;, []}</li>
-%% </ul>
-%% @end
-%% @throws {parse_error, occi_parser:errors()} | {unknown_mimetype, term()}
--spec load_invoke(occi_utils:mimetype(), iolist()) -> occi_invoke:t().
-load_invoke(MimeType, Bin) ->
-    case parser(MimeType) of
-	undefined -> 
-	    throw({unknown_mimetype, MimeType});
-	Mod -> 
-	    Mod:parse_invoke(Bin)
-    end.
+%% @throws errors()
+-spec parse(occi_utils:mimetype(), iolist()) -> ast().
+parse(Mimetype, Bin) ->
+    (parser(Mimetype)):parse(Bin).
 
 
 -spec render(occi_utils:mimetype(), occi_type:t(),occi_ctx:t()) -> iolist().
 render(MimeType, T, Ctx) ->
-    case renderer(MimeType) of
-	undefined ->
-	    throw({unknown_mimetype, MimeType});
-	Mod ->
-	    Mod:render(T, Ctx)
-    end.
+    (renderer(MimeType)):render(T, Ctx).
 
 
 %%%

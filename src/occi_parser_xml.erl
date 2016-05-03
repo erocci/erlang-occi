@@ -13,10 +13,7 @@
 -include_lib("annotations/include/annotations.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
 
--export([parse_model/2,
-	 parse_entity/3,
-	 parse_collection/2,
-	 parse_invoke/1]).
+-export([parse/1]).
 
 -type state() :: #{}.
 
@@ -24,84 +21,22 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
-
--spec parse_model(extension | kind | mixin | action, iolist()) -> occi_type:t().
-parse_model(RootType, Xml) when RootType =:= extension;
-				RootType =:= kind;
-				RootType =:= mixin;
-				RootType =:= action ->
-    case parse(Xml, #{}) of
-	{RootType, Type} ->
-	    Type;
-	{Other, _Type} ->
-	    throw({parse_error, {invalid_type, Other}})
-    end.
-
-
--spec parse_entity(entity | resource | link, iolist(), occi_ctx:t()) -> occi_type:t().
-parse_entity(entity, Xml, Ctx) ->
-    case parse(Xml, Ctx) of
-	{entity, E} -> E;
-	{resource, R} -> R;
-	{link, L} -> L;
-	{Other, _} -> throw({parse_error, {invalid_type, Other}})
-    end;
-
-parse_entity(resource, Xml, Ctx) ->
-    case parse(Xml, Ctx) of
-	{resource, R} -> R;
-	{Other, _} -> throw({parse_error, {invalid_type, Other}})
-    end;
-
-parse_entity(link, Xml, Ctx) ->
-    case parse(Xml, Ctx) of
-	{link, L} -> L;
-	{Other, _} -> throw({parse_error, {invalid_type, Other}})
-    end.
-
-
--spec parse_collection(iolist(), occi_ctx:t()) -> occi_collection:t().
-parse_collection(Xml, Ctx) ->
-    case parse(Xml, Ctx) of
-	{collection, C} -> C;
-	{Other, _} -> throw({parse_error, {invalid_type, Other}})
-    end.
-
-
--spec parse_invoke(iolist()) -> occi_invoke:t().
-parse_invoke(Xml) ->
-    case parse(Xml, #{}) of
-	{invoke, I} -> I;
-	{Other, _} -> throw({parse_error, {invalid_type, Other}})
+-spec parse(binary()) -> occi_rendering:ast().
+parse(Bin) ->
+    case xmerl_sax_parser:stream(Bin, options(fun handle_event/3)) of
+	{ok, Ast, _Rest} -> 
+	    Ast;
+	{Tag, {_, _, LineNo}, Reason, _EndTags, _EventState} -> 
+	    ?error("[line ~b] parse error: {~s, ~p}", [LineNo, Tag, Reason]),
+	    throw({parse_error, LineNo, Reason})
     end.
 
 %%%
 %%% Internal
 %%%
-
-%% @throws {parse_error, integer(), term()}
--spec parse(iolist(), occi_ctx:t()) -> occi_type:t().
-parse(Xml, Ctx) ->
-    case xmerl_sax_parser:stream(Xml, options(fun handle_event/3, Ctx)) of
-	{ok, {RootType, Type}, _Rest} -> 
-	    {RootType, Type};
-	{ok, Else, _Rest} ->
-	    throw({parse_error, Else});
-	{Tag, {_, _, LineNo}, Reason, _EndTags, _EventState} -> 
-	    case Reason of
-		R when is_list(R) ->
-		    ?error("[line ~b] parse error: {~s, ~p}", [LineNo, Tag, Reason]);
-		{Scheme, Term} ->
-		    ?error("[line ~b] parse error: {~s, {~s, ~s}}", [LineNo, Tag, Scheme, Term]);
-		_ ->
-		    ?error("[line ~b] parse error: {~s, ~p}", [LineNo, Tag, Reason])
-	    end,
-	    throw({parse_error, LineNo, {Tag, Reason}})
-    end.
-
-options(Fun, Ctx) ->
+options(Fun) ->
     [{event_fun, Fun},
-     {event_state, #{ stack => [], ns => #{}, ctx => Ctx }}].
+     {event_state, #{ parents => [], ns => #{} }}].
 
 
 %% @throws {invalid_attribute_type, term()} | {unknown_attribute, string(), {string(), string(), integer()}}
@@ -109,9 +44,9 @@ options(Fun, Ctx) ->
 %%-logging(debug).
 -spec handle_event(xmerl_sax_parser:event(), term(), state()) -> state().
 handle_event(startDocument, _, S) ->
-    S#{ stack := [ {document, undefined} ] };
+    S#{ parents := [ document ] };
 
-handle_event(endDocument, _, #{ stack := [ {document, Doc} ]}) ->
+handle_event(endDocument, _, #{ doc := Doc, parents := [ document ]}) ->
     Doc;
 
 handle_event(endDocument, _, S) ->
@@ -123,315 +58,33 @@ handle_event({startPrefixMapping, Prefix, URI}, _, #{ ns := NS }=S) ->
 handle_event({endPrefixMapping, _Prefix}, _, S) ->
     S;
 
-handle_event({startElement, ?occi_uri, "collection", _QN, A}, _Pos, #{ stack := Stack, 
-								       ctx := Ctx }=S) ->
-    C = case attr("id", A, undefined) of
-	    undefined ->
-		Scheme = attr("scheme", A),
-		Term = attr("term", A),
-		occi_collection:new({Scheme, Term});
-	    Id ->
-		occi_collection:new(occi_uri:from_string(Id, Ctx))
-	end,
-    S#{ stack => [ {collection, C} | Stack ] };
+handle_event({startElement, RawNS, RawElement, _QN, Attributes}, Pos, #{ parents := Parents }=S) ->
+    NS = ns_to_atom(RawNS),
+    Element = el_to_atom(RawElement),
+    ok = val_start_el(NS, Element, hd(Parents)),
+    try handle_start_el(NS, Element, Attributes, Pos, S) of
+	S1 ->
+	    S1#{ parents := [ {NS, Element} | Parents ]}
+    catch throw:Err ->
+	    throw(Err);
+	  _:Err ->
+	    Error = iolist_to_binary(io_lib:format("Unexpected error: ~p", [Err])),
+	    throw({xml, Error})
+    end;
 
-handle_event({endElement, ?occi_uri, "collection", _QN}, _, 
-	     #{ stack := [ {collection, Coll},  {document, undefined} ] }=S) ->
-    S#{ stack := [ {document, {collection, Coll} } ]};
-
-handle_event({startElement, ?occi_uri, "extension", _QN, A}, _Pos, #{ stack := Stack }=S) ->
-    Scheme = attr("scheme", A),
-    Ext = occi_extension:new(Scheme),
-    E2 = occi_extension:name(attr("name", A, <<>>), Ext),
-    S#{ stack => [ {extension, E2} | Stack ] };
-
-%% extension can only be a root node
-handle_event({endElement, ?occi_uri, "extension", _QN}, _, 
-	     #{ stack := [ {extension, Ext},  {document, undefined} ] }=S) ->
-    S#{ stack := [ {document, {extension, Ext} } ]};
-
-handle_event({startElement, ?occi_uri, "import", _QN, A}, _Pos, #{ stack := [ {extension, Ext} | Stack ] }=S) ->
-    Scheme = attr("scheme", A),
-    S#{ stack := [ {extension, occi_extension:add_import(Scheme, Ext)} | Stack ]};
-
-handle_event({endElement, ?occi_uri, "import", _QN}, _, S) ->
-    S;
-
-handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos,
-	     #{ stack := [ {extension, Ext} | Stack] }=S) ->
-    Term = attr("term", A),
-    K0 = occi_kind:new(attr("scheme", A, occi_extension:scheme(Ext)), Term),
-    K1 = case attr("title", A, undefined) of
-	     undefined ->
-		 K0;
-	     Title ->
-		 occi_kind:title(Title, K0)
-	 end,
-    S#{ stack := [ {kind, K1}, {extension, Ext} | Stack ] };
-
-handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos, 
-	     #{ stack := [ {resource, Id, undefined, Map} | Stack] }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    S#{ stack := [ {resource, Id, {Scheme, Term}, Map} | Stack ] };
-
-handle_event({startElement, ?occi_uri, "kind", _QN, A}, _Pos, 
-	     #{ stack := [ {link, Id, undefined, Source, Target, Map} | Stack] }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    S#{ stack := [ {link, Id, {Scheme, Term}, Source, Target, Map} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {kind, Kind}, {extension, Ext} | Stack] }=S) ->
-    Ext2 = occi_extension:add_category(Kind, Ext),
-    S#{ stack := [ {extension, Ext2} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {resource, _, _, _} | _]=Stack }=S) ->
-    S#{ stack := Stack };
-
-handle_event({endElement, ?occi_uri, "kind", _QN}, _, #{ stack := [ {link, _, _, _, _, _} | _]=Stack }=S) ->
-    S#{ stack := Stack };
-
-handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, 
-	     #{ stack := [ {extension, Ext} | Stack] }=S) ->
-    Term = attr("term", A),
-    M0 = occi_mixin:new(attr("scheme", A, occi_extension:scheme(Ext)), Term),
-    M1 = case attr("title", A, undefined) of
-	     undefined ->
-		 M0;
-	     Title ->
-		 occi_mixin:title(Title, M0)
-	 end,
-    S#{ stack := [ {mixin, M1}, {extension, Ext} | Stack ] };
-
-handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, 
-	     #{ stack := [ {resource, Id, Kind, Map} | Stack] }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    Map1 = Map#{ mixins := [ {Scheme, Term} | maps:get(mixins, Map) ]},
-    S#{ stack := [ {resource, Id, Kind, Map1} | Stack ] };
-
-handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, 
-	     #{ stack := [ {link, Id, Kind, Source, Target, Map} | Stack] }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    Map1 = Map#{ mixins := [ {Scheme, Term} | maps:get(mixins, Map) ]},
-    S#{ stack := [ {link, Id, Kind, Source, Target, Map1} | Stack ] };
-
-%% mixin is a root node
-handle_event({startElement, ?occi_uri, "mixin", _QN, A}, _Pos, #{ stack := Stack }=S) ->
-    Term = attr("term", A),
-    M0 = occi_mixin:new(attr("scheme", A), Term),
-    M1 = occi_mixin:title(attr("title", A, <<>>), M0),
-    Location = attr("location", A, Term),
-    M2 = occi_mixin:location(Location, M1),
-    S#{ stack := [ {mixin, M2} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {extension, Ext} | Stack] }=S) ->
-    Ext2 = occi_extension:add_category(Mixin, Ext),
-    S#{ stack := [ {extension, Ext2} | Stack ] };
-
-%% mixin is a root ndoe
-handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {mixin, Mixin}, {document, undefined} ] }=S) ->
-    S#{ stack := [ {document, {mixin, Mixin} } ] };
-
-handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {resource, _, _, _} | _]=Stack }=S) ->
-    S#{ stack := Stack };
-
-handle_event({endElement, ?occi_uri, "mixin", _QN}, _, #{ stack := [ {link, _, _, _, _, _} | _]=Stack }=S) ->
-    S#{ stack := Stack };
-
-handle_event({startElement, ?occi_uri, "resource", _QN, A}, _Pos, #{ stack := Stack, ctx := Ctx }=S) ->
-    Id = occi_uri:from_string(attr("id", A), Ctx),
-    Map = #{ links => [],
-	     mixins => [],
-	     attributes => #{ <<"occi.core.title">> => attr("title", A, undefined) } },
-    S#{ stack := [ {resource, Id, undefined, Map} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "resource", _QN}, _,
-	     #{ stack := [ {resource, Id, Kind, Map}, {document, undefined} ], ctx := Ctx }=S) ->
-    R = build_resource(Id, Kind, Map, Ctx),
-    S#{ stack := [ {document, {resource, R}} ] };
-
-handle_event({endElement, ?occi_uri, "resource", _QN}, _,
-	     #{ stack := [ {resource, Id, undefined, _Map}, {collection, Coll} | Stack ] }=S) ->
-    R = {Id, undefined},
-    Coll1 = occi_collection:append([R], Coll),
-    S#{ stack := [ {collection, Coll1} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "resource", _QN}, _,
-	     #{ stack := [ {resource, Id, Kind, Map}, {collection, Coll} | Stack ], ctx := Ctx }=S) ->
-    R = build_resource(Id, Kind, Map, Ctx),
-    Coll1 = occi_collection:append([R], Coll),
-    S#{ stack := [ {collection, Coll1} | Stack ] };
-
-handle_event({startElement, ?occi_uri, "link", _QN, A}, _Pos, #{ stack := Stack, ctx := Ctx }=S) ->
-    Id = occi_uri:from_string(attr("id", A), Ctx),
-    Target = occi_uri:from_string(attr("target", A), Ctx),
-    Source = case Stack of
-		 [ {resource, ResId, _, _} | _ ] -> ResId;
-		 _ -> occi_uri:from_string(attr("source", A), Ctx)
-	     end,
-    Map = #{ attributes => #{ <<"occi.core.title">> => attr("title", A, undefined) },
-	     mixins => [] },
-    S#{ stack := [ {link, Id, undefined, Source, Target, Map} | Stack ] };
-
-%% link is child of resource
-handle_event({endElement, ?occi_uri, "link", _QN}, _,
-	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {resource, ResId, ResKind, ResMap} | Stack ], ctx := Ctx }=S) ->
-    L = build_link(Id, Kind, Source, ResKind, Target, Map, Ctx),
-    ResMap0 = ResMap#{ links := [ L | maps:get(links, ResMap) ]},
-    S#{stack := [ {resource, ResId, ResKind, ResMap0} | Stack ]};
-
-handle_event({endElement, ?occi_uri, "link", _QN}, _,
- 	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {document, undefined} ], ctx := Ctx }=S) ->
-    L = build_link(Id, Kind, Source, undefined, Target, Map, Ctx),
-    S#{stack := [ {document, {link, L}} ]};
-
-handle_event({endElement, ?occi_uri, "link", _QN}, _,
- 	     #{ stack := [ {link, Id, undefined, _Source, _Target, _Map}, {collection, Coll} | Stack ] }=S) ->
-    L = {Id, undefined},
-    Coll1 = occi_collection:append([L], Coll),
-    S#{stack := [ {collection, Coll1} | Stack ]};
-
-handle_event({endElement, ?occi_uri, "link", _QN}, _,
- 	     #{ stack := [ {link, Id, Kind, Source, Target, Map}, {collection, Coll} | Stack ], ctx := Ctx }=S) ->
-    L = build_link(Id, Kind, Source, undefined, Target, Map, Ctx),
-    Coll1 = occi_collection:append([L], Coll),
-    S#{stack := [ {collection, Coll1} | Stack ]};
-
-handle_event({startElement, ?occi_uri, "depends", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    S#{ stack := [ {mixin, occi_mixin:add_depend({Scheme, Term}, Mixin)} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "depends", _QN}, _, S) ->
-    S;
-
-handle_event({startElement, ?occi_uri, "applies", _QN, A}, _Pos, #{ stack := [ {mixin, Mixin} | Stack] }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    S#{ stack := [ {mixin, occi_mixin:add_apply({Scheme, Term}, Mixin)} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "applies", _QN}, _, S) ->
-    S;
-
-handle_event({startElement, ?occi_uri, "action", _QN, A}, _Pos,
-	     #{ stack := [ {document, undefined} ] }=S) ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A),
-    S#{ stack := [ {invoke, {Scheme, Term}, #{}}, {document, undefined} ] };
-
-handle_event({startElement, ?occi_uri, "action", _QN, A}, _Pos,
-	     #{ stack := [ {Cls, Category}, {extension, Ext} | Stack] }=S) when Cls =:= kind; Cls =:= mixin ->
-    Term = attr("term", A),
-    Scheme = attr("scheme", A, occi_extension:scheme(Ext)),
-    Title = attr("title", A, <<>>),
-    Related = occi_category:id(Category),
-    Action = occi_action:title(Title, occi_action:new(Scheme, Term, Related)),
-    S#{ stack := [ {action, Action}, {Cls, Category}, {extension, Ext} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "action", _QN}, _, 
-	     #{ stack := [ {invoke, Id, Attributes}, {document, undefined} ] }=S) ->
-    Invoke = occi_invoke:new(Id, Attributes),
-    S#{ stack := [ {document, {invoke, Invoke}} ] };
-
-handle_event({endElement, ?occi_uri, "action", _QN}, _, 
-	     #{ stack := [ {action, Action}, {Cls, Category} | Stack ] }=S) ->
-    S#{ stack := [ {Cls, occi_category:add_action(Action, Category)} | Stack ] };
-
-handle_event({startElement, ?occi_uri, "parent", _QN, A}, _Pos, #{ stack := [ {kind, Kind} | Stack] }=S) ->
-    Scheme = attr("scheme", A),
-    Term = attr("term", A),
-    Kind2 = occi_kind:parent({Scheme, Term}, Kind),
-    S#{ stack := [ {kind, Kind2} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "parent", _QN}, _, S) ->
-    S;
-
-%% attribute spec
-handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
-	     #{ stack := [ {Cls, Category} | Stack] }=S) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
-    Name = attr("name", A),
-    Type = type_(attr("type", A, undefined), maps:get(ns, S)),
-    Map = #{ title => attr("title", A, <<>>),
-	     required => case attr("use", A, <<"optional">>) of
-			     <<"optional">> -> false;
-			     <<"required">> -> true
-			 end,
-	     mutable => case attr("immutable", A, <<"false">>) of
-			    <<"true">> -> false;
-			    <<"false">> -> true
-			end,
-	     default => attr("default", A, undefined),
-	     description => attr("default", A, <<>>) },
-    S#{ stack := [ {attribute, Name, Type, Map}, {Cls, Category} | Stack ] };
-
-%% resource attribute instance
-handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
-	     #{ stack := [ {resource, Id, Kind, Map} | Stack] }=S) ->
-    Attrs0 = maps:put(attr("name", A), attr("value", A), maps:get(attributes, Map)),
-    Map0 = Map#{ attributes := Attrs0 },
-    S#{ stack := [ {resource, Id, Kind, Map0} | Stack ] };
-
-%% link attribute instance
-handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
-	     #{ stack := [ {link, Id, Kind, Source, Target, Map} | Stack] }=S) ->
-    Attrs0 = maps:put(attr("name", A), attr("value", A), maps:get(attributes, Map)),
-    Map0 = Map#{ attributes := Attrs0 },
-    S#{ stack := [ {link, Id, Kind, Source, Target, Map0} | Stack ] };
-
-%% action invocation attribute instance
-handle_event({startElement, ?occi_uri, "attribute", _QN, A}, _Pos, 
-	     #{ stack := [ {invoke, Id, Attrs} | Stack] }=S) ->
-    Attrs0 = maps:put(attr("name", A), attr("value", A), Attrs),
-    S#{ stack := [ {invoke, Id, Attrs0} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
-	     #{ stack := [ {attribute, _, undefined, _} | _] }) ->
-    throw({invalid_attribute_type, "undefined"});
-
-handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
-	     #{ stack := [ {attribute, Name, Type, Map}, {Cls, Category} | Stack ] }=S) 
-  when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
-    A = occi_attribute:new(occi_category:id(Category), Name, Type),
-    A2 = occi_attribute:title(maps:get(title, Map), A),
-    A3 = occi_attribute:required(maps:get(required, Map), A2),
-    A4 = occi_attribute:mutable(maps:get(mutable, Map), A3),
-    A5 = case maps:get(default, Map) of
-	     undefined -> A4;
-	     Default -> occi_attribute:default(Default, A4)
-	 end,
-    A6 = occi_attribute:description(maps:get(description, Map), A5),
-    S#{ stack := [ {Cls, occi_category:add_attribute(A6, Category)} | Stack ] };
-
-handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
-	     #{ stack := [ Entity | Stack ] }=S) 
-  when ?is_entity(Entity) ->
-    S#{ stack := [ Entity | Stack ] };
-
-handle_event({endElement, ?occi_uri, "attribute", _QN}, _, 
-	     #{ stack := [ {invoke, _, _}=Invoke | Stack ] }=S) ->
-    S#{ stack := [ Invoke | Stack ] };
-
-handle_event({startElement, ?xsd_uri, "restriction", _QN, A}, _Pos,
-	     #{ stack := [ {attribute, _, _, _}=Attribute | Stack] }=S) ->
-    Type = case attr("base", A) of
-	       <<"xs:string">> -> {enum, []};
-	       BaseType -> throw({invalid_attribute_type, BaseType})
-	   end,
-    S#{ stack := [ Type, Attribute | Stack ] };
-
-handle_event({endElement, ?xsd_uri, "restriction", _QN}, _, 
-	     #{ stack := [ {enum, Values}, {attribute, Name, _, Map} | Stack ] }=S) ->
-    S#{ stack := [ {attribute, Name, {enum, Values}, Map} | Stack ] };
-
-handle_event({startElement, ?xsd_uri, "enumeration", _QN, A}, _Pos,
-	     #{ stack := [ {enum, Enum} | Stack] }=S) ->
-    Value = binary_to_atom(attr("value", A), utf8),
-    S#{ stack := [ {enum, [ Value | Enum ]} | Stack ] };
-
-handle_event({endElement, ?xsd_uri, "enumeration", _QN}, _, S) ->
-    S;
+handle_event({endElement, RawNS, RawElement, _QN}, Pos, #{ parents := Parents }=S) ->
+    NS = ns_to_atom(RawNS),
+    Element = el_to_atom(RawElement),
+    ok = val_end_el(NS, Element, hd(Parents)),
+    try handle_end_el(NS, Element, Pos, S#{ parents := tl(Parents) } ) of
+	S1 ->
+	    S1
+    catch throw:Err ->
+	    throw(Err);
+	  _:Err ->
+	    Error = iolist_to_binary(io_lib:format("Unexpected error: ~p", [Err])),
+	    throw({xml, Error})
+    end;
 
 handle_event({characters, _C}, _, S) ->
     S;
@@ -482,7 +135,265 @@ handle_event({notationDecl, _Name, _PublicId, _SystemId}, _, S) ->
     S;
 
 handle_event(Evt, _Pos, _S) ->
-    throw({invalid_xml, io_lib:format("~p", [Evt])}).
+    throw({xml, iolist_to_binary(io_lib:format("Unhandled event: ~p", [Evt]))}).
+
+
+handle_start_el(occi, collection, _A, _Pos, S) ->
+    S#{ collection => #{} };
+
+handle_start_el(occi, extension, A, _Pos, S) ->
+    Ext = #{ scheme => attr("scheme", A) },
+    Ext1 = case attr("name", A, undefined) of
+	       undefined -> Ext;
+	       Name -> Ext#{ name => Name }
+	   end,
+    S#{ extension => Ext1 };
+
+handle_start_el(occi, import,  A, _Pos, #{ extension := Ext }=S) ->
+    S#{ extension => Ext#{ imports => [ attr("scheme", A) | maps:get(imports, Ext, []) ] } };
+
+handle_start_el(occi, kind,  A, _Pos, #{ resource := Res, parents := [ {occi, resource} | _ ] }=S) ->
+    S#{ resource => Res#{ kind => { attr("scheme", A), attr("term", A) } } };
+
+handle_start_el(occi, kind,  A, _Pos, #{ link := Link, parents := [ {occi, link} | _ ] }=S) ->
+    S#{ link => Link#{ kind => { attr("scheme", A), attr("term", A) } } };
+
+handle_start_el(occi, kind, A, _Pos, #{ extension := Ext }=S) ->
+    K0 = #{ term => attr("term", A), scheme => attr("scheme", A, maps:get(scheme, Ext)) },
+    K1 = case attr("title", A, undefined) of
+	     undefined -> K0;
+	     Title -> K0#{ title => Title }
+	 end,
+    S#{ kind => K1 };
+
+handle_start_el(occi, mixin, A, _Pos, #{ resource := Res, parents := [ {occi, resource} | _ ] }=S) ->
+    Mixin = { attr("scheme", A), attr("term", A) },
+    S#{ resource => Res#{ mixins => [ Mixin | maps:get(mixins, Res, []) ] } };
+
+handle_start_el(occi, mixin, A, _Pos, #{ link := Link, parents := [ {occi, link} | _ ] }=S) ->
+    Mixin = { attr("scheme", A), attr("term", A) },
+    S#{ link => Link#{ mixins => [ Mixin | maps:get(mixins, Link, []) ] } };
+
+handle_start_el(occi, mixin, A, _Pos, #{ extension := Ext, parents := [ {occi, extension} | _ ] }=S) ->
+    M0 = #{ term => attr("term", A), scheme => attr("scheme", A, maps:get(scheme, Ext)) },
+    M1 = case attr("title", A, undefined) of
+	     undefined -> M0;
+	     Title -> M0#{ title => Title }
+	 end,
+    S#{ mixin => M1 };
+
+handle_start_el(occi, mixin, A, _Pos, S) ->
+    M0 = #{ term => attr("term", A), scheme => attr("scheme", A) },
+    M1 = case attr("title", A, undefined) of
+	     undefined -> M0;
+	     Title -> M0#{ title => Title }
+	 end,
+    S#{ mixin => M1 };
+
+handle_start_el(occi, resource, A, _Pos, S) ->
+    R0 = #{ id => attr("id", A),
+	    attributes => #{ <<"occi.core.title">> => attr("title", A, undefined) }
+	  },
+    R1 = case attr("title", A, undefined) of
+	     undefined -> R0;
+	     Title -> R0#{ attributes => #{ <<"occi.core.title">> => Title } }
+	 end,
+    S#{ resource => R1 };
+
+handle_start_el(occi, link, A, _Pos, S) ->
+    L0 = #{ id => attr("id", A),
+	    target => #{ location => attr("target", A) } },
+    L1 = case attr("source", A, undefined) of
+	     undefined -> L0;
+	     Source -> L0#{ source => #{ location => Source } }
+	 end,
+    L2 = case attr("title", A, undefined) of
+	     undefined -> L1;
+	     Title -> L1#{ attributes => #{ <<"occi.core.title">> => Title } }
+	 end,
+    S#{ link => L2 };
+
+handle_start_el(occi, depends, A, _Pos, #{ mixin := M }=S) ->
+    Depend = { attr("scheme", A), attr("term", A) },
+    S#{ mixin := M#{ depends => [ Depend | maps:get(depends, M, []) ] } };
+
+handle_start_el(occi, applies, A, _Pos, #{ mixin := M }=S) ->
+    Depend = { attr("scheme", A), attr("term", A) },
+    S#{ mixin := M#{ applies => [ Depend | maps:get(applies, M, []) ] } };
+
+handle_start_el(occi, action, A, _Pos, #{ parents := [ document ] }=S) ->
+    Action = { attr("scheme", A), attr("term", A) },
+    S#{ invoke => #{ action => Action } };
+
+handle_start_el(occi, action, A, _Pos, S)  ->
+    A0 = #{ term => attr("term", A), 
+	    scheme => attr("scheme", A) },
+    A1 = case attr("title", A, undefined) of
+	     undefined -> A0;
+	     Title -> A0#{ title => Title }
+	 end,
+    S#{ action => A1 };
+
+handle_start_el(occi, parent, A, _Pos, #{ kind := Kind }=S) ->
+    S#{ kind := Kind#{ parent => { attr("scheme", A), attr("term", A) } } };
+
+%% attribute spec
+handle_start_el(occi, attribute, A, _Pos, #{ ns := NS, parents := [ {occi, Cls} | _ ] }=S) 
+  when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
+    Name = attr("name", A),
+    Spec = #{ type => type_(attr("type", A, undefined), NS),
+	      title => attr("title", A, <<>>),
+	      required => case attr("use", A, <<"optional">>) of
+			      <<"optional">> -> false;
+			      <<"required">> -> true
+			  end,
+	      mutable => case attr("immutable", A, <<"false">>) of
+			     <<"true">> -> false;
+			     <<"false">> -> true
+			 end,
+	      default => attr("default", A, undefined),
+	      description => attr("default", A, <<>>) },
+    S#{ attribute => { Name, Spec } };
+
+%% entity attribute instance
+handle_start_el(occi, attribute, A, _Pos, #{ resource := Res, parents := [ {occi, resource} | _ ] }=S) ->
+    S#{ resource := update_entity(attr("name", A), attr("value", A), Res) };
+
+handle_start_el(occi, attribute, A, _Pos, #{ link := Link, parents := [ {occi, link} | _ ] }=S) ->
+    S#{ link := update_entity(attr("name", A), attr("value", A), Link) };
+
+%% action invocation attribute instance
+handle_start_el(occi, attribute, A, _Pos, #{ invoke := Invoke }=S) ->
+    Attrs0 = maps:get(attributes, Invoke, #{}),
+    Attrs1 = Attrs0#{ attr("name", A) => attr("value", A) },
+    S#{ invoke := Invoke#{ attributes => Attrs1 } };
+
+handle_start_el(xsd, restriction, A, _Pos, S) ->
+    case attr("base", A) of
+	<<"xs:string">> -> 
+	    S;
+	BaseType -> 
+	    throw({invalid_attribute_type, BaseType})
+    end;
+
+handle_start_el(xsd, enumeration, A, _Pos, S) ->
+    Value = binary_to_atom(attr("value", A), utf8),
+    S#{ enum => [ Value | maps:get(enum, S, []) ] };
+
+handle_start_el(Ns, El, _A, _Pos, S) ->
+    Error = iolist_to_binary(io_lib:format("Invalid start tag: ~s:~s", [Ns, El])),
+    ?debug("XML Parser State: ~p", [S]),
+    throw({xml, Error}).
+
+
+handle_end_el(occi, collection, _, #{ collection := Coll }=S) ->
+    S#{ doc => Coll };
+
+%% extension can only be a root node
+handle_end_el(occi, extension, _, #{ extension := Ext }=S) ->
+    S#{ doc => Ext };
+
+handle_end_el(occi, import, _, S) ->
+    S;
+
+handle_end_el(occi, kind, _, #{ kind := Kind, extension := Ext, 
+				parents := [ {occi, extension } | _ ] }=S) ->
+    S#{ extension := Ext#{ kinds => [ Kind | maps:get(kinds, Ext, []) ] } };
+
+handle_end_el(occi, kind, _, S) ->
+    S;
+
+handle_end_el(occi, mixin, _, #{ mixin := Mixin, extension := Ext,
+				 parents := [ {occi, extension} | _ ] }=S) ->
+    S#{ extension := Ext#{ mixins => [ Mixin | maps:get(mixins, Ext, []) ] } };
+
+%% mixin is a root ndoe
+handle_end_el(occi, mixin, _, #{ mixin := Mixin, parents := [ document ] }=S) ->
+    S#{ doc => Mixin };
+
+handle_end_el(occi, mixin, _, S) ->
+    S;
+
+handle_end_el(occi, resource, _, #{ resource := Res, collection := Coll,
+				    parents := [ {occi, collection} | _ ] }=S) ->
+    S#{ collection := Coll#{ resources => [ Res | maps:get(resources, Coll, []) ] } };
+
+handle_end_el(occi, resource, _, #{ resource := Res, parents := [ document ] }=S) ->
+    S#{ doc => Res };
+
+handle_end_el(occi, link, _, #{ link := Link, collection := Coll,
+				parents := [ {occi, collection} | _ ] }=S) ->
+    S#{ collection := Coll#{ links => [ Link | maps:get(links, Coll, []) ] } };
+
+handle_end_el(occi, link, _, #{ link := Link, parents := [ document ] }=S) ->
+    S#{ doc => Link };
+
+handle_end_el(occi, link, _, #{ link := Link, resource := Res,
+				parents := [ {occi, resource} | _ ] }=S) ->
+    S#{ resource := Res#{ links => [ Link | maps:get(links, Res, []) ] } };
+
+handle_end_el(occi, depends, _, S) ->
+    S;
+
+handle_end_el(occi, applies, _, S) ->
+    S;
+
+handle_end_el(occi, action, _, #{ invoke := Invoke, parents := [ document ] }=S) ->
+    S#{ doc := Invoke };
+
+handle_end_el(occi, action, _, #{ action := Action, kind := Kind,
+				  parents := [ {occi, kind} | _ ]}=S) ->
+    S#{ kind := Kind#{ actions => [ Action | maps:get(actions, Kind, []) ] } };
+
+handle_end_el(occi, action, _, #{ action := Action, mixin := Mixin,
+				  parents := [ {occi, mixin} | _ ]}=S) ->
+    S#{ mixin := Mixin#{ actions => [ Action | maps:get(actions, Mixin, []) ] } };
+
+handle_end_el(occi, parent, _, S) ->
+    S;
+
+handle_end_el(occi, attribute, _, #{ attribute := { Name, Spec }, action := Action,
+				     parents := [ {occi, action}, {occi, Cls} | _ ] }=S) 
+  when kind =:= Cls; mixin =:= mixin ->
+    Attrs = maps:put(Name, Spec, maps:get(attributes, Action, #{})),
+    S#{ action := Action#{ attributes => Attrs } };
+
+handle_end_el(occi, attribute, _, #{ attribute := { Name, Spec }, kind := Kind,
+				     parents := [ {occi, kind} | _ ] }=S) ->
+    Attrs = maps:put(Name, Spec, maps:get(attributes, Kind, #{})),
+    S#{ kind := Kind#{ attributes => Attrs } };
+
+handle_end_el(occi, attribute, _, #{ attribute := { Name, Spec }, mixin := Mixin,
+				     parents := [ {occi, mixin} | _ ] }=S) ->
+    Attrs = maps:put(Name, Spec, maps:get(attributes, Mixin, #{})),
+    S#{ mixin := Mixin#{ attributes => Attrs } };
+
+handle_end_el(occi, attribute, _, #{ parents := [ {occi, resource} | _ ] }=S) ->
+    S;
+
+handle_end_el(occi, attribute, _, #{ parents := [ {occi, link} | _ ] }=S) ->
+    S;
+
+handle_end_el(occi, attribute, _, #{ parents := [ {occi, action} | _ ] }=S) ->
+    S;
+
+handle_end_el(xsd, restriction, _, S) ->
+    S;
+
+handle_end_el(xsd, enumeration, _, #{ attribute := {Name, Spec},
+				      enum := Values }=S) ->
+    S#{ attribute := {Name, Spec#{ type := {enum, Values} } } };
+
+handle_end_el(Ns, El, _, S) ->
+    Error = iolist_to_binary(io_lib:format("Invalid end tag: ~s:~s", [Ns, El])),
+    ?debug("XML Parser State: ~p", [S]),
+    throw({xml, Error}).
+
+
+
+update_entity(Name, Value, Entity) ->
+    Attrs0 = maps:get(attributes, Entity, #{}),
+    Entity#{ attributes => Attrs0#{ Name => Value } }.
 
 
 attr(_Name, [], Default) ->
@@ -529,23 +440,70 @@ from_xml_type(Prefix, Name, _) ->
     throw({invalid_type, << (list_to_binary(Prefix))/binary, Name >>}).
 
 
-build_resource(Id, Kind, Map, Ctx) ->
-    R = occi_resource:new(Id, Kind),
-    R0 = lists:foldl(fun (MixinId, Acc) ->
-			     occi_resource:add_mixin(MixinId, Acc)
-		     end, R, maps:get(mixins, Map)),
-    R1 = occi_resource:set(maps:get(attributes, Map), Ctx, R0),
-    lists:foldl(fun (Link, Acc) ->
-			occi_resource:add_link(Link, Acc)
-		end, R1, maps:get(links, Map)).
+val_start_el(occi, collection,  document) ->              ok;
+val_start_el(occi, extension,   document) ->              ok;
+val_start_el(occi, import,      {occi, extension}) ->     ok;
+val_start_el(occi, kind,        {occi, extension}) ->     ok;
+val_start_el(occi, kind,        {occi, resource}) ->      ok;
+val_start_el(occi, kind,        {occi, link}) ->          ok;
+val_start_el(occi, mixin,       {occi, extension}) ->     ok;
+val_start_el(occi, mixin,       {occi, resource}) ->      ok;
+val_start_el(occi, mixin,       {occi, link}) ->          ok;
+val_start_el(occi, mixin,       document) ->              ok;
+val_start_el(occi, resource,    document) ->              ok;
+val_start_el(occi, resource,    {occi, collection}) ->    ok;
+val_start_el(occi, link,        document) ->              ok;
+val_start_el(occi, link,        {occi, collection}) ->    ok;
+val_start_el(occi, link,        {occi, resource}) ->      ok;
+val_start_el(occi, depends,     {occi, mixin}) ->         ok;
+val_start_el(occi, applies,     {occi, mixin}) ->         ok;
+val_start_el(occi, action,      document) ->              ok;
+val_start_el(occi, action,      {occi, kind}) ->          ok;
+val_start_el(occi, action,      {occi, mixin}) ->         ok;
+val_start_el(occi, parent,      {occi, kind}) ->          ok;
+val_start_el(occi, attribute,   {occi, kind}) ->          ok;
+val_start_el(occi, attribute,   {occi, mixin}) ->         ok;
+val_start_el(occi, attribute,   {occi, action}) ->        ok;
+val_start_el(occi, attribute,   {occi, resource}) ->      ok;
+val_start_el(occi, attribute,   {occi, link}) ->          ok;
+val_start_el(occi, attribute,   {occi, invoke}) ->        ok;
+val_start_el(xsd,  restriction, {occi, attribute}) ->     ok;
+val_start_el(xsd,  enumeration, {xsd, restriction}) ->    ok;
+val_start_el(Ns, El, {ParentNs, ParentEl}) -> 
+    Error = iolist_to_binary(io_lib:format("Invalid child: '~s:~s' -> '~s:~s'", [ParentNs, ParentEl, Ns, El])),
+    throw({xml, Error}).
 
 
-build_link(Id, Kind, Src, SrcKind, Target, Map, Ctx) ->
-    L = occi_link:new(Id, Kind, Src, SrcKind, Target, undefined),
-    L0 = lists:foldl(fun (MixinId, Acc) ->
-			     occi_link:add_mixin(MixinId, Acc)
-		     end, L, maps:get(mixins, Map)),
-    occi_link:set(maps:get(attributes, Map), Ctx, L0).
+val_end_el(Ns, El, {Ns, El}) -> ok;
+val_end_el(Ns, El, {OtherNs, OtherEl} ) -> 
+    Error = iolist_to_binary(io_lib:format("Mismatch closing tag: '~s:~s' / '~s:~s'", [OtherNs, OtherEl, Ns, El])),
+    throw({xml, Error}).
+
+
+ns_to_atom(?occi_uri) ->  occi;
+ns_to_atom(?xsd_uri) ->   xsd;
+ns_to_atom(Ns) -> 
+    Error = iolist_to_binary(io_lib:format("Unknown namespace: '~s'", [Ns])),
+    throw({xml, Error}).
+
+
+el_to_atom("collection") ->  collection;
+el_to_atom("extension") ->   extension;
+el_to_atom("import") ->      import;
+el_to_atom("kind") ->        kind;
+el_to_atom("mixin") ->       mixin;
+el_to_atom("resource") ->    resource;
+el_to_atom("link") ->        link;
+el_to_atom("depends") ->     depends;
+el_to_atom("applies") ->     applies;
+el_to_atom("action") ->      action;
+el_to_atom("parent") ->      parent;
+el_to_atom("attribute") ->   attribute;
+el_to_atom("restriction") -> restriction;
+el_to_atom("enumeration") -> enumeration;
+el_to_atom(El) -> 
+    Error = iolist_to_binary(io_lib:format("Unknown Element: '~s'", [El])),
+    throw({xml, Error}).
 
 %%%
 %%% eunit

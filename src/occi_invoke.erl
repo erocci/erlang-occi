@@ -17,7 +17,7 @@
 	 title/2,
 	 attributes/1]).
 
--export([load/2,
+-export([from_map/1,
 	 render/3]).
 
 -record(invoke, {id         :: occi_category:id(),
@@ -63,10 +63,17 @@ attributes(#invoke{attributes=Attributes}) ->
     Attributes.
 
 
-%% @doc Load an action invocation from iolist
+%% @doc Load an action invocation from AST
 %% @end
-load(Mimetype, Bin) -> 
-    occi_rendering:load_invoke(Mimetype, Bin).
+from_map(Map) -> 
+    try begin
+	    Id = maps:get(action, Map),
+	    Attrs = maps:get(attributes, Map, []),
+	    new(Id, Attrs)
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.
 
 
 %% @doc Render action invocation into given mimetype

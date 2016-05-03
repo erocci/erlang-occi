@@ -19,7 +19,7 @@
 	 add_depend/2,
 	 depends/1]).
 
--export([load/2]).
+-export([from_map/1]).
 
 -mixin([occi_type]).
 
@@ -66,8 +66,31 @@ depends(M) ->
     ?g(depends, M).
 
 
-%% @doc Load mixin from iolist 
+%% @doc Load mixin from an AST
 %% @end
--spec load(occi_utils:mimetype(), iolist()) -> t().
-load(Mimetype, Bin) -> 
-    occi_rendering:load_model(mixin, Mimetype, Bin).
+-spec from_map(occi_rendering:ast()) -> t().
+from_map(Map) ->
+    try begin
+	    Scheme = maps:get(scheme, Map),
+	    Term = maps:get(term, Map),
+	    M = new(Scheme, Term),
+	    M0 = case maps:get(title, Map, undefined) of
+		     undefined -> M;
+		     Title -> title(Title, M)
+		 end,
+	    M1 = lists:foldl(fun ({ApplyScheme, ApplyTerm}, Acc) ->
+				     add_apply({ApplyScheme, ApplyTerm}, Acc)
+			     end, M0, maps:get(applies, Map, [])),
+	    M2 = lists:foldl(fun ({DepScheme, DepTerm}, Acc) ->
+				     add_depend({DepScheme, DepTerm}, Acc)
+			     end, M1, maps:get(depends, Map, [])),
+	    M3 = maps:fold(fun (Name, Spec, Acc1) ->
+				   add_attribute(occi_attribute:from_map(Name, {Scheme, Term}, Spec), Acc1)
+			     end, M2, maps:get(attributes, Map, #{})),
+	    lists:foldl(fun (Map2, Acc2) ->
+				add_action(occi_action:from_map({Scheme, Term}, Map2), Acc2)
+			end, M3, maps:get(actions, Map, []))
+	end
+    catch error:{badkey, _}=Err ->
+	    throw(Err)
+    end.	    
