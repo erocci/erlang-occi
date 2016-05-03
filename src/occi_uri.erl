@@ -10,9 +10,9 @@
 -include("occi_uri.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin({uri, except, [from_string/1,
-		      to_string/1,
-		      append_path/2]}).
+-mixin([{uri, except, [from_string/1,
+		       to_string/1,
+		       append_path/2]}]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
