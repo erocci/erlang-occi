@@ -68,7 +68,7 @@ attributes(#invoke{attributes=Attributes}) ->
 from_map(Map) -> 
     try begin
 	    Id = maps:get(action, Map),
-	    Attrs = maps:get(attributes, Map, []),
+	    Attrs = maps:get(attributes, Map, #{}),
 	    new(Id, Attrs)
 	end
     catch error:{badkey, _}=Err ->

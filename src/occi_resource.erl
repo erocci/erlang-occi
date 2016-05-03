@@ -88,12 +88,17 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
 				     add_mixin(M, Acc1)
 			     end, R, maps:get(mixins, Map, [])),
 	    R2 = lists:foldl(fun (Map2, Acc2) ->
-				     add_link(occi_link:from_map(Map2), Acc2)
+				     Map3 = case maps:is_key(source, Map2) of
+						true -> 
+						    Map2;
+						false ->
+						    Map2#{ source => #{ location => Id,
+									kind => occi_kind:id(Kind) } }
+					    end,
+				     add_link(occi_link:from_map(Map3), Acc2)
 			     end, R1, maps:get(links, Map, [])),
 	    Attrs0 = maps:get(attributes, Map, #{}),
-	    Attrs1 = Attrs0#{ <<"occi.core.summary">> => maps:get(summary, Map, undefined),
-			      <<"occi.core.title">> => maps:get(title, Map, undefined) },
-	    occi_entity:set(Attrs1, client, R2)
+	    occi_entity:set(Attrs0, client, R2)
 	end
     catch error:{badkey, _}=Err ->
 	    throw(Err)

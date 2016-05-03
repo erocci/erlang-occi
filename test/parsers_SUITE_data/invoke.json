@@ -1,6 +1,5 @@
 {
-    "scheme": "http://schemas.ogf.org/occi/infrastructure/compute/action#",
-    "term": "stop",
+    "action": "http://schemas.ogf.org/occi/infrastructure/compute/action#stop",
     "attributes": {
 	"method": "graceful"
     }

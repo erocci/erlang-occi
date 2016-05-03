@@ -32,8 +32,13 @@ validate('x-occi-attribute', V, Acc) ->
     lists:foldl(fun val_attribute/2, Acc, p_attributes(V, []));
 
 validate('link', V, Acc) ->
-    lists:foldl(fun ({link, Link}, Acc1) ->
-			Acc#{ links => [ maps:fold(fun val_link/3, #{}, Link) | maps:get(links, Acc1, []) ] }
+    lists:foldl(fun ({link, Map}, Acc1) ->
+			Link = maps:fold(fun val_link/3, #{}, Map),
+			Link1 = case maps:is_key(kind, Link) of
+				    true -> Link;
+				    false -> Link#{ kind => ?link_kind_id }
+				end,
+			Acc#{ links => [ Link1 | maps:get(links, Acc1, []) ] }
 		end, Acc, p_links(V, []));
 
 validate('x-occi-location', V, Acc) ->
@@ -42,8 +47,9 @@ validate('x-occi-location', V, Acc) ->
 
 val_category({category, #{ class := action }=Cat}, Acc) ->
     %% action invocation
-    Acc#{ term => maps:get(term, Cat),
-	  scheme => maps:get(scheme, Cat),
+    Scheme = maps:get(scheme, Cat),
+    Term = maps:get(term, Cat),
+    Acc#{ action => {Scheme, Term},
 	  title => maps:get(title, Cat, undefined) };
 
 val_category({category, #{ class := kind }=Cat}, Acc)  ->
@@ -62,12 +68,6 @@ val_category({category, #{ class := mixin }=Cat}, Acc) ->
 
 val_attribute({attribute, <<"occi.core.id">>, {_Type, Value}}, Acc) ->
     Acc#{ id => Value };
-
-val_attribute({attribute, <<"occi.core.summary">>, {_Type, Value}}, Acc) ->
-    Acc#{ summary => Value };
-
-val_attribute({attribute, <<"occi.core.title">>, {_Type, Value}}, Acc) ->
-    Acc#{ title => Value };
 
 val_attribute({attribute, <<"occi.core.source">>, {_Type, Value}}, Acc) ->
     Source = maps:get(source, Acc, #{}),
@@ -101,7 +101,7 @@ val_link(target, Location, Acc) ->
     Target = maps:get(target, Acc, #{}),
     Acc#{ target => Target#{ location => Location } };
 
-val_link(rel, Kind, Acc) ->
+val_link(rel, [Kind | _], Acc) ->
     Target = maps:get(target, Acc, #{}),
     Acc#{ target => Target#{ kind => Kind } };
 
@@ -118,20 +118,13 @@ val_location(Location, Acc) ->
 -define(is_alpha(C), C >= 65, C =< 90; C >= 97, C =< 122).
 -define(is_digit(C), C >= 48, C =< 57).
 
-p_locations(error, _Ctx) ->
-    [];
-
-p_locations({ok, Values}, Ctx) ->
-    p_locations(Values, [], Ctx).
-
-
-p_locations([], Acc, _Ctx) ->
+p_locations([], Acc) ->
     lists:reverse(Acc);
 
-p_locations([ Bin | Tail ], Acc, Ctx) ->
+p_locations([ Bin | Tail ], Acc) ->
     case p_location_value(eat_ws(Bin)) of
 	{location, Location} ->
-	    p_locations(Tail, [ occi_uri:from_string(Location, Ctx) | Acc ], Ctx);
+	    p_locations(Tail, [ Location | Acc ]);
 	Else ->
 	    throw({parse_error, {invalid_location, Else}})
     end.

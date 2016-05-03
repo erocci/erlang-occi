@@ -1,5 +1,5 @@
 
   Category:   resource; scheme="http://schemas.ogf.org/occi/core#"; class=kind
- x-occi-attribute:  occi.core.id="resource1"
+ x-occi-attribute:  occi.core.id="path/resource1"
 
 

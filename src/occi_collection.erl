@@ -7,7 +7,6 @@
 
 -module(occi_collection).
 
--include("occi_uri.hrl").
 -include("occi_type.hrl").
 
 -export([new/0,
@@ -20,7 +19,8 @@
 	 size/1,
 	 append/2]).
 
--export([from_map/2,
+-export([from_map/1,
+	 from_map/2,
 	 load/3,
 	 render/3]).
 
@@ -68,11 +68,11 @@ id(#collection{id=Id}) ->
 
 %% @doc Get all entity ids
 %% @end
--spec ids(t()) -> sets:set().
+-spec ids(t()) -> [].
 ids(#collection{ elements=Elements }) ->
     sets:fold(fun ({Id, _}, Acc) ->
-		      sets:add_element(Id, Acc)
-	      end, sets:new(), Elements).
+			    [ Id | Acc ]
+		    end, [], Elements).
 
 
 %% @doc Get all elements
@@ -114,15 +114,17 @@ size(#collection{ elements=Elements }) ->
 load(Mimetype, Bin, Ctx) ->
     occi_rendering:load_collection(Mimetype, Bin, Ctx).
 
+
+-spec from_map(occi_rendering:ast()) -> t().
+from_map(Map) ->
+    from_map2(new(), Map).
+
+
 %% @doc Build collecton from AST
 %% @end
 -spec from_map(occi_category:id() | binary(), occi_rendering:ast()) -> t().
 from_map(Id, Map) ->
-    C = new(Id),
-    Elements = maps:get(entities, Map, []) 
-	++ maps:get(resources, Map, [])
-	++ maps:get(links, Map, []),
-    append(Elements, C).
+    from_map2(new(Id), Map).
 
 
 %% @doc Render collection into given mimetype
@@ -134,11 +136,28 @@ render(Mimetype, E, Ctx) ->
 %%%
 %%% Priv
 %%%
+from_map2(Coll, Map) ->
+    Fun = fun (Id, Acc) when is_binary(Id) ->
+		  [ Id | Acc ];
+	      (Map1, Acc) when is_map(Map1) ->
+		  case maps:is_key(kind, Map1) of
+		      true ->
+			  [ occi_entity:from_map(Map1) | Acc ];
+		      false ->
+			  [ maps:get(id, Map1) | Acc ]
+		  end
+	  end,
+    E0 = lists:foldl(Fun, [], maps:get(entities, Map, [])),
+    E1 = lists:foldl(Fun, E0, maps:get(resources, Map, [])),
+    E2 = lists:foldl(Fun, E1, maps:get(links, Map, [])),
+    append(E2, Coll).
+    
+
 to_elem(E, Acc) when is_binary(E) ->
-    sets:add_element(E, Acc);
+    sets:add_element({E, undefined}, Acc);
 
 to_elem({Id, _}=E, Acc) when is_binary(Id) ->
     sets:add_element(E, Acc);
 
 to_elem(E, Acc) when ?is_entity(E) ->
-    sets:add_element(E, Acc).
+    sets:add_element({occi_entity:id(E), E}, Acc).

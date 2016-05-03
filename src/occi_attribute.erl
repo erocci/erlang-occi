@@ -125,16 +125,22 @@ description(Desc, A) when is_binary(Desc) ->
 -spec from_map(Name :: binary(), CatId :: occi_category:id(), occi_rendering:ast()) -> t().
 from_map(Name, CatId, Map) ->
     try begin
-	    #{ name => Name,
-	       category => CatId,
-	       type => maps:get(type, Map),
-	       title => maps:get(title, Map, <<>>),
-	       required => maps:get(required, Map, false),
-	       mutable => maps:get(mutable, Map, true),
-	       default => maps:get(default, Map, undefined),
-	       pattern => maps:get(pattern, Map, undefined),
-	       description => maps:get(description, Map, <<>>)
-	     }
+	    Type = maps:get(type, Map),
+	    Spec = #{ name => Name,
+		      category => CatId,
+		      type => Type,
+		      title => maps:get(title, Map, <<>>),
+		      required => maps:get(required, Map, false),
+		      mutable => maps:get(mutable, Map, true),
+		      pattern => maps:get(pattern, Map, undefined),
+		      description => maps:get(description, Map, <<>>)
+		    },
+	    case maps:get(default, Map, undefined) of
+		undefined ->
+		    Spec#{ default => undefined };
+		Default ->
+		    Spec#{ default => occi_base_type:cast(Default, Type) }
+	    end
 	end
     catch error:{badkey, _}=Err ->
 	    throw(Err)

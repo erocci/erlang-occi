@@ -237,6 +237,12 @@ handle_start_el(occi, action, A, _Pos, S)  ->
 handle_start_el(occi, parent, A, _Pos, #{ kind := Kind }=S) ->
     S#{ kind := Kind#{ parent => { attr("scheme", A), attr("term", A) } } };
 
+%% action invocation attribute instance
+handle_start_el(occi, attribute, A, _Pos, #{ invoke := Invoke,
+					     parents := [ {occi, action}, document ] }=S) ->
+    Attrs = maps:put(attr("name", A), attr("value", A), maps:get(attributes, Invoke, #{})),
+    S#{ invoke := Invoke#{ attributes => Attrs } };
+
 %% attribute spec
 handle_start_el(occi, attribute, A, _Pos, #{ ns := NS, parents := [ {occi, Cls} | _ ] }=S) 
   when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
@@ -261,12 +267,6 @@ handle_start_el(occi, attribute, A, _Pos, #{ resource := Res, parents := [ {occi
 
 handle_start_el(occi, attribute, A, _Pos, #{ link := Link, parents := [ {occi, link} | _ ] }=S) ->
     S#{ link := update_entity(attr("name", A), attr("value", A), Link) };
-
-%% action invocation attribute instance
-handle_start_el(occi, attribute, A, _Pos, #{ invoke := Invoke }=S) ->
-    Attrs0 = maps:get(attributes, Invoke, #{}),
-    Attrs1 = Attrs0#{ attr("name", A) => attr("value", A) },
-    S#{ invoke := Invoke#{ attributes => Attrs1 } };
 
 handle_start_el(xsd, restriction, A, _Pos, S) ->
     case attr("base", A) of
@@ -307,7 +307,7 @@ handle_end_el(occi, mixin, _, #{ mixin := Mixin, extension := Ext,
 				 parents := [ {occi, extension} | _ ] }=S) ->
     S#{ extension := Ext#{ mixins => [ Mixin | maps:get(mixins, Ext, []) ] } };
 
-%% mixin is a root ndoe
+%% mixin is a root node
 handle_end_el(occi, mixin, _, #{ mixin := Mixin, parents := [ document ] }=S) ->
     S#{ doc => Mixin };
 
@@ -339,7 +339,7 @@ handle_end_el(occi, applies, _, S) ->
     S;
 
 handle_end_el(occi, action, _, #{ invoke := Invoke, parents := [ document ] }=S) ->
-    S#{ doc := Invoke };
+    S#{ doc => Invoke };
 
 handle_end_el(occi, action, _, #{ action := Action, kind := Kind,
 				  parents := [ {occi, kind} | _ ]}=S) ->

@@ -19,7 +19,7 @@
 
 -spec parse(binary()) -> occi_rendering:ast().
 parse(Bin) ->
-    maps:fold(fun validate/3, #{}, jsx:decode(Bin)).
+    maps:fold(fun validate/3, #{}, jsx:decode(Bin, [return_maps])).
 
 %%%
 %%% Parsers
@@ -45,7 +45,7 @@ validate(<<"attributes">>, V, Acc) when is_map(V) ->
     %% link: Object
     %% kind: Object
     %% action: Object
-    Acc#{ attributes => V };
+    Acc#{ attributes => maps:merge(maps:get(attributes, Acc, #{}), V) };
 
 validate(<<"actions">>, V, Acc) when is_list(V) ->
     %% resource: Array
@@ -66,14 +66,15 @@ validate(<<"links">>, V, Acc) when is_list(V) ->
 
 validate(<<"summary">>, V, Acc) when is_binary(V) ->
     %% resource: String
-    Acc#{ summary => V };
+    Acc#{ attributes => maps:put(<<"occi.core.summary">>, V, maps:get(attributes, Acc, #{})) };
 
 validate(<<"title">>, V, Acc) when is_binary(V) ->
     %% resource: String
     %% link: String
     %% kind: String
     %% action: String
-    Acc#{ title => V };
+    Acc#{ title => V,
+	  attributes => maps:put(<<"occi.core.title">>, V, maps:get(attributes, Acc, #{})) };
 
 validate(<<"action">>, V, Acc) when is_binary(V) ->
     %% action invocation: String
@@ -226,7 +227,7 @@ val_link(<<"mixins">>, V, Acc) when is_list(V) ->
     Acc#{ mixins => [ type_id(Bin) || Bin <- V ] };
 
 val_link(<<"attributes">>, V, Acc) when is_map(V) ->
-    Acc#{ attributes => V };
+    Acc#{ attributes => maps:merge(maps:get(attributes, Acc, #{}), V) };
 
 val_link(<<"actions">>, V, Acc) when is_list(V) ->
     Acc#{ actions => [ type_id(Bin) || Bin <- V ] };
@@ -235,7 +236,7 @@ val_link(<<"id">>, V, Acc) when is_binary(V) ->
     Acc#{ id => V };
 
 val_link(<<"title">>, V, Acc) when is_binary(V) ->
-    Acc#{ title => V };
+    Acc#{ title => maps:put(<<"occi.core.title">>, V, maps:get(attributes, Acc, #{})) };
 
 val_link(<<"source">>, V, Acc) when is_map(V) ->
     Source = maps:fold(fun link_end/3, #{}, V),
@@ -257,7 +258,7 @@ val_resource(<<"mixins">>, V, Acc) when is_binary(V) ->
     Acc#{ mixins => [ type_id(Bin) || Bin <- V ] };
 
 val_resource(<<"attributes">>, V, Acc) when is_map(V) ->
-    Acc#{ attributes => V };
+    Acc#{ attributes => maps:merge(maps:get(attributes, Acc, #{}), V) };
 
 val_resource(<<"actions">>, V, Acc) when is_list(V) ->
     Acc#{ actions => [ type_id(Bin) || Bin <- V ] };
@@ -269,10 +270,10 @@ val_resource(<<"links">>, V, Acc) when is_list(V) ->
     Acc#{ links => [ val_link(Bin) || Bin <- V ] };
 
 val_resource(<<"title">>, V, Acc) when is_binary(V) ->
-    Acc#{ title => V };
+    Acc#{ title => maps:put(<<"occi.core.title">>, V, maps:get(attributes, Acc, #{})) };
 
 val_resource(<<"summary">>, V, Acc) when is_binary(V) ->
-    Acc#{ summary => V }.
+    Acc#{ summary => maps:put(<<"occi.core.summary">>, V, maps:get(attributes, Acc, #{})) }.
 
 
 val_attributes(<<"mutable">>, V, Acc) when is_boolean(V) ->
@@ -300,12 +301,7 @@ val_attributes(<<"description">>, V, Acc) when is_binary(V) ->
 
 
 type_id(Bin) ->
-    case binary:split(Bin, [<<"#">>], [global, trim_all]) of
-	[Scheme, Term] ->
-	    {Scheme, Term};
-	Invalid ->
-	    throw({invalid_kind, Invalid})
-    end.
+    occi_category:parse_id(Bin).
 
 %%%
 %%% eunit

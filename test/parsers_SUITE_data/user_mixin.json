@@ -1,9 +1,5 @@
 {
-    "mixins": [
-	{
-	    "scheme": "http://schemas.example.org/occi#",
-	    "term": "mymixin0",
-	    "location": "http://localhost:8080/categories/mymixin0"
-	}
-    ]
+    "scheme": "http://schemas.example.org/occi#",
+    "term": "mymixin0",
+    "location": "http://localhost:8080/categories/mymixin0"
 }

@@ -52,14 +52,8 @@ cast(V, integer) ->
 cast(V, float) ->
     cast_float(V);
 
-cast(V, uri) when ?is_uri(V) ->
+cast(V, uri) when is_binary(V) ->
     V;
-
-cast(V, uri) ->
-    try occi_uri:from_string(V)
-    catch _:_ ->
-	    throw({invalid_value, uri, V})
-    end;
 
 cast({Scheme, Term}=V, kind) when is_binary(Scheme), is_binary(Term) ->
     V;

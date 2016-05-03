@@ -472,4 +472,5 @@ rel_id(Map) ->
 
 
 url_id(Url, Map) ->
-    Map#{ id := occi_uri:path(occi_uri:from_string(Url)) }.
+    << $/, Path/binary >> = occi_uri:path(occi_uri:from_string(Url)),
+    Map#{ id := Path }.

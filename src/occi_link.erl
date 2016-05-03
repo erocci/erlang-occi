@@ -58,9 +58,9 @@ new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_binary(KindId) ->
 new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
     new(Id, occi_models:kind(link, KindId), Src, SrcKind, Target, TargetKind);
 
-new(Id, Kind, Src, SrcKind, Target, TargetKind) when ?is_uri(Id), 
-						     ?is_uri(Src),
-						     ?is_uri(Target) ->
+new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_binary(Id), 
+						     is_binary(Src),
+						     is_binary(Target) ->
     Link = occi_entity:merge_parents(Kind, {link, Id, occi_kind:id(Kind), [], #{}, #{}, #{}}),
     set(#{ <<"occi.core.source">> => Src, 
 	   <<"occi.core.source.kind">> => SrcKind,
@@ -91,8 +91,7 @@ from_map(Kind, Map) ->
 				     add_mixin(M, Acc1)
 			     end, L, maps:get(mixins, Map, [])),
 	    Attrs0 = maps:get(attributes, Map, #{}),
-	    Attrs1 = Attrs0#{ <<"occi.core.title">> => maps:get(title, Map, undefined) },
-	    occi_entity:set(Attrs1, client, L1)
+	    occi_entity:set(Attrs0, client, L1)
 	end
     catch error:{badkey, _}=Err ->
 	    throw(Err)
