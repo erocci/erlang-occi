@@ -31,14 +31,15 @@ init_per_group(load, Config) ->
     Config;
 
 init_per_group(models, Config) ->
-    Ext = occi_extension:load(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-				     "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
-				     " name=\"Custom\""
-				     " scheme=\"http://example.org/occi#\""
-				     " status=\"stable\" version=\"1\">"
-				     " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
-				     "</occi:extension>">>),
-    occi_models:import(Ext),    
+    Map = occi_rendering:parse(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+				      "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
+				      " name=\"Custom\""
+				      " scheme=\"http://example.org/occi#\""
+				      " status=\"stable\" version=\"1\">"
+				      " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
+				      "</occi:extension>">>),
+    Ext = occi_extension:from_map(Map),
+    occi_models:import(Ext),
     Config.
 
 
@@ -71,30 +72,42 @@ all() ->
 load_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Bin} = file:read_file(ExtFile),
-    Ext = occi_extension:load(xml, Bin),
+    Ext = occi_extension:from_map(occi_rendering:parse(xml, Bin)),
     occi_models:import(Ext),
-    ?assertMatch(kind,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}))),
-    ?assertMatch(kind,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"network">>}))),
-    ?assertMatch(kind,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"storage">>}))),
-    ?assertMatch(kind,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"storagelink">>}))),
-    ?assertMatch(kind,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>}))),
-    ?assertMatch(mixin,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure/network#">>, <<"ipnetwork">>}))),
-    ?assertMatch(mixin, 
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure/networkinterface#">>, <<"ipnetworkinterface">>}))),
-    ?assertMatch(mixin,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"os_tpl">>}))),
-    ?assertMatch(mixin,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"resource_tpl">>}))),
-    ?assertMatch(mixin,
-		 occi_category:class(occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"large">>}))),
-    ?assertMatch(mixin,
-		 occi_category:class(occi_models:category({<<"http://occi.example.org/occi/infrastructure/os_tpl#">>, <<"debian6">>}))),
+
+    ComputeKind = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}),
+    ?assertMatch(kind, occi_category:class(ComputeKind)),
+
+    NetworkKind = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"network">>}),
+    ?assertMatch(kind, occi_category:class(NetworkKind)),
+
+    StorageKind = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"storage">>}),
+    ?assertMatch(kind, occi_category:class(StorageKind)),
+
+    StorageLinkKind = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"storagelink">>}),
+    ?assertMatch(kind, occi_category:class(StorageLinkKind)),
+
+    NetworkInterfaceKind = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>}),
+    ?assertMatch(kind, occi_category:class(NetworkInterfaceKind)),
+
+    IpNetworkMixin = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure/network#">>, <<"ipnetwork">>}),
+    ?assertMatch(mixin, occi_category:class(IpNetworkMixin)),
+
+    IpNetworkInterfaceMixin = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure/networkinterface#">>, <<"ipnetworkinterface">>}),
+    ?assertMatch(mixin, occi_category:class(IpNetworkInterfaceMixin)),
+
+    OsTplMixin = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"os_tpl">>}),
+    ?assertMatch(mixin, occi_category:class(OsTplMixin)),
+
+    ResourceTplMixin = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"resource_tpl">>}),
+    ?assertMatch(mixin, occi_category:class(ResourceTplMixin)),
+
+    LargeMixin = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"large">>}),
+    ?assertMatch(mixin, occi_category:class(LargeMixin)),
+
+    DebianMixin = occi_models:category({<<"http://occi.example.org/occi/infrastructure/os_tpl#">>, <<"debian6">>}),
+    ?assertMatch(mixin, occi_category:class(DebianMixin)),
+
     A0 = {<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"start">>},
     ?assertMatch(action, occi_category:class(occi_models:category(A0))),
     A1 = {<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"stop">>},
@@ -107,13 +120,14 @@ load_extension(Config) ->
 
 
 load_import(_Config) ->
-    Ext = occi_extension:load(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-				     "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
-				     " name=\"Custom\""
-				     " scheme=\"http://example.org/occi#\""
-				     " status=\"stable\" version=\"1\">"
-				     " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
-				     "</occi:extension>">>),
+    Obj = occi_rendering:parse(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+				      "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
+				      " name=\"Custom\""
+				      " scheme=\"http://example.org/occi#\""
+				      " status=\"stable\" version=\"1\">"
+				      " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
+				      "</occi:extension>">>),
+    Ext = occi_extension:from_map(Obj),
     occi_models:import(Ext),
     Cat0 = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}),
     ?assertMatch(kind, occi_category:class(Cat0)).
