@@ -19,7 +19,7 @@
 -export([start_link/0,
 	 resource/2]).
 
-%% gen_serverx callbacks
+%% gen_server callbacks
 -export([init/1,
 	 handle_info/2,
 	 handle_call/3,
@@ -47,6 +47,7 @@
 %% @end
 %%--------------------------------------------------------------------
 start_link() ->
+    ok = occi_utils:mkdir(occi_utils:resources_dir()),
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 
@@ -54,8 +55,10 @@ start_link() ->
 resource(Id, Urls) ->
     case gen_server:call(?MODULE, {import, Id, Urls}) of
 	{imported, Res} ->
+	    ?debug("Resource already imported: ~s", [Id]),
 	    {ok, Res};
 	{pending, Ref} ->
+	    ?debug("Waiting for resource: ~s", [Id]),
 	    wait_import(Id, Ref);
 	{error, _}=Err ->
 	    Err
@@ -67,7 +70,6 @@ resource(Id, Urls) ->
 %%%===================================================================
 -spec init(term()) -> {ok, state()}.
 init([]) ->
-    ok = occi_utils:mkdir(occi_utils:resources_dir()),
     {ok, ets:new(?MODULE, [set, private, {keypos, 2}])}.
 
 
@@ -241,10 +243,14 @@ retry(Dl, S) ->
     {noreply, ok, S}.
 
 
-wait_import(_Scheme, Ref) ->
+wait_import(Id, Ref) ->
     receive
-	{Ref, Res} -> 
-	    Res
+	{Ref, {ok, _}=Ret} -> 
+	    ?debug("Resource received: ~s", [Id]),
+	    Ret;
+	{Ref, {error, Err}=Ret} ->
+	    ?debug("Error receiving resource ~s: ~p", [Id, Err]),
+	    Ret
     end.
 
 send_pending(Res, Dl) ->

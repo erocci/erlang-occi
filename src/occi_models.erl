@@ -14,6 +14,8 @@
 -include("occi_log.hrl").
 -include_lib("annotations/include/annotations.hrl").
 
+-behaviour(gen_server).
+
 -export([start_link/0]).
 
 -export([import/1,
@@ -28,12 +30,21 @@
 	 attribute/2,
 	 attributes/1]).
 
+%% gen_server callbacks
+-export([init/1,
+	 handle_info/2,
+	 handle_call/3,
+	 handle_cast/2,
+	 terminate/2,
+	 code_change/3]).
+
 %% internal
 -define(core_scheme, <<"http://schemas.ogf.org/occi/core#">>).
 
 -record category, {id        :: occi_category:id(),
 		   location  :: binary(),
 		   value     :: occi_category:t()}.
+
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -42,8 +53,7 @@
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-    Pid = spawn_link(fun init/0),
-    {ok, Pid}.
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 
 %% @doc Import an extension into the model
@@ -191,28 +201,50 @@ attributes(CatId) ->
 	    occi_category:attributes(Cat)
     end.
 
+
+%%% gen_server callbacks
+init([]) ->
+    case mnesia:create_table(category, [{ram_copies, nodes()}, {attributes, record_info(fields, category)}]) of
+	{atomic, ok} -> 
+	    init_core();
+	{aborted, {already_exists, category}} -> 
+	    init_core();
+	{aborted, _} = Err -> 
+	    {stop, Err}
+    end.
+
+
+init_core() ->
+    case load_imports([?core_scheme]) of
+	ok -> {ok, undefined};
+	Err -> {stop, Err}
+    end.
+
+
+handle_info(_Info, S) ->
+    {noreply, S}.
+
+
+handle_call(_Call, _From, S) ->
+    {reply, ok, S}.
+
+
+handle_cast(_Evt, S) ->
+    {noreply, S}.
+
+
+terminate(_Reason, _S) ->
+    ok.
+
+
+code_change(_OldVsn, S, _Extra) ->
+    {ok, S}.
+
+
 %%
 %% Priv
 %%
 -define(model_ctx, #parse_ctx{ valid=model, url=undefined }).
-
--spec init() -> ok.
-init() ->
-    case mnesia:create_table(category, [{ram_copies, nodes()}, {attributes, record_info(fields, category)}]) of
-	{atomic, ok} -> ok;
-	{aborted, {already_exists, category}} -> ok;
-	{aborted, _} = Err -> throw(Err)
-    end,
-    ok = load_imports([?core_scheme]),
-    loop().
-
-
-loop() ->
-    receive
-	_ ->
-	    loop()
-    end.
-
 
 %% Check extension exists in the database, throw error if not
 load_imports([]) ->
