@@ -30,7 +30,7 @@ only attribute existence is checked.
 
 
 <pre><code>
-entity() = {Class::<a href="occi_type.md#type-name">occi_type:name()</a>, Id::<a href="uri.md#type-t">uri:t()</a>, Kind::<a href="occi_category.md#type-id">occi_category:id()</a>, Mixins::[<a href="occi_category.md#type-id">occi_category:id()</a>], Attributes::<a href="maps.md#type-map">maps:map()</a>, Values::<a href="maps.md#type-map">maps:map()</a>, Actions::<a href="maps.md#type-map">maps:map()</a>}
+entity() = {Class::<a href="occi_type.md#type-name">occi_type:name()</a>, Id::binary(), Kind::<a href="occi_category.md#type-id">occi_category:id()</a>, Mixins::[<a href="occi_category.md#type-id">occi_category:id()</a>], Attributes::<a href="maps.md#type-map">maps:map()</a>, Values::<a href="maps.md#type-map">maps:map()</a>, Actions::<a href="maps.md#type-map">maps:map()</a>}
 </code></pre>
 
 
@@ -43,6 +43,16 @@ entity() = {Class::<a href="occi_type.md#type-name">occi_type:name()</a>, Id::<a
 t() = <a href="#type-entity">entity()</a>
 </code></pre>
 
+
+
+
+### <a name="type-validation">validation()</a> ###
+
+
+<pre><code>
+validation() = internal | client | server
+</code></pre>
+
 <a name="index"></a>
 
 ## Function Index ##
@@ -53,8 +63,8 @@ If an attribute is already defined, this mixin's definition take precedence over
 the previous one.</td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td>Return key-value attributes map
 If attribute has default value, return the default value.</td></tr><tr><td valign="top"><a href="#do-3">do/3</a></td><td>Equivalent to <a href="#do-4"><tt>do(occi_invoke:id(Invoke),
 occi_invoke:attributes(Invoke), Fun, E)</tt></a>.</td></tr><tr><td valign="top"><a href="#do-4">do/4</a></td><td>Execute an action
-<code>Fun = fun((ActionId :: occi_category:id(), Attributes :: maps:map(), Entity :: ()) -> {ok, t()} | {error, term()})</code></td></tr><tr><td valign="top"><a href="#get-2">get/2</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td>opaque type representing an entity.</td></tr><tr><td valign="top"><a href="#is_subtype-2">is_subtype/2</a></td><td>Returns true if the entity is of type Type or subtype of.</td></tr><tr><td valign="top"><a href="#kind-1">kind/1</a></td><td></td></tr><tr><td valign="top"><a href="#load-3">load/3</a></td><td>Load entity from iolist.</td></tr><tr><td valign="top"><a href="#merge_parents-2">merge_parents/2</a></td><td></td></tr><tr><td valign="top"><a href="#mixins-1">mixins/1</a></td><td></td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td>Render entity into given mimetype.</td></tr><tr><td valign="top"><a href="#rm_mixin-2">rm_mixin/2</a></td><td>Unassociate mixin from this entity
-Attributes only defined by this mixin are removed.</td></tr><tr><td valign="top"><a href="#set-3">set/3</a></td><td>Set the full list of attributes for this resource.</td></tr><tr><td valign="top"><a href="#update-3">update/3</a></td><td>Update attributes values.</td></tr></table>
+<code>Fun = fun((ActionId :: occi_category:id(), Attributes :: maps:map(), Entity :: ()) -> {ok, t()} | {error, term()})</code></td></tr><tr><td valign="top"><a href="#from_map-1">from_map/1</a></td><td></td></tr><tr><td valign="top"><a href="#from_map-2">from_map/2</a></td><td>New entity from AST.</td></tr><tr><td valign="top"><a href="#get-2">get/2</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td>opaque type representing an entity.</td></tr><tr><td valign="top"><a href="#is_subtype-2">is_subtype/2</a></td><td>Returns true if the entity is of type Type or subtype of.</td></tr><tr><td valign="top"><a href="#kind-1">kind/1</a></td><td></td></tr><tr><td valign="top"><a href="#merge_parents-2">merge_parents/2</a></td><td></td></tr><tr><td valign="top"><a href="#mixins-1">mixins/1</a></td><td></td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td>Render entity into given mimetype.</td></tr><tr><td valign="top"><a href="#rm_mixin-2">rm_mixin/2</a></td><td>Unassociate mixin from this entity
+Attributes only defined by this mixin are removed.</td></tr><tr><td valign="top"><a href="#set-3">set/3</a></td><td>Set the full list of attributes for this resource.</td></tr><tr><td valign="top"><a href="#update-3">update/3</a></td><td>Update attributes values.</td></tr><tr><td valign="top"><a href="#update_from_map-2">update_from_map/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -125,6 +135,26 @@ throws `{invalid_action, [occi_category:id()](occi_category.md#type-id)}`
 Execute an action
 `Fun = fun((ActionId :: occi_category:id(), Attributes :: maps:map(), Entity :: ()) -> {ok, t()} | {error, term()})`
 
+<a name="from_map-1"></a>
+
+### from_map/1 ###
+
+<pre><code>
+from_map(Map::<a href="occi_rendering.md#type-ast">occi_rendering:ast()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+<a name="from_map-2"></a>
+
+### from_map/2 ###
+
+<pre><code>
+from_map(Kind::<a href="occi_category.md#type-t">occi_category:t()</a> | binary(), Map::<a href="occi_rendering.md#type-ast">occi_rendering:ast()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+New entity from AST
+
 <a name="get-2"></a>
 
 ### get/2 ###
@@ -141,7 +171,7 @@ throws `{invalid_key, [occi_attribute:key()](occi_attribute.md#type-key)}`
 ### id/1 ###
 
 <pre><code>
-id(E::<a href="#type-t">t()</a>) -&gt; <a href="uri.md#type-t">uri:t()</a>
+id(E::<a href="#type-t">t()</a>) -&gt; binary()
 </code></pre>
 <br />
 
@@ -166,17 +196,6 @@ Returns true if the entity is of type Type or subtype of
 kind(E::<a href="#type-t">t()</a>) -&gt; <a href="occi_kind.md#type-id">occi_kind:id()</a>
 </code></pre>
 <br />
-
-<a name="load-3"></a>
-
-### load/3 ###
-
-<pre><code>
-load(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="#type-t">t()</a>
-</code></pre>
-<br />
-
-Load entity from iolist
 
 <a name="merge_parents-2"></a>
 
@@ -243,4 +262,13 @@ update(Attrs::#{}, Validation::<a href="#type-validation">validation()</a>, E::<
 throws `{invalid_keys, [[occi_attribute:key()](occi_attribute.md#type-key)]} | {invalid_value, [{[occi_attribute:key()](occi_attribute.md#type-key), [occi_base_type:t()](occi_base_type.md#type-t)}]} | {required, [[occi_attribute:key()](occi_attribute.md#type-key)]}`
 
 Update attributes values.
+
+<a name="update_from_map-2"></a>
+
+### update_from_map/2 ###
+
+<pre><code>
+update_from_map(Map::<a href="occi_rendering.md#type-ast">occi_rendering:ast()</a>, Entity::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
 

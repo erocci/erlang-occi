@@ -51,7 +51,7 @@ t() = #category{}
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#actions-1">actions/1</a></td><td></td></tr><tr><td valign="top"><a href="#add_action-2">add_action/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_attribute-2">add_attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attribute-2">attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td></td></tr><tr><td valign="top"><a href="#class-1">class/1</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-1">location/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-2">location/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#parse_id-1">parse_id/1</a></td><td></td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td>Render category into given mimetype.</td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#actions-1">actions/1</a></td><td></td></tr><tr><td valign="top"><a href="#add_action-2">add_action/2</a></td><td></td></tr><tr><td valign="top"><a href="#add_attribute-2">add_attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attribute-2">attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td></td></tr><tr><td valign="top"><a href="#class-1">class/1</a></td><td></td></tr><tr><td valign="top"><a href="#id-1">id/1</a></td><td></td></tr><tr><td valign="top"><a href="#id_from_map-1">id_from_map/1</a></td><td>Return a category id from an AST.</td></tr><tr><td valign="top"><a href="#location-1">location/1</a></td><td></td></tr><tr><td valign="top"><a href="#location-2">location/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#parse_id-1">parse_id/1</a></td><td></td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td>Render category into given mimetype.</td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -121,12 +121,23 @@ id(C::<a href="#type-t">t()</a>) -&gt; <a href="occi_category.md#type-id">occi_c
 </code></pre>
 <br />
 
+<a name="id_from_map-1"></a>
+
+### id_from_map/1 ###
+
+<pre><code>
+id_from_map(Map::<a href="occi_rendering.md#type-ast">occi_rendering:ast()</a>) -&gt; <a href="#type-id">id()</a>
+</code></pre>
+<br />
+
+Return a category id from an AST
+
 <a name="location-1"></a>
 
 ### location/1 ###
 
 <pre><code>
-location(C::<a href="#type-t">t()</a>) -&gt; <a href="uri.md#type-t">uri:t()</a>
+location(C::<a href="#type-t">t()</a>) -&gt; binary()
 </code></pre>
 <br />
 
@@ -135,7 +146,7 @@ location(C::<a href="#type-t">t()</a>) -&gt; <a href="uri.md#type-t">uri:t()</a>
 ### location/2 ###
 
 <pre><code>
-location(Location::<a href="uri.md#type-t">uri:t()</a>, C::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+location(Location::binary(), C::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -175,7 +186,7 @@ throws `{invalid_cid, term()}`
 ### render/3 ###
 
 <pre><code>
-render(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, E::<a href="#type-t">t()</a>, Ctx::<a href="#type-render_ctx">render_ctx()</a>) -&gt; iolist()
+render(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, E::<a href="#type-t">t()</a>, Ctx::<a href="occi_ctx.md#type-t">occi_ctx:t()</a>) -&gt; iolist()
 </code></pre>
 <br />
 

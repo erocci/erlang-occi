@@ -32,7 +32,7 @@ t() = #action{}
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#category-1">category/1</a></td><td>Get related category (kind or mixin).</td></tr><tr><td valign="top"><a href="#load-3">load/3</a></td><td>Load action from iolist.</td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td>Create new action category.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#category-1">category/1</a></td><td>Get related category (kind or mixin).</td></tr><tr><td valign="top"><a href="#from_map-2">from_map/2</a></td><td>Load action from ast.</td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td>Create new action category.</td></tr></table>
 
 
 <a name="functions"></a>
@@ -50,16 +50,16 @@ category(A::<a href="#type-t">t()</a>) -&gt; <a href="occi_category.md#type-id">
 
 Get related category (kind or mixin)
 
-<a name="load-3"></a>
+<a name="from_map-2"></a>
 
-### load/3 ###
+### from_map/2 ###
 
 <pre><code>
-load(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="#type-t">t()</a>
+from_map(Related::<a href="occi_category.md#type-id">occi_category:id()</a>, Map::<a href="occi_rendering.md#type-ast">occi_rendering:ast()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
-Load action from iolist
+Load action from ast
 
 <a name="new-3"></a>
 

@@ -29,6 +29,7 @@ The Core model can be represented with the following figure.
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_base_type.md" class="module">occi_base_type</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_category.md" class="module">occi_category</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_collection.md" class="module">occi_collection</a></td></tr>
+<tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_ctx.md" class="module">occi_ctx</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_dl.md" class="module">occi_dl</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_entity.md" class="module">occi_entity</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_extension.md" class="module">occi_extension</a></td></tr>
@@ -43,6 +44,7 @@ The Core model can be represented with the following figure.
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_parser_xml.md" class="module">occi_parser_xml</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_renderer_json.md" class="module">occi_renderer_json</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_renderer_text.md" class="module">occi_renderer_text</a></td></tr>
+<tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_renderer_uri.md" class="module">occi_renderer_uri</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_renderer_xml.md" class="module">occi_renderer_xml</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_rendering.md" class="module">occi_rendering</a></td></tr>
 <tr><td><a href="http://github.com/erocci/erlang-occi/blob/master/doc/occi_resource.md" class="module">occi_resource</a></td></tr>

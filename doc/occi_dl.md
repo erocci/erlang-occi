@@ -83,7 +83,7 @@ init(X1::term()) -&gt; {ok, <a href="#type-state">state()</a>}
 ### resource/2 ###
 
 <pre><code>
-resource(Id::term(), Urls::[{<a href="http_uri.md#type-uri">http_uri:uri()</a>, <a href="file.md#type-filename_all">file:filename_all()</a>}]) -&gt; {ok, <a href="file.md#type-filename_all">file:filename_all()</a>} | {error, term()}
+resource(Id::term(), Urls::[<a href="http_uri.md#type-uri">http_uri:uri()</a>]) -&gt; {ok, <a href="file.md#type-filename_all">file:filename_all()</a>} | {error, term()}
 </code></pre>
 <br />
 

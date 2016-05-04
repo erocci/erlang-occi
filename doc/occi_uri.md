@@ -66,7 +66,7 @@ Parse uri
 ### from_string/2 ###
 
 <pre><code>
-from_string(Url::binary() | string(), Ctx::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+from_string(Url::binary() | string(), Ctx::<a href="occi_ctx.md#type-t">occi_ctx:t()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -95,7 +95,7 @@ Render uri as binary
 ### to_string/2 ###
 
 <pre><code>
-to_string(Uri::<a href="uri.md#type-t">uri:t()</a>, Ctx::<a href="uri.md#type-t">uri:t()</a>) -&gt; binary()
+to_string(Uri::<a href="uri.md#type-t">uri:t()</a>, Ctx::<a href="occi_ctx.md#type-t">occi_ctx:t()</a>) -&gt; binary()
 </code></pre>
 <br />
 

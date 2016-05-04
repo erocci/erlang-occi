@@ -24,7 +24,7 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 <table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#action-1">action/1</a></td><td>Return an action definition.</td></tr><tr><td valign="top"><a href="#add_category-1">add_category/1</a></td><td></td></tr><tr><td valign="top"><a href="#attribute-2">attribute/2</a></td><td></td></tr><tr><td valign="top"><a href="#attributes-1">attributes/1</a></td><td></td></tr><tr><td valign="top"><a href="#categories-0">categories/0</a></td><td>Return the list of categories
 Categories references (parent, depends, etc) are not resolved.</td></tr><tr><td valign="top"><a href="#category-1">category/1</a></td><td>Return a category
 Category references (parent, depend, etc) is resolved:
-attributes and actions from references are merged into the resulting category.</td></tr><tr><td valign="top"><a href="#import-1">import/1</a></td><td>Import an extension into the model.</td></tr><tr><td valign="top"><a href="#kind-2">kind/2</a></td><td>Return a kind, checking it has specified parent.</td></tr><tr><td valign="top"><a href="#start_link-0">start_link/0</a></td><td></td></tr></table>
+attributes and actions from references are merged into the resulting category.</td></tr><tr><td valign="top"><a href="#import-1">import/1</a></td><td>Import an extension into the model.</td></tr><tr><td valign="top"><a href="#kind-1">kind/1</a></td><td>Return a kind.</td></tr><tr><td valign="top"><a href="#kind-2">kind/2</a></td><td>Return a kind, checking it has specified parent.</td></tr><tr><td valign="top"><a href="#location-1">location/1</a></td><td>If any, return a category given a location.</td></tr><tr><td valign="top"><a href="#rm_category-1">rm_category/1</a></td><td></td></tr><tr><td valign="top"><a href="#start_link-0">start_link/0</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -109,6 +109,19 @@ import(E::<a href="occi_extension.md#type-t">occi_extension:t()</a>) -&gt; ok
 
 Import an extension into the model
 
+<a name="kind-1"></a>
+
+### kind/1 ###
+
+<pre><code>
+kind(KindId::<a href="occi_category.md#type-id">occi_category:id()</a> | binary()) -&gt; <a href="occi_category.md#type-id">occi_category:id()</a>
+</code></pre>
+<br />
+
+throws `{unknown_category, [occi_category:id()](occi_category.md#type-id)}`
+
+Return a kind
+
 <a name="kind-2"></a>
 
 ### kind/2 ###
@@ -121,6 +134,27 @@ kind(Parent::link | resource, KindId::<a href="occi_category.md#type-id">occi_ca
 throws `{unknown_category, [occi_category:id()](occi_category.md#type-id)} | {invalid_kind, [occi_category:id()](occi_category.md#type-id)}`
 
 Return a kind, checking it has specified parent
+
+<a name="location-1"></a>
+
+### location/1 ###
+
+<pre><code>
+location(Path::binary()) -&gt; <a href="occi_category.md#type-t">occi_category:t()</a> | undefined
+</code></pre>
+<br />
+
+If any, return a category given a location.
+Otherwise, returns 'undefined
+
+<a name="rm_category-1"></a>
+
+### rm_category/1 ###
+
+<pre><code>
+rm_category(Id::<a href="occi_category.md#type-id">occi_category:id()</a>) -&gt; ok
+</code></pre>
+<br />
 
 <a name="start_link-0"></a>
 

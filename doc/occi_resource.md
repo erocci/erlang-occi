@@ -23,7 +23,7 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 
 
 <pre><code>
-resource() = {Class::<a href="occi_type.md#type-name">occi_type:name()</a>, Id::<a href="uri.md#type-t">uri:t()</a>, Kind::<a href="occi_category.md#type-id">occi_category:id()</a>, Mixins::[<a href="occi_category.md#type-id">occi_category:id()</a>], Attributes::<a href="maps.md#type-map">maps:map()</a>, Values::<a href="maps.md#type-map">maps:map()</a>, Actions::<a href="maps.md#type-map">maps:map()</a>, Links::list()}
+resource() = {Class::<a href="occi_type.md#type-name">occi_type:name()</a>, Id::binary(), Kind::<a href="occi_category.md#type-id">occi_category:id()</a>, Mixins::[<a href="occi_category.md#type-id">occi_category:id()</a>], Attributes::<a href="maps.md#type-map">maps:map()</a>, Values::<a href="maps.md#type-map">maps:map()</a>, Actions::<a href="maps.md#type-map">maps:map()</a>, Links::list()}
 </code></pre>
 
 
@@ -41,7 +41,7 @@ t() = <a href="#type-resource">resource()</a>
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_link-2">add_link/2</a></td><td>Add the given link to the resource.</td></tr><tr><td valign="top"><a href="#links-1">links/1</a></td><td>Get list of links associated to this resource.</td></tr><tr><td valign="top"><a href="#load-3">load/3</a></td><td>Load resource from iolist.</td></tr><tr><td valign="top"><a href="#new-1">new/1</a></td><td>Creates a resource with given id, of kind ...core#resource.</td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add_link-2">add_link/2</a></td><td>Add the given link to the resource.</td></tr><tr><td valign="top"><a href="#from_map-2">from_map/2</a></td><td>New resource from AST.</td></tr><tr><td valign="top"><a href="#links-1">links/1</a></td><td>Get list of links associated to this resource.</td></tr><tr><td valign="top"><a href="#new-1">new/1</a></td><td>Creates a resource with given id, of kind ...core#resource.</td></tr><tr><td valign="top"><a href="#new-2">new/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -59,6 +59,17 @@ add_link(Link::<a href="occi_link.md#type-t">occi_link:t()</a>, R::<a href="occi
 
 Add the given link to the resource
 
+<a name="from_map-2"></a>
+
+### from_map/2 ###
+
+<pre><code>
+from_map(Kind::<a href="occi_kind.md#type-t">occi_kind:t()</a>, Map::<a href="occi_rendering.md#type-ast">occi_rendering:ast()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+New resource from AST
+
 <a name="links-1"></a>
 
 ### links/1 ###
@@ -70,23 +81,12 @@ links(R::<a href="occi_resource.md#type-t">occi_resource:t()</a>) -&gt; [<a href
 
 Get list of links associated to this resource
 
-<a name="load-3"></a>
-
-### load/3 ###
-
-<pre><code>
-load(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="#type-t">t()</a>
-</code></pre>
-<br />
-
-Load resource from iolist
-
 <a name="new-1"></a>
 
 ### new/1 ###
 
 <pre><code>
-new(Id::<a href="uri.md#type-t">uri:t()</a>) -&gt; <a href="#type-t">t()</a>
+new(Id::binary()) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
@@ -97,7 +97,7 @@ Creates a resource with given id, of kind ...core#resource
 ### new/2 ###
 
 <pre><code>
-new(Id::<a href="uri.md#type-t">uri:t()</a>, KindId::<a href="occi_category.md#type-t">occi_category:t()</a> | <a href="occi_category.md#type-id">occi_category:id()</a> | string() | binary()) -&gt; <a href="#type-t">t()</a>
+new(Id::binary(), KindId::<a href="occi_category.md#type-t">occi_category:t()</a> | <a href="occi_category.md#type-id">occi_category:id()</a> | string() | binary()) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 

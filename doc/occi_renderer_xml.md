@@ -28,7 +28,7 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 ### render/2 ###
 
 <pre><code>
-render(T::<a href="occi_type.md#type-t">occi_type:t()</a>, Ctx::<a href="uri.md#type-t">uri:t()</a>) -&gt; iolist()
+render(T::<a href="occi_type.md#type-t">occi_type:t()</a>, Ctx::<a href="occi_ctx.md#type-t">occi_ctx:t()</a>) -&gt; iolist()
 </code></pre>
 <br />
 

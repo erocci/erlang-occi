@@ -2,6 +2,7 @@
 
 # Module occi_rendering #
 * [Description](#description)
+* [Data Types](#types)
 * [Function Index](#index)
 * [Function Details](#functions)
 
@@ -14,35 +15,85 @@ __Authors:__ Jean Parpaillon ([`jean.parpaillon@free.fr`](mailto:jean.parpaillon
 <a name="description"></a>
 
 ## Description ##
+
+<a name="types"></a>
+
+## Data Types ##
+
+
+
+
+### <a name="type-ast">ast()</a> ###
+
+
+<pre><code>
+ast() = #{<a href="#type-ast_key">ast_key()</a> =&gt; <a href="#type-ast_value">ast_value()</a>}
+</code></pre>
+
+
+
+
+### <a name="type-ast_key">ast_key()</a> ###
+
+
+<pre><code>
+ast_key() = categories | attributes | actions | id | links | summary | title | action | source | target | parent | location | depends | applies
+</code></pre>
+
+
+
+
+### <a name="type-ast_link_end">ast_link_end()</a> ###
+
+
+<pre><code>
+ast_link_end() = #{location | kind =&gt; binary()}
+</code></pre>
+
+
+
+
+### <a name="type-ast_value">ast_value()</a> ###
+
+
+<pre><code>
+ast_value() = binary() | list() | <a href="maps.md#type-map">maps:map()</a> | <a href="#type-ast_link_end">ast_link_end()</a>
+</code></pre>
+
+
+
+
+### <a name="type-errors">errors()</a> ###
+
+
+<pre><code>
+errors() = {parse_error, term()} | {unknown_mimetype, term()} | {badkey, atom()}
+</code></pre>
+
 <a name="index"></a>
 
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#load_collection-3">load_collection/3</a></td><td>Load the specified OCCI collection
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}.</td></tr><tr><td valign="top"><a href="#load_entity-4">load_entity/4</a></td><td>Load the specified OCCI entity (or sub-type thereof from an iolist()
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}.</td></tr><tr><td valign="top"><a href="#load_invoke-3">load_invoke/3</a></td><td>Load the specified OCCI action invocation
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}.</td></tr><tr><td valign="top"><a href="#load_model-4">load_model/4</a></td><td>Load the specified OCCI category or extension from an iolist()
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}.</td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#parse-2">parse/2</a></td><td>Parse an OCCI object and returns it as a map.</td></tr><tr><td valign="top"><a href="#render-3">render/3</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
 
 ## Function Details ##
 
-<a name="load_collection-3"></a>
+<a name="parse-2"></a>
 
-### load_collection/3 ###
+### parse/2 ###
 
 <pre><code>
-load_collection(MimeType::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_collection.md#type-t">occi_collection:t()</a>
+parse(Mimetype::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist()) -&gt; <a href="#type-ast">ast()</a>
 </code></pre>
 <br />
 
-throws `{parse_error, [occi_parser:errors()](occi_parser.md#type-errors)} | {unknown_mimetype, term()}`
+throws `[errors()](#type-errors)`
 
-Load the specified OCCI collection
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
+Parse an OCCI object and returns it as a map.
 
 Supported mimetypes are:
 
@@ -54,80 +105,9 @@ Supported mimetypes are:
 
 * {<<"application">>, <<"occi+json">>, []}
 
+* {<<"text">>, <<"plain">>, []}
 
-<a name="load_entity-4"></a>
-
-### load_entity/4 ###
-
-<pre><code>
-load_entity(Type::<a href="occi_type.md#type-name">occi_type:name()</a>, MimeType::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_type.md#type-t">occi_type:t()</a>
-</code></pre>
-<br />
-
-throws `{parse_error, [occi_parser:errors()](occi_parser.md#type-errors)} | {unknown_mimetype, term()}`
-
-Load the specified OCCI entity (or sub-type thereof from an iolist()
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
-
-Supported mimetypes are:
-
-* {<<"application">>, <<"xml">>, []}
-
-* {<<"application">>, <<"occi+xml">>, []}
-
-* {<<"application">>, <<"json">>, []}
-
-* {<<"application">>, <<"occi+json">>, []}
-
-
-<a name="load_invoke-3"></a>
-
-### load_invoke/3 ###
-
-<pre><code>
-load_invoke(MimeType::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_invoke.md#type-t">occi_invoke:t()</a>
-</code></pre>
-<br />
-
-throws `{parse_error, [occi_parser:errors()](occi_parser.md#type-errors)} | {unknown_mimetype, term()}`
-
-Load the specified OCCI action invocation
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
-
-Supported mimetypes are:
-
-* {<<"application">>, <<"xml">>, []}
-
-* {<<"application">>, <<"occi+xml">>, []}
-
-* {<<"application">>, <<"json">>, []}
-
-* {<<"application">>, <<"occi+json">>, []}
-
-
-<a name="load_model-4"></a>
-
-### load_model/4 ###
-
-<pre><code>
-load_model(Type::<a href="occi_type.md#type-name">occi_type:name()</a>, MimeType::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, Bin::iolist(), Ctx::<a href="#type-parse_ctx">parse_ctx()</a>) -&gt; <a href="occi_type.md#type-t">occi_type:t()</a>
-</code></pre>
-<br />
-
-throws `{parse_error, [occi_parser:errors()](occi_parser.md#type-errors)} | {unknown_mimetype, term()}`
-
-Load the specified OCCI category or extension from an iolist()
-Mimetype must be given as {Type :: binary(), SubType :: binary(), []}
-
-Supported mimetypes are:
-
-* {<<"application">>, <<"xml">>, []}
-
-* {<<"application">>, <<"occi+xml">>, []}
-
-* {<<"application">>, <<"json">>, []}
-
-* {<<"application">>, <<"occi+json">>, []}
+* {<<"text">>, <<"occi">>, []}
 
 
 <a name="render-3"></a>
@@ -135,7 +115,7 @@ Supported mimetypes are:
 ### render/3 ###
 
 <pre><code>
-render(MimeType::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, T::<a href="occi_type.md#type-t">occi_type:t()</a>, Ctx::<a href="#type-render_ctx">render_ctx()</a>) -&gt; iolist()
+render(MimeType::<a href="occi_utils.md#type-mimetype">occi_utils:mimetype()</a>, T::<a href="occi_type.md#type-t">occi_type:t()</a>, Ctx::<a href="occi_ctx.md#type-t">occi_ctx:t()</a>) -&gt; iolist()
 </code></pre>
 <br />
 

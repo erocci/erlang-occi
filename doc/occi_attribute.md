@@ -61,7 +61,7 @@ type_t() = <a href="occi_base_type.md#type-t">occi_base_type:t()</a>
 ## Function Index ##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#category-1">category/1</a></td><td></td></tr><tr><td valign="top"><a href="#default-1">default/1</a></td><td></td></tr><tr><td valign="top"><a href="#default-2">default/2</a></td><td></td></tr><tr><td valign="top"><a href="#description-1">description/1</a></td><td></td></tr><tr><td valign="top"><a href="#description-2">description/2</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-1">mutable/1</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-2">mutable/2</a></td><td></td></tr><tr><td valign="top"><a href="#name-1">name/1</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#pattern-1">pattern/1</a></td><td></td></tr><tr><td valign="top"><a href="#pattern-2">pattern/2</a></td><td></td></tr><tr><td valign="top"><a href="#required-1">required/1</a></td><td></td></tr><tr><td valign="top"><a href="#required-2">required/2</a></td><td></td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr><tr><td valign="top"><a href="#type-1">type/1</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#category-1">category/1</a></td><td></td></tr><tr><td valign="top"><a href="#default-1">default/1</a></td><td></td></tr><tr><td valign="top"><a href="#default-2">default/2</a></td><td></td></tr><tr><td valign="top"><a href="#description-1">description/1</a></td><td></td></tr><tr><td valign="top"><a href="#description-2">description/2</a></td><td></td></tr><tr><td valign="top"><a href="#from_map-3">from_map/3</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-1">mutable/1</a></td><td></td></tr><tr><td valign="top"><a href="#mutable-2">mutable/2</a></td><td></td></tr><tr><td valign="top"><a href="#name-1">name/1</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td></td></tr><tr><td valign="top"><a href="#pattern-1">pattern/1</a></td><td></td></tr><tr><td valign="top"><a href="#pattern-2">pattern/2</a></td><td></td></tr><tr><td valign="top"><a href="#required-1">required/1</a></td><td></td></tr><tr><td valign="top"><a href="#required-2">required/2</a></td><td></td></tr><tr><td valign="top"><a href="#title-1">title/1</a></td><td></td></tr><tr><td valign="top"><a href="#title-2">title/2</a></td><td></td></tr><tr><td valign="top"><a href="#type-1">type/1</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -110,6 +110,15 @@ description(A::<a href="#type-t">t()</a>) -&gt; binary()
 
 <pre><code>
 description(Desc::binary(), A::<a href="#type-t">t()</a>) -&gt; <a href="#type-t">t()</a>
+</code></pre>
+<br />
+
+<a name="from_map-3"></a>
+
+### from_map/3 ###
+
+<pre><code>
+from_map(Name::binary(), CatId::<a href="occi_category.md#type-id">occi_category:id()</a>, Map::<a href="occi_rendering.md#type-ast">occi_rendering:ast()</a>) -&gt; <a href="#type-t">t()</a>
 </code></pre>
 <br />
 
