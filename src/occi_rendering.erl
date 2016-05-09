@@ -30,6 +30,7 @@
 		 | applies.
 -type ast_link_end() :: #{ location | kind => binary() }.
 -type ast_value() :: binary() | list() | maps:map() | ast_link_end().
+
 -type ast() :: #{ ast_key() => ast_value() }.
 
 -export_type([ast/0, errors/0]).

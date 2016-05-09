@@ -59,11 +59,22 @@ start_link() ->
 %% @doc Import an extension into the model
 %%
 %% @end
--spec import(occi_extension:t()) -> ok.
+-spec import(occi_extension:t()) -> {ok, [occi_category:t()]} | {error, term()}.
 import(E) ->
-    ok = load_imports(occi_extension:imports(E)),
-    ok = load_categories(occi_extension:scheme(E), occi_extension:kinds(E)),
-    ok = load_categories(occi_extension:scheme(E), occi_extension:mixins(E)).
+    Categories0 = occi_extension:kinds(E) ++ occi_extension:mixins(E),
+    case load_imports(occi_extension:imports(E), Categories0) of
+	{ok, Categories1} ->
+	    ok = lists:foreach(fun (Category) -> 
+				       ?debug("Add category ~p", [occi_category:id(Category)]),
+				       add_category(Category),
+				       lists:foreach(fun (Action) ->
+							     ok = add_category(Action)
+						     end, occi_category:actions(Category))
+			       end, Categories0),
+	    {ok, Categories1};
+	{error, _}=Err ->
+	    Err
+    end.
 
 
 %% @doc Return the list of categories
@@ -215,9 +226,9 @@ init([]) ->
 
 
 init_core() ->
-    case load_imports([?core_scheme]) of
-	ok -> {ok, undefined};
-	Err -> {stop, Err}
+    case load_imports([?core_scheme], []) of
+	{ok, _Categories} -> {ok, undefined};
+	{error, Err} -> {stop, Err}
     end.
 
 
@@ -247,35 +258,31 @@ code_change(_OldVsn, S, _Extra) ->
 -define(model_ctx, #parse_ctx{ valid=model, url=undefined }).
 
 %% Check extension exists in the database, throw error if not
-load_imports([]) ->
-    ok;
+load_imports([], Categories) ->
+    {ok, Categories};
 
-load_imports([ Scheme | Imports ]) ->
+load_imports([ Scheme | Imports ], Acc) ->
     ?debug("Import extension: ~s", [Scheme]),
     case dl_schema(Scheme) of
 	{ok, Path} ->
-	    case file:read_file(Path) of
-		{ok, Bin} ->
-		    import(occi_extension:from_map(occi_rendering:parse(occi_utils:mimetype(Path), Bin)));
+	    case load_dl_schema(Path) of
+		{ok, Categories} ->
+		    load_imports(Imports, Acc ++ Categories);
 		{error, Err} ->
-		    throw({import, Err})
-	    end,
-	    load_imports(Imports);
+		    throw(Err)
+	    end;
 	{error, Err} ->
 	    throw({import, Err})
     end.
 
 
-load_categories(_Scheme, []) ->
-    ok;
-
-load_categories(Scheme, [ Cat | Categories ]) ->
-    ?debug("Add category ~p", [occi_category:id(Cat)]),
-    ok = add_category(Cat),
-    lists:foreach(fun (Action) ->
-			  ok = add_category(Action)
-		  end, occi_category:actions(Cat)),
-    load_categories(Scheme, Categories).
+load_dl_schema(Path) ->
+    case file:read_file(Path) of
+	{ok, Bin} ->
+	    import(occi_extension:from_map(occi_rendering:parse(occi_utils:mimetype(Path), Bin)));
+	{error, Err} ->
+	    throw({import, Err})
+    end.
 
 
 dl_schema(Scheme) ->

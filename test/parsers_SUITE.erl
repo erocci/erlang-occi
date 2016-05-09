@@ -21,7 +21,7 @@ init_per_suite(Config) ->
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
     {ok, Xml} = file:read_file(ExtFile),
     Ext = occi_extension:from_map(occi_parser_xml:parse(Xml)),
-    ok = occi_models:import(Ext),
+    {ok, _} = occi_models:import(Ext),
     Config.
 
 
