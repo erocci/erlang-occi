@@ -34,7 +34,20 @@
 	   | occi_link:t()
 	   | occi_invoke:t().
 
+-type mod() :: occi_extension
+	     | occi_collection
+	     | occi_category
+	     | occi_kind
+	     | occi_mixin
+	     | occi_action
+	     | occi_attribute
+	     | occi_entity
+	     | occi_resource
+	     | occi_link
+	     | occi_invoke.
+
 -export_type([name/0,
+	      mod/0,
 	      t/0]).
 
 

@@ -20,4 +20,6 @@
 
 -define(is_uri(X), element(1, X) =:= uri).
 
+-define(is_occi_mod(X), occi_extension =:= X orelse occi_collection =:= X orelse occi_category =:= X orelse occi_kind =:= X orelse occi_mixin =:= X orelse occi_action =:= X orelse occi_attribute =:= X orelse occi_entity =:= X orelse occi_resource =:= X orelse occi_link =:= X orelse occi_invoke =:= X).
+
 -endif.

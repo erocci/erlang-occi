@@ -19,8 +19,7 @@ suite() ->
 init_per_suite(Config) ->
     {ok, _} = application:ensure_all_started(occi),
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
-    {ok, Xml} = file:read_file(ExtFile),
-    Ext = occi_extension:from_map(occi_parser_xml:parse(Xml)),
+    Ext = occi_rendering:parse_file(ExtFile, occi_extension),
     {ok, _} = occi_models:import(Ext),
     Config.
 
@@ -111,19 +110,14 @@ init_per_group('user_mixin', Config) ->
 		  ?assertMatch({<<"http://schemas.example.org/occi#">>, <<"mymixin0">>},
 			       occi_mixin:id(M))
 	  end,
-    Load = fun (Type, Bin) -> occi_mixin:from_map(occi_rendering:parse(Type, Bin)) end,
-    [ {check, Fun}, {load, Load} | Config ];
+    [ {check, Fun}, {occi_type, occi_mixin} | Config ];
 
 init_per_group('collection', Config) ->
     Fun = fun(C)  ->
 		  ?assertMatch([<<"/resource1">>, <<"/resource0">>],
 			       occi_collection:ids(C))
 	  end,
-    Load = fun (Type, Bin) -> 
-		   Obj = occi_rendering:parse(Type, Bin),
-		   occi_collection:from_map(Obj) 
-	   end,
-    [ {check, Fun}, {load, Load} | Config ];
+    [ {check, Fun}, {occi_type, occi_collection} | Config ];
 
 init_per_group('invoke', Config) ->
     Fun = fun(Action)  ->
@@ -132,8 +126,7 @@ init_per_group('invoke', Config) ->
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"stop">>},
 			       occi_invoke:id(Action))
 	  end,
-    Load = fun (Type, Bin) -> occi_invoke:from_map(occi_rendering:parse(Type, Bin)) end,
-    [ {check, Fun}, {load, Load} | Config ];
+    [ {check, Fun}, {occi_type, occi_invoke} | Config ];
 
 init_per_group(_, Config) ->
     Config.
@@ -209,11 +202,6 @@ parse_tests(Type, Ext, Config) ->
 parse_test(Type, Filename, Config) ->
     ct:pal(info, ?STD_IMPORTANCE, "=== Parsing ~s", [filename:basename(Filename)]),
     {ok, Bin} = file:read_file(Filename),
-    DefaultFun = fun (T, B) -> 
-			 Obj = occi_rendering:parse(T, B),
-			 occi_entity:from_map(Obj)
-		 end,
-    LoadFun = proplists:get_value(load, Config, DefaultFun),
-    O = LoadFun(Type, Bin),
+    O = occi_rendering:parse(Type, Bin, proplists:get_value(occi_type, Config, occi_entity)),
     CheckFun = ?config(check, Config),
     CheckFun(O).

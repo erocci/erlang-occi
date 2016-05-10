@@ -31,14 +31,14 @@ init_per_group(load, Config) ->
     Config;
 
 init_per_group(models, Config) ->
-    Map = occi_rendering:parse(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-				      "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
-				      " name=\"Custom\""
-				      " scheme=\"http://example.org/occi#\""
-				      " status=\"stable\" version=\"1\">"
-				      " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
-				      "</occi:extension>">>),
-    Ext = occi_extension:from_map(Map),
+    Bin = <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+	    "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
+	    " name=\"Custom\""
+	    " scheme=\"http://example.org/occi#\""
+	    " status=\"stable\" version=\"1\">"
+	    " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
+	    "</occi:extension>">>,
+    Ext = occi_rendering:parse(xml, Bin, occi_extension),
     occi_models:import(Ext),
     Config.
 
@@ -71,8 +71,7 @@ all() ->
 
 load_extension(Config) -> 
     ExtFile = filename:join([?config(data_dir, Config), "occi-infrastructure.xml"]),
-    {ok, Bin} = file:read_file(ExtFile),
-    Ext = occi_extension:from_map(occi_rendering:parse(xml, Bin)),
+    Ext = occi_rendering:parse_file(ExtFile, occi_extension),
     occi_models:import(Ext),
 
     ComputeKind = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}),
@@ -120,14 +119,13 @@ load_extension(Config) ->
 
 
 load_import(_Config) ->
-    Obj = occi_rendering:parse(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    Ext = occi_rendering:parse(xml, <<"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 				      "<occi:extension xmlns:occi=\"http://schemas.ogf.org/occi\""
 				      " name=\"Custom\""
 				      " scheme=\"http://example.org/occi#\""
 				      " status=\"stable\" version=\"1\">"
 				      " <occi:import scheme=\"http://schemas.ogf.org/occi/infrastructure#\" />"
-				      "</occi:extension>">>),
-    Ext = occi_extension:from_map(Obj),
+				      "</occi:extension>">>, occi_extension),
     occi_models:import(Ext),
     Cat0 = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}),
     ?assertMatch(kind, occi_category:class(Cat0)).

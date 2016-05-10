@@ -40,7 +40,7 @@
 %% Throws extension if the scheme is not a valid URI.
 %% @end
 %% @throws {invalid_uri, string() | binary()}
--spec new(Scheme :: string() | binary()) -> t().
+-spec new(Scheme :: binary()) -> t().
 new(Scheme) when is_binary(Scheme) ->
     try uri:from_string(Scheme) of
 	_ ->

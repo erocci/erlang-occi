@@ -7,7 +7,11 @@
 
 -module(occi_rendering).
 
--export([parse/2,
+-include("occi_types.hrl").
+
+-export([parse/3,
+	 parse_file/2,
+	 parse_file/3,
 	 render/3]).
 
 -type errors() :: {parse_error, term()}
@@ -35,7 +39,10 @@
 
 -export_type([ast/0, errors/0]).
 
-%% @doc Parse an OCCI object and returns it as a map.
+%% @doc Parse a binary and returns the object using `Mod:from_map/1'
+%% or the provided function.
+%%
+%% Module must implement from_map/1
 %%
 %% Supported mimetypes are:
 %% <ul>
@@ -48,9 +55,34 @@
 %% </ul>
 %% @end
 %% @throws errors()
--spec parse(occi_utils:mimetype(), iolist()) -> ast().
-parse(Mimetype, Bin) ->
-    (parser(Mimetype)):parse(Bin).
+-spec parse(occi_utils:mimetype(), iolist(), occi_type:mod() | fun()) -> occi_type:t().
+parse(Mimetype, Data, Fun) when is_function(Fun) ->
+    Ast = (parser(Mimetype)):parse(Data),
+    Fun(Ast);
+
+parse(Mimetype, Data, Mod) when ?is_occi_mod(Mod) ->
+    Mod:from_map((parser(Mimetype)):parse(Data)).
+
+
+%% @doc Parse file and return an OCCI type
+%% (Tries to) detects mimetype from filename
+%% @end
+-spec parse_file(file:filename_all(), occi_type:mod() | fun()) -> occi_type:t().
+parse_file(Path, ModOrFun) ->
+    parse_file(occi_utils:mimetype(Path), Path, ModOrFun).
+
+
+%% @doc Parse file and return an OCCI type
+%% (Tries to) detects mimetype from filename
+%% @end
+-spec parse_file(occi_utils:mimetype(), file:filename_all(), occi_type:mod() | fun()) -> occi_type:t().
+parse_file(Mimetype, Path, ModOrFun) ->
+    case file:read_file(Path) of
+	{ok, Bin} ->
+	    parse(Mimetype, Bin, ModOrFun);
+	{error, Err} ->
+	    throw(Err)
+    end.
 
 
 -spec render(occi_utils:mimetype(), occi_type:t(),occi_ctx:t()) -> iolist().

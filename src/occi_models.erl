@@ -255,8 +255,6 @@ code_change(_OldVsn, S, _Extra) ->
 %%
 %% Priv
 %%
--define(model_ctx, #parse_ctx{ valid=model, url=undefined }).
-
 %% Check extension exists in the database, throw error if not
 load_imports([], Categories) ->
     {ok, Categories};
@@ -265,21 +263,12 @@ load_imports([ Scheme | Imports ], Acc) ->
     ?debug("Import extension: ~s", [Scheme]),
     case dl_schema(Scheme) of
 	{ok, Path} ->
-	    case load_dl_schema(Path) of
+	    case import(occi_rendering:parse_file(Path, occi_extension)) of
 		{ok, Categories} ->
 		    load_imports(Imports, Acc ++ Categories);
 		{error, Err} ->
 		    throw(Err)
 	    end;
-	{error, Err} ->
-	    throw({import, Err})
-    end.
-
-
-load_dl_schema(Path) ->
-    case file:read_file(Path) of
-	{ok, Bin} ->
-	    import(occi_extension:from_map(occi_rendering:parse(occi_utils:mimetype(Path), Bin)));
 	{error, Err} ->
 	    throw({import, Err})
     end.
