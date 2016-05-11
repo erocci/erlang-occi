@@ -18,15 +18,17 @@
 -export([new/1,
 	 new/2,
 	 add_link/2,
-	 links/1]).
+	 links/1,
+	 links/2]).
 
 -export([from_map/2]).
 
--define(links, 8).
+-define(links, 9).
 
 -type resource() :: {
 		Class      :: occi_type:name(),
 		Id         :: binary(),
+		Location   :: occi_uri:url(),
 		Kind       :: occi_category:id(),
 		Mixins     :: [occi_category:id()],
 		Attributes :: maps:map(),
@@ -59,7 +61,7 @@ new(Id, {_Scheme, _Term}=KindId) ->
     new(Id, occi_models:kind(resource, KindId));
 
 new(Id, Kind) ->
-    occi_entity:merge_parents(Kind, {resource, Id, occi_kind:id(Kind), [], #{}, #{}, #{}, []}).
+    occi_entity:merge_parents(Kind, {resource, Id, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}, []}).
 
 
 %% @doc Add the given link to the resource
@@ -72,9 +74,16 @@ add_link(Link, R) when element(?class, Link) =:= link ->
 
 %% @doc Get list of links associated to this resource
 %% @end
--spec links(occi_resource:t()) -> [occi_link:t()].
+-spec links(occi_resource:t()) -> [ occi_link:t() | occi_entity:id() ].
 links(R) ->
     element(?links, R).
+
+
+%% @doc Set full list of links
+%% @end
+-spec links([ occi_link:t() | occi_entity:id() ], occi_resource:t()) -> t().
+links(Links, Resource) ->
+    setelement(?links, Resource, Links).
 
 
 %% @doc New resource from AST
@@ -84,9 +93,13 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
     try begin
 	    Id = maps:get(id, Map, undefined),
 	    R = new(Id, Kind),
+	    R0 = case maps:get(location, Map, undefined) of
+		     undefined -> R;
+		     Location -> occi_entity:location(Location, R)
+		 end,
 	    R1 = lists:foldl(fun (M, Acc1) ->
 				     add_mixin(M, Acc1)
-			     end, R, maps:get(mixins, Map, [])),
+			     end, R0, maps:get(mixins, Map, [])),
 	    R2 = lists:foldl(fun (Map2, Acc2) ->
 				     Map3 = case maps:is_key(source, Map2) of
 						true -> 

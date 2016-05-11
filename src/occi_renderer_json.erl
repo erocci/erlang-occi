@@ -83,7 +83,7 @@ r_type(collection, Coll, Ctx) ->
 			       Acc#{ links => [ Link | maps:get(links, Acc, []) ] }
 		       end
 	       end,
-    sets:fold(SplitFun, #{}, occi_collection:elements(Coll));
+    ordsets:fold(SplitFun, #{}, occi_collection:elements(Coll));
 
 r_type(resource, R, Ctx) ->
     M = r_entity(R, Ctx),

@@ -53,11 +53,11 @@ to_xml(collection, Coll, Ctx) ->
 	    undefined ->
 		[]
 	end,
-    C = sets:fold(fun ({Id, undefined}, Acc) ->
-			  [ {location, [{href, occi_uri:to_string(Id, Ctx)}], []} | Acc ];
-		      ({_, E}, Acc) ->
-			  [ to_xml(occi_type:type(E), E, Ctx) | Acc ]
-		  end, [], occi_collection:elements(Coll)),
+    C = ordsets:fold(fun ({Id, undefined}, Acc) ->
+			     [ {location, [{href, occi_uri:to_string(Id, Ctx)}], []} | Acc ];
+			 ({_, E}, Acc) ->
+			     [ to_xml(occi_type:type(E), E, Ctx) | Acc ]
+		     end, [], occi_collection:elements(Coll)),
     {collection, A, lists:reverse(C)};
 
 

@@ -83,8 +83,8 @@ init_per_group('netif', Config) ->
 init_per_group('bounded_collection', Config) ->
     Kind = {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>},
     C = occi_collection:new(Kind),
-    R0 = occi_resource:new(<<"resource0">>),
-    R1 = occi_resource:new(<<"resource1">>),
+    R0 = occi_resource:location(<<"/resource0">>, occi_resource:new(<<"resource0">>)),
+    R1 = occi_resource:location(<<"/resource1">>, occi_resource:new(<<"resource1">>)),
     C1 = occi_collection:append([R0, R1], C),
     [ {object, C1}, {ctx, ?ctx} | Config ];
 

@@ -8,6 +8,7 @@
 -module(occi_collection).
 
 -include("occi_type.hrl").
+-include("occi_log.hrl").
 
 -export([new/0,
 	 new/1,
@@ -25,10 +26,10 @@
 	 render/3]).
 
 -type id() :: binary() | occi_category:id().
--type elem() :: {occi_entity:id(), occi_entity:t() | undefined}.
+-type elem() :: {occi_uri:url(), occi_entity:t() | undefined}.
 
 -record(collection, {id                    :: id(),
-		     elements = sets:new() :: sets:set()}).
+		     elements = ordsets:new() :: ordsets:ordset()}).
 
 -type t() :: #collection{}.
 
@@ -37,7 +38,7 @@
 %% @end
 -spec new() -> t().
 new() ->
-    #collection{id=undefined, elements=sets:new()}.
+    #collection{id=undefined, elements=ordsets:new()}.
 
 
 %% @doc Create a new collection.
@@ -46,10 +47,10 @@ new() ->
 %% @end
 -spec new(binary() | occi_category:id()) -> t().
 new(Id) when is_binary(Id) ->
-    #collection{id=Id};
+    #collection{id=Id, elements=ordsets:new()};
 
 new({_Scheme, _Term}=Id) ->
-    #collection{id=Id}.
+    #collection{id=Id, elements=ordsets:new()}.
 
 
 %% @doc Creates a new bounded collection
@@ -70,14 +71,14 @@ id(#collection{id=Id}) ->
 %% @end
 -spec ids(t()) -> [].
 ids(#collection{ elements=Elements }) ->
-    sets:fold(fun ({Id, _}, Acc) ->
-			    [ Id | Acc ]
-		    end, [], Elements).
+    lists:reverse(ordsets:fold(fun ({Id, _}, Acc) ->
+				       [ Id | Acc ]
+			       end, [], Elements)).
 
 
 %% @doc Get all elements
 %% @end
--spec elements(t()) -> sets:set().
+-spec elements(t()) -> ordsets:ordset().
 elements(#collection{ elements=Elements }) ->
     Elements.
 
@@ -86,18 +87,15 @@ elements(#collection{ elements=Elements }) ->
 %% @end
 -spec elements([elem() | occi_entity:id() | occi_entity:t()], t()) -> t().
 elements(Elements, #collection{}=C) ->
-    Elements2 = sets:fold(fun to_elem/2, sets:new(), Elements),
+    Elements2 = lists:reverse(ordsets:fold(fun to_elem/2, ordsets:new(), Elements)),
     C#collection{ elements=Elements2 }.
 
 
 %% @doc Append elements to the collection
 %% @end
--spec append([elem()] | sets:set(), t()) -> t().
-append(NewElements, Coll) when is_list(NewElements) ->
-    append(sets:from_list(NewElements), Coll);
-
+-spec append(ordsets:ordset(), t()) -> t().
 append(NewElements, #collection{ elements=Elements }=C) ->
-    Elements2 = sets:union(sets:fold(fun to_elem/2, sets:new(), NewElements), Elements),
+    Elements2 = ordsets:union(ordsets:fold(fun to_elem/2, ordsets:new(), NewElements), Elements),
     C#collection{ elements=Elements2 }.
 
 
@@ -105,7 +103,7 @@ append(NewElements, #collection{ elements=Elements }=C) ->
 %% @end
 -spec size(t()) -> integer().
 size(#collection{ elements=Elements }) ->
-    sets:size(Elements).
+    ordsets:size(Elements).
 
 
 %% @doc Load collection from iolist
@@ -144,20 +142,26 @@ from_map2(Coll, Map) ->
 		      true ->
 			  [ occi_entity:from_map(Map1) | Acc ];
 		      false ->
-			  [ maps:get(id, Map1) | Acc ]
+			  [ maps:get(location, Map1, maps:get(id, Map1)) | Acc ]
 		  end
 	  end,
     E0 = lists:foldl(Fun, [], maps:get(entities, Map, [])),
     E1 = lists:foldl(Fun, E0, maps:get(resources, Map, [])),
     E2 = lists:foldl(Fun, E1, maps:get(links, Map, [])),
     append(E2, Coll).
-    
 
-to_elem(E, Acc) when is_binary(E) ->
-    sets:add_element({E, undefined}, Acc);
 
-to_elem({Id, _}=E, Acc) when is_binary(Id) ->
-    sets:add_element(E, Acc);
+to_elem(Location, Acc) when is_binary(Location) ->
+    ordsets:add_element({Location, undefined}, Acc);
+
+to_elem({Location, _}=E, Acc) when is_binary(Location) ->
+    ordsets:add_element(E, Acc);
 
 to_elem(E, Acc) when ?is_entity(E) ->
-    sets:add_element({occi_entity:id(E), E}, Acc).
+    Location = case occi_entity:location(E) of
+		   undefined ->
+		       throw({invalid_location, undefined});
+		   L -> 
+		       L
+	       end,
+    ordsets:add_element({Location, E}, Acc).

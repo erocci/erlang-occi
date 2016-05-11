@@ -1,4 +1,4 @@
 {
     "kind": "http://schemas.ogf.org/occi/core#resource",
-    "id": "http://localhost:8080/path/resource1"
+    "id": "resource1"
 }

@@ -37,9 +37,9 @@ render(Categories, Ctx) when ?is_categories(Categories) ->
 	      end, Categories);
 
 render(Coll, Ctx) when ?is_collection(Coll) ->
-    sets:fold(fun ({Id, _}, Acc) ->
-		      [ Acc, occi_uri:to_string(Id, Ctx), $\n ]
-	      end, [], occi_collection:elements(Coll));
+    ordsets:fold(fun ({Id, _}, Acc) ->
+			 [ Acc, occi_uri:to_string(Id, Ctx), $\n ]
+		 end, [], occi_collection:elements(Coll));
 
 render(T, _Ctx) -> 
     throw({bad_type, occi_type:type(T)}).

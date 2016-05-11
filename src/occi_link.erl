@@ -61,7 +61,7 @@ new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
 new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_binary(Id), 
 						     is_binary(Src),
 						     is_binary(Target) ->
-    Link = occi_entity:merge_parents(Kind, {link, Id, occi_kind:id(Kind), [], #{}, #{}, #{}}),
+    Link = occi_entity:merge_parents(Kind, {link, Id, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}),
     set(#{ <<"occi.core.source">> => Src, 
 	   <<"occi.core.source.kind">> => SrcKind,
 	   <<"occi.core.target">> => Target,
@@ -87,9 +87,13 @@ from_map(Kind, Map) ->
 	    L = new(Id, Kind,
 		    maps:get(location, Src), maps:get(kind, Src, undefined), 
 		    maps:get(location, Target), maps:get(kind, Target, undefined)),
+	    L0 = case maps:get(location, Map, undefined) of
+		     undefined -> L;
+		     Location -> occi_entity:location(Location, L)
+		 end,
 	    L1 = lists:foldl(fun (M, Acc1) ->
 				     add_mixin(M, Acc1)
-			     end, L, maps:get(mixins, Map, [])),
+			     end, L0, maps:get(mixins, Map, [])),
 	    Attrs0 = maps:get(attributes, Map, #{}),
 	    occi_entity:set(Attrs0, client, L1)
 	end

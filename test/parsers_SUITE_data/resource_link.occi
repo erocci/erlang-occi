@@ -1,3 +1,3 @@
 category: resource; scheme="http://schemas.ogf.org/occi/core#"; class="kind"
 link: <http://example.org/another_resource1>; rel="http://schemas.ogf.org/occi/core#resource"; self="mylink1"
-x-occi-attribute: occi.core.id="http://example.org:8080/resource1"
+x-occi-attribute: occi.core.id="resource1"

@@ -23,13 +23,17 @@
 	 from_string/2,
 	 to_string/1,
 	 to_string/2,
-	 append_path/2]).
+	 append_path/2,
+	 add_prefix/2,
+	 rm_prefix/2]).
 
 -record(uri, {scheme, user_info, host, port, path, q, frag, raw}).
 
+-type url() :: binary().
+
 -type t() :: #uri{}.
 
--export_type([t/0]).
+-export_type([t/0, url/0]).
 
 %% @doc Parse uri
 %% @end
@@ -110,6 +114,33 @@ append_path(Uri=#uri{path=Path}, NewPath) when is_binary(NewPath) ->
     Stripped = path_strip(Path),
     uri:path(Uri, <<Stripped/binary, $/, NewPath/binary>>).
 
+
+%% @doc Prepend path with prefix
+%% @end
+-spec add_prefix(binary(), binary()) -> binary().
+add_prefix(Prefix, Path) when is_binary(Prefix), is_binary(Prefix) ->
+    filename:join([Prefix, Path]).
+
+
+%% @doc Delete prefix from path
+%% @end
+-spec rm_prefix(binary(), binary()) -> binary().
+rm_prefix(<<>>, Path) ->
+    rm_prefix2(Path);
+
+rm_prefix(<< C, Rest/binary >>, << C, Path/binary >>) when is_binary(Path) ->
+    rm_prefix(Rest, Path);
+
+rm_prefix(Prefix, Path) when is_binary(Prefix), is_binary(Path) ->
+    throw({mismatch, Prefix, Path}).
+
+
+rm_prefix2(<< $/, Rest/binary >>) ->
+    rm_prefix2(Rest);
+
+rm_prefix2(Path) when is_binary(Path) ->
+    Path.
+
 %%%
 %%% Priv
 %%%
@@ -175,5 +206,15 @@ path_strip_test_() ->
      ?_assertMatch(<<"/my/path">>, path_strip(<<"/my/path/">>)),
      ?_assertMatch(<<"/my/path">>, path_strip(<<"/my/path//">>)),
      ?_assertMatch(<<"/my/path">>, path_strip(<<"/my/path">>))
+    ].
+
+add_prefix_test_() ->
+    [
+     ?_assertMatch(<<"/my/prefixed/path">>, add_prefix(<<"/my/prefixed">>, <<"path">>))
+    ].
+
+rm_prefix_test_() ->
+    [
+     ?_assertMatch(<<"path">>, rm_prefix(<<"/my/prefix">>, <<"/my/prefix/path">>))
     ].
 -endif.

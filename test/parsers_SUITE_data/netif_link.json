@@ -1,7 +1,7 @@
 {
     "kind": "http://schemas.ogf.org/occi/infrastructure#networkinterface",
     "mixins": ["http://schemas.ogf.org/occi/infrastructure/networkinterface#ipnetworkinterface"],
-    "id": "/netif1",
+    "id": "netif1",
     "source": {
 	"location": "/compute1"
     },

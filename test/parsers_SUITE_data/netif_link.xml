@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <link xmlns="http://schemas.ogf.org/occi"
-      id="/netif1"
+      id="netif1"
       source="/compute1"
       target="/network1" >
   <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="networkinterface" />
