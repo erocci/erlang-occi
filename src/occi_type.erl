@@ -7,7 +7,8 @@
 
 -module(occi_type).
 
--export([type/1]).
+-export([type/1,
+	 mod/1]).
 
 -type name() :: extension
 	      | categories
@@ -60,3 +61,24 @@ type(T) when is_tuple(T) ->
 
 type(_) ->
     undefined.
+
+
+-spec mod(t()) -> mod().
+mod(T) when is_tuple(T) ->
+    case element(1, T) of
+	extension  -> occi_extension;
+	collection -> occi_collection;
+	category   -> occi_category;
+	kind       -> occi_kind;
+	mixin      -> occi_mixin;
+	action     -> occi_action;
+	attribute  -> occi_attribute;
+	entity     -> occi_entity;
+	resource   -> occi_resource;
+	link       -> occi_link;
+	invoke     -> occi_invoke;
+	Type       -> throw({unsupported_type, Type})
+    end;
+
+mod(_) ->
+    throw({unuspported_type, undefined}).

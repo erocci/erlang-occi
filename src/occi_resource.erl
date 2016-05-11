@@ -12,7 +12,7 @@
 -include("occi_uri.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [from_map/2]},
+-mixin([{occi_entity, except, [from_map/2, change_prefix/3]},
 	occi_type]).
 
 -export([new/1,
@@ -22,6 +22,8 @@
 	 links/2]).
 
 -export([from_map/2]).
+
+-export([change_prefix/3]).
 
 -define(links, 9).
 
@@ -116,6 +118,21 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
     catch error:{badkey, _}=Err ->
 	    throw(Err)
     end.
+
+
+%% @doc Change urls prefix
+%% @end
+-spec change_prefix(occi_uri:prefix_op(), binary(), t()) -> t().
+change_prefix(Op, Prefix, Res) ->
+    Location2 = occi_uri:change_prefix(Op, Prefix, element(?location, Res)),
+    Res2 = location(Location2, Res),
+    Links2 = lists:foldl(fun (Link, Acc) when is_binary(Link) ->
+				 [ occi_uri:change_prefix(Op, Prefix, Link) | Acc ];
+			     (Link, Acc) when ?is_link(Link) ->
+				 [ occi_link:change_prefix(Op, Prefix, Link) | Acc ]
+			 end, [], links(Res2)),
+    links(Links2, Res2).
+    
 
 %%%
 %%% eunit

@@ -41,6 +41,8 @@
 	 update_from_map/2,
 	 render/3]).
 
+-export([change_prefix/3]).
+
 %% Internal (for subtypes)
 -export([merge_parents/2, gen_location/2]).
 
@@ -311,6 +313,18 @@ merge_parents(Kind, E) ->
 				     end, {Attrs0, Actions0}, occi_kind:parents(Kind)),
     E1 = merge_attributes(lists:reverse(Attrs1), element(?attributes, E), element(?values, E), E),
     merge_actions(lists:reverse(Actions1), element(?actions, E1), E1).
+
+
+%% @doc Change prefix urls in entity
+%% @end
+-spec change_prefix(occi_uri:prefix_op(), binary(), t()) -> t().
+change_prefix(Op, Prefix, Entity) ->
+    case element(?class, Entity) of
+	resource ->
+	    occi_resource:change_prefix(Op, Prefix, Entity);
+	link ->
+	    occi_link:change_prefix(Op, Prefix, Entity)
+    end.
 
 
 %%%

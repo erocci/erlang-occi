@@ -24,16 +24,18 @@
 	 to_string/1,
 	 to_string/2,
 	 append_path/2,
+	 change_prefix/3,
 	 add_prefix/2,
 	 rm_prefix/2]).
 
 -record(uri, {scheme, user_info, host, port, path, q, frag, raw}).
 
 -type url() :: binary().
+-type prefix_op() :: add | rm.
 
 -type t() :: #uri{}.
 
--export_type([t/0, url/0]).
+-export_type([t/0, url/0, prefix_op/0]).
 
 %% @doc Parse uri
 %% @end
@@ -113,6 +115,16 @@ append_path(Uri, <<$/, NewPath/binary>>) ->
 append_path(Uri=#uri{path=Path}, NewPath) when is_binary(NewPath) ->
     Stripped = path_strip(Path),
     uri:path(Uri, <<Stripped/binary, $/, NewPath/binary>>).
+
+
+%% @doc Change prefix of url
+%% @end
+-spec change_prefix(prefix_op(), binary(), binary()) -> binary().
+change_prefix(add, Prefix, Path) ->
+    add_prefix(Prefix, Path);
+
+change_prefix(rm, Prefix, Path) ->
+    rm_prefix(Prefix, Path).
 
 
 %% @doc Prepend path with prefix
