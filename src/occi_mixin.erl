@@ -17,7 +17,9 @@
 	 add_apply/2,
 	 applies/1,
 	 add_depend/2,
-	 depends/1]).
+	 depends/1,
+	 tag/1,
+	 tag/2]).
 
 -export([from_map/1]).
 
@@ -32,7 +34,7 @@
 new(Scheme, Term) ->
     M0 = occi_category:new(Scheme, Term, mixin),
     Map = M0#mixin.m,
-    M0#mixin{m = Map#{applies => [], depends => [], actions => #{}, location => undefined} }.
+    M0#mixin{m = Map#{applies => [], depends => [], actions => #{}, location => undefined, tag => false } }.
 
 
 -spec add_apply(binary() | occi_category:id(), t()) -> t().
@@ -64,6 +66,16 @@ add_depend({_Scheme, _Term}=Depend, Mixin) ->
 -spec depends(t()) -> [occi_category:id()].
 depends(M) ->
     ?g(depends, M).
+
+
+-spec tag(t()) -> boolean().
+tag(M) ->
+    ?g(tag, M).
+
+
+-spec tag(boolean(), t()) -> t().
+tag(IsTag, M) when is_boolean(IsTag) ->
+    ?s(tag, IsTag, M).
 
 
 %% @doc Load mixin from an AST
