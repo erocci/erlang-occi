@@ -14,9 +14,9 @@
 	 parse_file/3,
 	 render/3]).
 
--type errors() :: {parse_error, term()}
-		| {unknown_mimetype, term()}
-		| {badkey, atom()}.
+-type error() :: {parse_error, term()}
+	       | {unknown_mimetype, term()}
+	       | {badkey, atom()}.
 
 -type ast_key() :: categories
 		 | attributes
@@ -37,7 +37,7 @@
 
 -type ast() :: #{ ast_key() => ast_value() }.
 
--export_type([ast/0, errors/0]).
+-export_type([ast/0, error/0]).
 
 %% @doc Parse a binary and returns the object using `Mod:from_map/1'
 %% or the provided function.
