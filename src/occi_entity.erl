@@ -104,25 +104,31 @@ mixins(E) ->
 %%
 %% @throws {invalid_category, occi_category:id()}
 %% @end
--spec add_mixin(occi_category:id() | string() | binary(), t()) -> t().
+-spec add_mixin(occi_mixin:t() | occi_category:id() | string() | binary(), t()) -> t().
 add_mixin(MixinId, E) when is_list(MixinId); is_binary(MixinId) ->
     add_mixin(occi_category:parse_id(MixinId), E);
 
-add_mixin(MixinId, E) ->
+add_mixin({_Scheme, _Term}=MixinId, E) ->
     case occi_models:category(MixinId) of
 	undefined ->
 	    throw({invalid_category, MixinId});
 	Mixin ->
-	    merge_mixin(Mixin, setelement(?mixins, E, [ MixinId | element(?mixins, E) ]))
-    end.
+	    add_mixin(Mixin, E)
+    end;
+
+add_mixin(Mixin, E) when ?is_mixin(Mixin) ->
+    merge_mixin(Mixin, setelement(?mixins, E, [ occi_mixin:id(Mixin) | element(?mixins, E) ])).
 
 
 %% @doc Unassociate mixin from this entity
 %% Attributes only defined by this mixin are removed
 %%
 %% @end
--spec rm_mixin(occi_category:id(), t()) -> t().
-rm_mixin(MixinId, E) ->
+-spec rm_mixin(occi_mixin:t() | occi_category:id(), t()) -> t().
+rm_mixin(Mixin, E) when ?is_mixin(Mixin) ->
+    rm_mixin(occi_mixin:id(Mixin), E);
+
+rm_mixin({_Scheme, _Term}=MixinId, E) ->
     Mixins = lists:filter(fun (Id) when Id =:= MixinId -> false;
 			      (_) -> true
 			  end, element(?mixins, E)),
