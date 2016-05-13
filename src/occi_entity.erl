@@ -210,7 +210,7 @@ actions(E) ->
 %% @end
 -spec do(occi_categoy:id(), maps:map(), fun(), t()) -> t().
 do(ActionId, Attributes, Fun, E) when ?is_category_id(ActionId) ->
-    Invoke = occi_action:new(ActionId, Attributes),
+    Invoke = occi_invoke:new(ActionId, Attributes),
     do(Invoke, Fun, E).
 
 

@@ -22,7 +22,6 @@
 
 -export([from_map/1,
 	 from_map/2,
-	 load/3,
 	 render/3]).
 
 -type id() :: binary() | occi_category:id().
@@ -104,13 +103,6 @@ append(NewElements, #collection{ elements=Elements }=C) ->
 -spec size(t()) -> integer().
 size(#collection{ elements=Elements }) ->
     ordsets:size(Elements).
-
-
-%% @doc Load collection from iolist
-%% @end
--spec load(occi_utils:mimetype(), iolist(), occi_ctx:t()) -> t().
-load(Mimetype, Bin, Ctx) ->
-    occi_rendering:load_collection(Mimetype, Bin, Ctx).
 
 
 -spec from_map(occi_rendering:ast()) -> t().
