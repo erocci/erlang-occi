@@ -33,7 +33,7 @@
 -type url() :: binary().
 -type prefix_op() :: add | rm.
 
--type t() :: #uri{}.
+-opaque t() :: #uri{}.
 
 -export_type([t/0, url/0, prefix_op/0]).
 

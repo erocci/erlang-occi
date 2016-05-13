@@ -20,7 +20,7 @@
 -export([from_map/2]).
 
 -record(action, { id :: occi_category:id(), m :: #{} }).
--type t() :: #action{}.
+-opaque t() :: #action{}.
 
 -export_type([t/0]).
 

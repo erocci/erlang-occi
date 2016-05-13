@@ -24,7 +24,9 @@
 		 apply      :: occi_category:id(),
 		 attributes :: maps:map()}).
 
--type t() :: #invoke{}.
+-opaque t() :: #invoke{}.
+
+-export_type([t/0]).
 
 %% @doc Creates a new action invocation
 %% @end

@@ -30,7 +30,9 @@
 -record(collection, {id                    :: id(),
 		     elements = ordsets:new() :: ordsets:ordset()}).
 
--type t() :: #collection{}.
+-opaque t() :: #collection{}.
+
+-export_type([t/0]).
 
 
 %% @doc Create a new collection

@@ -11,18 +11,18 @@
 
 -export([cast/2]).
 
--type spec() :: {enum, [atom()]}
-	      | string
-	      | integer
-	      | float
-	      | uri
-	      | kind
-	      | resource.
+-opaque spec() :: {enum, [atom()]}
+		| string
+		| integer
+		| float
+		| uri
+		| kind
+		| resource.
 
--type t() :: atom()
-	   | string()
-	   | integer()
-	   | float().
+-opaque t() :: atom()
+	     | string()
+	     | integer()
+	     | float().
 
 -export_type([t/0, spec/0]).
 

@@ -60,19 +60,21 @@
 
 %% @doc opaque type representing an entity
 %% @end
--type t() :: entity().
--export_type([t/0]).
+-opaque t() :: entity().
+-type id() :: binary() | undefined.
+
+-export_type([t/0, id/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--spec id(t()) -> binary().
+-spec id(t()) -> id().
 id(E) ->
     element(?id, E).
 
 
--spec id(binary(), t()) -> t().
+-spec id(id(), t()) -> t().
 id(Id, E) ->
     setelement(?id, E, Id).
 

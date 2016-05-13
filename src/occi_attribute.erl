@@ -29,7 +29,7 @@
 -type name_t() :: binary().
 -type type_t() :: occi_base_type:t().
 -type key() :: binary().
--type t() :: #{}.
+-opaque t() :: #{}.
 
 -export_type([t/0, key/0]).
 

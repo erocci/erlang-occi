@@ -26,7 +26,7 @@
 -mixin([occi_type]).
 
 -record(mixin, {id :: occi_category:id(), m :: #{}}).
--type t() :: #mixin{}.
+-opaque t() :: #mixin{}.
 
 -export_type([t/0]).
 

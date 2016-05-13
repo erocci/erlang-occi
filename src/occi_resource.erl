@@ -39,7 +39,7 @@
 		Links      :: list()
 	       }.
 
--type t() :: resource().
+-opaque t() :: resource().
 -export_type([t/0]).
 
 -ifdef(TEST).
@@ -49,13 +49,13 @@
 
 %% @doc Creates a resource with given id, of kind ...core#resource
 %% @end
--spec new(binary()) -> t().
+-spec new(occi_entity:id()) -> t().
 new(Id) ->
     occi_resource:new(Id, ?resource_kind_id).
 
 
 %% @throws {unknown_category, term()}
--spec new(binary(), occi_category:t() | occi_category:id() | string() | binary()) -> t().
+-spec new(occi_entity:id(), occi_category:t() | occi_category:id() | string() | binary()) -> t().
 new(Id, KindId) when is_list(KindId); is_binary(KindId) ->
     new(Id, occi_category:parse_id(KindId));
 

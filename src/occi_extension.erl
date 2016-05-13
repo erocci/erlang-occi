@@ -24,9 +24,10 @@
 
 -mixin([occi_type]).
 
--type id() :: string().
+-type id() :: binary().
 -record(extension, {id :: id(), m :: #{}}).
--type t() :: #extension{}.
+
+-opaque t() :: #extension{}.
 
 -export_type([id/0, t/0]).
 

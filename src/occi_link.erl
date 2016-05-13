@@ -23,7 +23,8 @@
 -export([from_map/2, 
 	 change_prefix/3]).
 
--type t() :: occi_entity:t().
+-opaque t() :: occi_entity:t().
+
 -export_type([t/0]).
 
 -ifdef(TEST).

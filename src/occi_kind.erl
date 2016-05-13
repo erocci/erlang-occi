@@ -25,9 +25,8 @@
 
 -mixin([occi_type]).
 
-
 -record(kind, {id :: occi_category:id(), m :: #{} }).
--type t() :: #kind{}.
+-opaque t() :: #kind{}.
 
 -export_type([t/0]).
 

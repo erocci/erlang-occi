@@ -23,7 +23,7 @@
 -type validation() :: server | client | internal | model.
 -define(is_validation(X), server =:= X orelse client =:= X orelse internal =:= X orelse model =:= X).
 
--type t() :: maps:map().
+-opaque t() :: maps:map().
 
 -export_type([t/0]).
 

@@ -34,7 +34,7 @@
 
 
 -record(category, {id :: id(), m :: #{}}).
--type t() :: #category{}.
+-opaque t() :: #category{}.
 
 -export_type([id/0, class/0, t/0]).
 
