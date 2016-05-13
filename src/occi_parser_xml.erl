@@ -10,7 +10,6 @@
 -include("occi_log.hrl").
 -include("occi_xml.hrl").
 -include("occi_type.hrl").
--include_lib("annotations/include/annotations.hrl").
 -include_lib("xmerl/include/xmerl.hrl").
 
 -export([parse/1]).

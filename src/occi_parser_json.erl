@@ -9,7 +9,6 @@
 
 -include("occi_log.hrl").
 -include("occi_entity.hrl").
--include_lib("annotations/include/annotations.hrl").
 
 -export([parse/1]).
 

@@ -11,7 +11,6 @@
 -module(occi_dl).
 
 -include("occi_log.hrl").
--include_lib("annotations/include/annotations.hrl").
 
 -behaviour(gen_server).
 

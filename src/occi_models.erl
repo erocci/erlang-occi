@@ -12,7 +12,6 @@
 -include("occi.hrl").
 -include("occi_type.hrl").
 -include("occi_log.hrl").
--include_lib("annotations/include/annotations.hrl").
 
 -behaviour(gen_server).
 
@@ -41,9 +40,10 @@
 %% internal
 -define(core_scheme, <<"http://schemas.ogf.org/occi/core#">>).
 
--record category, {id        :: occi_category:id(),
-		   location  :: binary(),
-		   value     :: occi_category:t()}.
+-define(REC, ?MODULE).
+-record ?REC, {id        :: occi_category:id(),
+	       location  :: binary(),
+	       value     :: occi_category:t()}.
 
 
 -ifdef(TEST).
@@ -140,13 +140,13 @@ action(ActionId) ->
 -spec location(binary()) -> occi_category:t() | undefined.
 location(Path) ->
     Fun = fun () ->
-		  mnesia:match_object(#category{_='_', location=Path})
+		  mnesia:match_object(#?REC{_='_', location=Path})
 	  end,		  
     case mnesia:transaction(Fun) of
 	{aborted, Err} -> throw(Err);
 	{atomic, []} -> undefined;
-	{atomic, [#category{value=Category}]} -> Category
-    end.		  
+	{atomic, [#?REC{value=Category}]} -> Category
+    end.
 
 
 %% @doc Return a category
@@ -176,7 +176,7 @@ add_category(Cat) when ?is_category(Cat) ->
 -spec rm_category(occi_category:id()) -> ok.
 rm_category(Id) when ?is_category_id(Id) ->
     Fun = fun () ->
-		  mnesia:delete({category, Id})
+		  mnesia:delete({?REC, Id})
 	  end,
     case mnesia:transaction(Fun) of
 	{atomic, ok} -> ok;
@@ -215,10 +215,10 @@ attributes(CatId) ->
 
 %%% gen_server callbacks
 init([]) ->
-    case mnesia:create_table(category, [{ram_copies, nodes()}, {attributes, record_info(fields, category)}]) of
+    case mnesia:create_table(?REC, [{ram_copies, nodes()}, {attributes, record_info(fields, ?REC)}]) of
 	{atomic, ok} -> 
 	    init_core();
-	{aborted, {already_exists, category}} -> 
+	{aborted, {already_exists, ?REC}} -> 
 	    init_core();
 	{aborted, _} = Err -> 
 	    {stop, Err}
@@ -306,7 +306,7 @@ hash_location2(true, Loc, I) ->
 
 
 exists_location(Loc) ->
-    case mnesia:dirty_match_object(#category{_='_', location=Loc}) of
+    case mnesia:dirty_match_object(#?REC{_='_', location=Loc}) of
 	[] ->  false;
 	_ -> true
     end.
@@ -316,17 +316,17 @@ exists_location(Loc) ->
 %%% Requests functions
 %%%
 categories_t() ->
-    mnesia:foldl(fun (#category{value=Cat}, Acc) ->
+    mnesia:foldl(fun (#?REC{value=Cat}, Acc) ->
 			 [ Cat | Acc ]
-		 end, [], category).
+		 end, [], ?REC).
 
 
 -spec category_t(occi_category:id()) -> occi_category:t() | undefined.
 category_t(Id) ->
-    case mnesia:read(category, Id, read) of
+    case mnesia:read(?REC, Id, read) of
 	[] -> 
 	    undefined;
-	[#category{value=C}] -> 
+	[#?REC{value=C}] -> 
 	    resolve_t(occi_category:class(C), C)
     end.
 
@@ -353,7 +353,7 @@ resolve_t(action, C) ->
 
 
 add_category_t(Cat) ->
-    case mnesia:read(category, occi_category:id(Cat)) of
+    case mnesia:read(?REC, occi_category:id(Cat)) of
 	[] -> 
 	    mnesia:write(category_record_t(Cat));
 	_ ->
@@ -363,12 +363,12 @@ add_category_t(Cat) ->
 
 
 category_record_t(Cat) when ?is_action(Cat) ->
-    #category{id=occi_category:id(Cat), location=undefined, value=Cat};
+    #?REC{id=occi_category:id(Cat), location=undefined, value=Cat};
 
 category_record_t(Cat) ->
     {_Scheme, Term} = occi_category:id(Cat),
     Location = hash_location(Term),
-    #category{id=occi_category:id(Cat), location=Location, value=occi_category:location(Location, Cat)}.
+    #?REC{id=occi_category:id(Cat), location=Location, value=occi_category:location(Location, Cat)}.
 
 
 %%%

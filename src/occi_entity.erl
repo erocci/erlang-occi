@@ -16,7 +16,6 @@
 -include("occi_log.hrl").
 -include("occi_entity.hrl").
 -include("occi_type.hrl").
--include_lib("annotations/include/annotations.hrl").
 
 -export([id/1,
 	 id/2,

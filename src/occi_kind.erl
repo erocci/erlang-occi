@@ -10,7 +10,6 @@
 -include("occi.hrl").
 -include("occi_category.hrl").
 -include_lib("mixer/include/mixer.hrl").
--include_lib("annotations/include/annotations.hrl").
 
 -mixin([{occi_category, except, [new/2]}]).
 

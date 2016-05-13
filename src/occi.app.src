@@ -6,11 +6,19 @@
   {description, "OCCI Core Implementation"},
   {mod, {occi , []}},
   {modules, []},
-  {registered, []},
+  {registered, 
+   [
+    occi_dl,
+    occi_models
+   ]},
   {applications, 
    [ 
      inets,
      ssl,
+     xmerl,
+     uri,
+     uuid,
+     jsx,
      mnesia
    ]},
   {env, [
