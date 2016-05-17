@@ -27,7 +27,7 @@
 
 %% @doc Create new action category
 %% @end
--spec new(Scheme :: string(), Term :: string(), Related :: occi_category:t()) -> t().
+-spec new(Scheme :: binary(), Term :: binary(), Related :: occi_category:t()) -> t().
 new(Scheme, Term, Related) ->
     A = occi_category:new(Scheme, Term, action),
     Map = A#action.m,
@@ -51,10 +51,10 @@ from_map(Related, Map) ->
 	    A = new(Scheme, Term, Related),
 	    A0 = case maps:get(title, Map, undefined) of
 		     undefined -> A;
-		     Title -> title(Title, A)
+		     Title -> occi_category:title(Title, A)
 		 end,
 	    maps:fold(fun (Name, Spec, Acc1) ->
-			      add_attribute(occi_attribute:from_map(Name, {Scheme, Term}, Spec), Acc1)
+			      occi_category:add_attribute(occi_attribute:from_map(Name, {Scheme, Term}, Spec), Acc1)
 		      end, A0, maps:get(attributes, Map, #{}))
 	end
     catch error:{badkey, _}=Err ->

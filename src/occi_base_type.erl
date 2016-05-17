@@ -21,6 +21,7 @@
 
 -opaque t() :: atom()
 	     | string()
+	     | binary()
 	     | integer()
 	     | float().
 

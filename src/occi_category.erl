@@ -44,7 +44,7 @@
 
 
 %% @throws {invalid_cid, term()}
--spec new(Id :: string() | id(), Cls :: class()) -> t().
+-spec new(Id :: binary() | id(), Cls :: class()) -> t().
 new(CatId, Cls) when is_binary(CatId) ->
     new(parse_id(CatId), Cls);
 
