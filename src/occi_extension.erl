@@ -112,7 +112,10 @@ mixins(#extension{m=M}) ->
 %%
 %% WARNING: cycles are forbidden
 %% @end
--spec add_import(string(), t()) -> t().
+-spec add_import(binary() | string(), t()) -> t().
+add_import(Scheme, E) when is_list(Scheme) ->
+    add_import(list_to_binary(Scheme), E);
+
 add_import(Scheme, #extension{m=M}=E) ->
     M2 = M#{ imports := [ Scheme | maps:get(imports, M) ] },
     E#extension{m=M2}.
@@ -132,12 +135,15 @@ from_map(Map) ->
     try begin
 	    E = new(maps:get(scheme, Map)),
 	    E1 = name(maps:get(name, Map, <<>>), E),
-	    E2 = lists:foldl(fun (Map1, Acc1) ->
+	    E2 = lists:foldl(fun (Scheme, Acc0) ->
+				     add_import(Scheme, Acc0)
+			     end, E1, lists:reverse(maps:get(imports, Map, []))),
+	    E3 = lists:foldl(fun (Map1, Acc1) ->
 				     add_category(occi_kind:from_map(Map1), Acc1)
-			     end, E1, maps:get(kinds, Map, [])),
+			     end, E2, maps:get(kinds, Map, [])),
 	    lists:foldl(fun (Map2, Acc2) ->
 				add_category(occi_mixin:from_map(Map2), Acc2)
-			end, E2, maps:get(mixins, Map, []))
+			end, E3, maps:get(mixins, Map, []))
 	end
     catch error:{badkey, _}=Err ->
 	    throw(Err)
