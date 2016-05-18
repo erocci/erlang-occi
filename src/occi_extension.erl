@@ -152,7 +152,7 @@ from_map(Map) ->
 
 %% @doc Render extension into given mimetype
 %% @end
--spec render(occi_utils:mimetype(), t(), occi_ctx:t()) -> iolist().
+-spec render(occi_utils:mimetype(), t(), occi_uri:t()) -> iolist().
 render(Mimetype, E, Ctx) ->
     occi_rendering:render(Mimetype, E, Ctx).
 

@@ -27,7 +27,7 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
--spec render(T :: occi:t(), Ctx :: occi_ctx:t()) -> iolist().
+-spec render(T :: occi:t(), Ctx :: occi_uri:t()) -> iolist().
 render(T, Ctx) ->
     Json = r_type(occi_type:type(T), T, Ctx),
     jsx:encode(Json, [space, {indent, 2}]).

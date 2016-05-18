@@ -79,7 +79,7 @@ from_map(Map) ->
 
 %% @doc Render action invocation into given mimetype
 %% @end
--spec render(occi_utils:mimetype(), t(), occi_ctx:t()) -> iolist().
+-spec render(occi_utils:mimetype(), t(), occi_uri:t()) -> iolist().
 render(Mimetype, I, Ctx) ->
     occi_rendering:render(Mimetype, I, Ctx).
 

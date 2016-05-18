@@ -85,7 +85,7 @@ parse_file(Mimetype, Path, ModOrFun) ->
     end.
 
 
--spec render(occi_utils:mimetype(), occi_type:t(),occi_ctx:t()) -> iolist().
+-spec render(occi_utils:mimetype(), occi_type:t(),occi_uri:t()) -> iolist().
 render(MimeType, T, Ctx) ->
     (renderer(MimeType)):render(T, Ctx).
 

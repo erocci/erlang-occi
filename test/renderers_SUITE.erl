@@ -13,7 +13,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("common_test/include/ct.hrl").
 
--define(ctx, occi_ctx:new(model, <<"http://example.org:8080/">>)).
+-define(ctx, occi_uri:from_string(<<"http://example.org:8080/">>)).
 
 suite() ->
     [{timetrap,{seconds,30}}].

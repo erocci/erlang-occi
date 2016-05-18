@@ -19,7 +19,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--spec render(T :: occi_type:t(), Ctx :: occi_ctx:t()) -> iolist().
+-spec render(T :: occi_type:t(), Ctx :: occi_uri:t()) -> iolist().
 render(T, Ctx) ->
     to_document(occi_type:type(T), T, Ctx).
     

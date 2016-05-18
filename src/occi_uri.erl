@@ -50,7 +50,7 @@ from_string(S) ->
 %% @doc Parse uri, eventually completing with host/port and path's 
 %% prefix from context
 %% @end
--spec from_string(binary() | string(), occi_ctx:t()) -> t().
+-spec from_string(binary() | string(), t()) -> t().
 from_string(Url, Ctx) when is_list(Url) ->
     from_string(list_to_binary(Url) ,Ctx);
 
@@ -60,10 +60,10 @@ from_string(<< "http://", _/binary >> = Url, _Ctx) ->
 from_string(<< "https://", _/binary >> = Url, _Ctx) ->
     uri:from_string(Url);
 
-from_string(<< $/, _/binary >> = Url, #{ url := Ctx }) when ?is_uri(Ctx)  ->
+from_string(<< $/, _/binary >> = Url, Ctx) when ?is_uri(Ctx)  ->
     uri:path(Ctx, Url);
 
-from_string(Url, #{ url := Ctx }) when ?is_uri(Ctx), is_binary(Url)  ->
+from_string(Url, Ctx) when ?is_uri(Ctx), is_binary(Url)  ->
     append_path(Ctx, Url);
 
 from_string(Url, _) ->
@@ -82,17 +82,17 @@ to_string(U) ->
 
 %% @doc Render uri as binary, with a different context
 %% @end
--spec to_string(uri:t(), occi_ctx:t()) -> binary().
+-spec to_string(uri:t(), t()) -> binary().
 to_string(#uri{ scheme = <<"urn">> }=Urn, _Ctx) ->
     to_string(Urn);
 
-to_string(Uri, #{ url := Ctx }) when ?is_uri(Uri), ?is_uri(Ctx) ->
+to_string(Uri, Ctx) when ?is_uri(Uri), ?is_uri(Ctx) ->
     to_string(uri:path(Ctx, uri:path(Uri)));
 
-to_string(<< $/, Path/binary >>, #{ url := Ctx }) when ?is_uri(Ctx) ->
+to_string(<< $/, Path/binary >>, Ctx) when ?is_uri(Ctx) ->
     to_string(uri:path(Ctx, << $/, Path/binary >>));
 
-to_string(Path, #{ url := Ctx }) when is_binary(Path), ?is_uri(Ctx) ->
+to_string(Path, Ctx) when is_binary(Path), ?is_uri(Ctx) ->
     to_string(append_path(Ctx, Path));
 
 to_string(Uri, _) ->
@@ -181,7 +181,7 @@ path_strip2(L) ->
 %%%
 -ifdef(TEST).
 from_string2_test_() ->
-    Ctx = occi_ctx:new(<<"http://localhost:8080/coll">>),
+    Ctx = from_string(<<"http://localhost:8080/coll">>),
     [
      ?_assertMatch(#uri{ raw = <<"http://localhost:8080/coll/myresource">> }, 
 		   from_string(<<"myresource">>, Ctx)),
@@ -190,7 +190,7 @@ from_string2_test_() ->
     ].
 
 to_string2_test_() ->
-    Ctx = occi_ctx:new(<<"http://localhost:8080">>),
+    Ctx = from_string(<<"http://localhost:8080">>),
     [
      ?_assertMatch(<<"http://localhost:8080/myresource">>, 
 		     to_string(from_string(<<"http://example.org/myresource">>), Ctx))
