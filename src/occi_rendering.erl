@@ -93,6 +93,7 @@ render(MimeType, T, Ctx) ->
 %%%
 %%% Priv
 %%%
+parser(<<"*/*">>)                                -> occi_parser_text;
 parser({<<"application">>, <<"xml">>, _})        -> occi_parser_xml;
 parser({<<"application">>, <<"occi+xml">>, _})   -> occi_parser_xml;
 parser(xml)                                      -> occi_parser_xml;
@@ -105,6 +106,7 @@ parser({<<"text">>, <<"occi">>, _})              -> occi_parser_text;
 parser(text)                                     -> occi_parser_text.
 
 
+renderer(<<"*/*">>)                              -> occi_renderer_text;
 renderer({<<"application">>, <<"xml">>, _})      -> occi_renderer_xml;
 renderer({<<"application">>, <<"occi+xml">>, _}) -> occi_renderer_xml;
 renderer(xml)                                    -> occi_renderer_xml;
