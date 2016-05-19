@@ -32,8 +32,8 @@
 render(T, Ctx) ->
     Headers = to_headers(occi_type:type(T), T, orddict:new(), Ctx),
     orddict:fold(fun (K, Values, Acc) ->
-			 Joined = iolist_join(Values, ", "),
-			 [ Acc, "\n", K, ": ", Joined ]
+			 L = [ [ K, ": ", Value, $\n ] || Value <- Values ],
+			 [ Acc, L ]
 		 end, [], Headers).
 
 
