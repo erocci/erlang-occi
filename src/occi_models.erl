@@ -78,7 +78,6 @@ import(E) ->
 
 
 %% @doc Return the list of categories
-%% Categories references (parent, depends, etc) are not resolved
 %%
 %% @end
 -spec categories() -> [occi_category:t()].
@@ -150,8 +149,6 @@ location(Path) ->
 
 
 %% @doc Return a category
-%% Category references (parent, depend, etc) is resolved:
-%% attributes and actions from references are merged into the resulting category
 %%
 %% @end
 -spec category(binary() | occi_category:id()) -> occi_category:t() | undefined.
@@ -317,7 +314,7 @@ exists_location(Loc) ->
 %%%
 categories_t() ->
     mnesia:foldl(fun (#?REC{value=Cat}, Acc) ->
-			 [ Cat | Acc ]
+			 [ resolve_t(occi_category:class(Cat), Cat) | Acc ]
 		 end, [], ?REC).
 
 
@@ -341,7 +338,8 @@ resolve_t(kind, C) ->
 		undefined ->
 		    mnesia:abort({invalid_parent, ParentId});
 		Parent ->
-		    occi_kind:parents([ParentId | occi_kind:parents(Parent) ], C)
+		    Parents = [ParentId | occi_kind:parents(resolve_t(occi_category:class(Parent), Parent)) ],
+		    occi_kind:parents(Parents, C)
 	    end
     end;
 
