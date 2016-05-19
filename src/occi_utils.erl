@@ -75,10 +75,13 @@ mkdir(Dir) ->
 
 
 -spec mimetype(file:filename_all()) -> mimetype().
+mimetype(Path) when is_list(Path) ->
+    mimetype(list_to_binary(Path));
+
 mimetype(Path) ->
     case filename:extension(Path) of
-	".xml" ->
+	<<".xml">> ->
 	    {<<"application">>, <<"xml">>, []};
-	".json" ->
+	<<".json">> ->
 	    {<<"application">>, <<"json">>, []}
     end.
