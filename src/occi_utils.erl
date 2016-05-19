@@ -14,7 +14,8 @@
 	 mkdir/1,
 	 priv_dir/0,
 	 resources_dir/0,
-	 mimetype/1]).
+	 mimetype/1,
+	 normalize_mimetype/1]).
 
 -type mimetype() :: {Type :: binary(), SubType :: binary(), Options :: list()}
 		  | undefined.
@@ -87,3 +88,39 @@ mimetype(Path) ->
 	Ext ->
 	    throw({unknown_mimetype, Ext})
     end.
+
+
+-define(mimetype_plain,    {<<"text">>, <<"occi+plain">>, []}).
+-define(mimetype_plain(V), {<<"text">>, <<"occi+plain">>, V}).
+-define(mimetype_occi,     {<<"text">>, <<"occi">>, []}).
+-define(mimetype_occi(V),  {<<"text">>, <<"occi">>, V}).
+-define(mimetype_uri,      {<<"text">>, <<"uri-list">>, []}).
+-define(mimetype_uri(V),   {<<"text">>, <<"uri-list">>, V}).
+-define(mimetype_xml,      {<<"application">>, <<"occi+xml">>, []}).
+-define(mimetype_xml(V),   {<<"application">>, <<"occi+xml">>, V}).
+-define(mimetype_json,     {<<"application">>, <<"occi+json">>, []}).
+-define(mimetype_json(V),  {<<"application">>, <<"occi+json">>, V}).
+
+
+-spec normalize_mimetype(term()) -> occi_utils:mimetype().
+normalize_mimetype(<<"*/*">>)                                -> ?mimetype_plain;
+normalize_mimetype(<<"application/xml">>)                    -> ?mimetype_xml;
+normalize_mimetype(<<"application/occi+xml">>)               -> ?mimetype_xml;
+normalize_mimetype({<<"application">>, <<"xml">>, V})        -> ?mimetype_xml(V);
+normalize_mimetype({<<"application">>, <<"occi+xml">>, V})   -> ?mimetype_xml(V);
+normalize_mimetype(xml)                                      -> ?mimetype_xml;
+normalize_mimetype(<<"application/json">>)                   -> ?mimetype_json;
+normalize_mimetype(<<"application/occi+json">>)              -> ?mimetype_json;
+normalize_mimetype({<<"application">>, <<"json">>, V})       -> ?mimetype_json(V);
+normalize_mimetype({<<"application">>, <<"occi+json">>, V})  -> ?mimetype_json(V);
+normalize_mimetype(json)                                     -> ?mimetype_json;
+normalize_mimetype(<<"text/plain">>)                         -> ?mimetype_plain;
+normalize_mimetype(<<"text/occi+plain">>)                    -> ?mimetype_plain;
+normalize_mimetype(<<"text/occi">>)                          -> ?mimetype_occi;
+normalize_mimetype({<<"text">>, <<"plain">>, V})             -> ?mimetype_plain(V);
+normalize_mimetype({<<"text">>, <<"occi+plain">>, V})        -> ?mimetype_plain(V);
+normalize_mimetype({<<"text">>, <<"occi">>, V})              -> ?mimetype_occi(V);
+normalize_mimetype(text)                                     -> ?mimetype_plain;
+normalize_mimetype(<<"text/uri-list">>)                      -> ?mimetype_uri;
+normalize_mimetype({<<"text">>, <<"uri-list">>, V})          -> ?mimetype_uri(V);
+normalize_mimetype('uri-list')                               -> ?mimetype_uri.

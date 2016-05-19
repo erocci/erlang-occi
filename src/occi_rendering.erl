@@ -57,7 +57,7 @@
 %% @throws errors()
 -spec parse(occi_utils:mimetype(), iolist(), occi_type:mod() | fun()) -> occi_type:t().
 parse(Mimetype, Data, Fun) when is_function(Fun) ->
-    Ast = (parser(Mimetype)):parse(Data),
+    Ast = (parser(occi_utils:normalize_mimetype(Mimetype))):parse(Data),
     try Fun(Ast)
     catch error:{badkey, _}=Err ->
 	    throw({parse_error, Err})
@@ -90,51 +90,20 @@ parse_file(Mimetype, Path, ModOrFun) ->
 
 
 -spec render(occi_utils:mimetype(), occi_type:t(),occi_uri:t()) -> iolist().
-render(MimeType, T, Ctx) ->
-    (renderer(MimeType)):render(T, Ctx).
-
+render(Mimetype, T, Ctx) ->
+    (renderer(occi_utils:normalize_mimetype(Mimetype))):render(T, Ctx).
 
 %%%
 %%% Priv
 %%%
-parser(<<"*/*">>)                                -> occi_parser_text;
-parser(<<"application/xml">>)                    -> occi_parser_xml;
-parser(<<"application/occi+xml">>)               -> occi_parser_xml;
-parser({<<"application">>, <<"xml">>, _})        -> occi_parser_xml;
 parser({<<"application">>, <<"occi+xml">>, _})   -> occi_parser_xml;
-parser(xml)                                      -> occi_parser_xml;
-parser(<<"application/json">>)                   -> occi_parser_json;
-parser(<<"application/occi+json">>)              -> occi_parser_json;
-parser({<<"application">>, <<"json">>, _})       -> occi_parser_json;
 parser({<<"application">>, <<"occi+json">>, _})  -> occi_parser_json;
-parser(json)                                     -> occi_parser_json;
-parser(<<"text/plain">>)                         -> occi_parser_text;
-parser(<<"text/occi+plain">>)                    -> occi_parser_text;
-parser(<<"text/occi">>)                          -> occi_parser_text;
-parser({<<"text">>, <<"plain">>, _})             -> occi_parser_text;
 parser({<<"text">>, <<"occi+plain">>, _})        -> occi_parser_text;
-parser({<<"text">>, <<"occi">>, _})              -> occi_parser_text;
-parser(text)                                     -> occi_parser_text.
+parser({<<"text">>, <<"occi">>, _})              -> occi_parser_text.
 
 
-renderer(<<"*/*">>)                              -> occi_renderer_text;
-renderer(<<"application/xml">>)                  -> occi_renderer_xml;
-renderer(<<"application/occi+xml">>)             -> occi_renderer_xml;
-renderer({<<"application">>, <<"xml">>, _})      -> occi_renderer_xml;
 renderer({<<"application">>, <<"occi+xml">>, _}) -> occi_renderer_xml;
-renderer(xml)                                    -> occi_renderer_xml;
-renderer(<<"application/json">>)                 -> occi_renderer_json;
-renderer(<<"application/occi+json">>)            -> occi_renderer_json;
-renderer({<<"application">>, <<"json">>, _})     -> occi_renderer_json;
 renderer({<<"application">>, <<"occi+json">>, _})-> occi_renderer_json;
-renderer(json)                                   -> occi_renderer_json;
-renderer(<<"text/plain">>)                       -> occi_renderer_text;
-renderer(<<"text/occi+plain">>)                  -> occi_renderer_text;
-renderer(<<"text/occi">>)                        -> occi_renderer_text;
-renderer({<<"text">>, <<"plain">>, _})           -> occi_renderer_text;
 renderer({<<"text">>, <<"occi+plain">>, _})      -> occi_renderer_text;
 renderer({<<"text">>, <<"occi">>, _})            -> occi_renderer_text;
-renderer(text)                                   -> occi_renderer_text;
-renderer(<<"text/uri-list">>)                    -> occi_renderer_uri;
-renderer({<<"text">>, <<"uri-list">>, _})        -> occi_renderer_uri;
-renderer('uri-list')                             -> occi_renderer_uri.
+renderer({<<"text">>, <<"uri-list">>, _})        -> occi_renderer_uri.
