@@ -106,7 +106,7 @@ from_map(Map) ->
 		 end,
 	    K2 = maps:fold(fun (Name, Spec, Acc1) ->
 				   add_attribute(occi_attribute:from_map(Name, {Scheme, Term}, Spec), Acc1)
-			   end, K1, maps:get(attributes, Map, [])),
+			   end, K1, maps:get(attributes, Map, #{})),
 	    K3 = lists:foldl(fun (Map2, Acc2) ->
 				     add_action(occi_action:from_map({Scheme, Term}, Map2), Acc2)
 			     end, K2, maps:get(actions, Map, [])),
