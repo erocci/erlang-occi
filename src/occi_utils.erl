@@ -83,5 +83,7 @@ mimetype(Path) ->
 	<<".xml">> ->
 	    {<<"application">>, <<"xml">>, []};
 	<<".json">> ->
-	    {<<"application">>, <<"json">>, []}
+	    {<<"application">>, <<"json">>, []};
+	Ext ->
+	    throw({unknown_mimetype, Ext})
     end.
