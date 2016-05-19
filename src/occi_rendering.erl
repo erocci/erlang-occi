@@ -58,10 +58,14 @@
 -spec parse(occi_utils:mimetype(), iolist(), occi_type:mod() | fun()) -> occi_type:t().
 parse(Mimetype, Data, Fun) when is_function(Fun) ->
     Ast = (parser(Mimetype)):parse(Data),
-    Fun(Ast);
+    try Fun(Ast)
+    catch error:{badkey, _}=Err ->
+	    throw({parse_error, Err})
+    end;
 
 parse(Mimetype, Data, Mod) when ?is_occi_mod(Mod) ->
-    Mod:from_map((parser(Mimetype)):parse(Data)).
+    Fun = fun (Ast) -> Mod:from_map(Ast) end,
+    parse(Mimetype, Data, Fun).
 
 
 %% @doc Parse file and return an OCCI type

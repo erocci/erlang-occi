@@ -331,16 +331,16 @@ category_t(Id) ->
 -spec resolve_t(occi_category:class(), occi_category:t()) -> occi_category:t().
 resolve_t(kind, C) ->
     case occi_kind:parent(C) of
-	undefined ->
-	    C;
-	ParentId ->
-	    case category_t(ParentId) of
-		undefined ->
-		    mnesia:abort({invalid_parent, ParentId});
-		Parent ->
-		    Parents = [ParentId | occi_kind:parents(resolve_t(occi_category:class(Parent), Parent)) ],
-		    occi_kind:parents(Parents, C)
-	    end
+    	undefined ->
+    	    C;
+    	ParentId ->
+    	    case category_t(ParentId) of
+    		undefined ->
+    		    mnesia:abort({invalid_parent, ParentId});
+    		Parent ->
+    		    Parents = [ParentId | occi_kind:parents(resolve_t(occi_category:class(Parent), Parent)) ],
+    		    occi_kind:parents(Parents, C)
+    	    end
     end;
 
 resolve_t(mixin, C) ->
