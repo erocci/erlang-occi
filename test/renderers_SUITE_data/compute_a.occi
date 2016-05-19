@@ -1,3 +1,13 @@
-category: compute; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind, debian6; scheme="http://occi.example.org/occi/infrastructure/os_tpl#"; class=mixin
-link: <http://example.org:8080/ns1/mycompute0?action=restart>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#restart", <http://example.org:8080/ns1/mycompute0?action=start>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#start", <http://example.org:8080/ns1/mycompute0?action=stop>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#stop", <http://example.org:8080/ns1/mycompute0?action=suspend>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#suspend"
-x-occi-attribute: occi.compute.cores=4, occi.compute.hostname="mycompute", occi.compute.memory=2.50000, occi.compute.speed=4.50000, occi.compute.state="inactive", occi.core.title="My super compute", occi.core.id="http://example.org:8080/ns1/mycompute0"
+category: compute; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind
+category: debian6; scheme="http://occi.example.org/occi/infrastructure/os_tpl#"; class=mixin
+link: <http://example.org:8080/ns1/mycompute0?action=restart>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#restart"
+link: <http://example.org:8080/ns1/mycompute0?action=start>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#start"
+link: <http://example.org:8080/ns1/mycompute0?action=stop>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#stop"
+link: <http://example.org:8080/ns1/mycompute0?action=suspend>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#suspend"
+x-occi-attribute: occi.compute.cores=4
+x-occi-attribute: occi.compute.hostname="mycompute"
+x-occi-attribute: occi.compute.memory=2.50000
+x-occi-attribute: occi.compute.speed=4.50000
+x-occi-attribute: occi.compute.state="inactive"
+x-occi-attribute: occi.core.title="My super compute"
+x-occi-attribute: occi.core.id="http://example.org:8080/ns1/mycompute0"
