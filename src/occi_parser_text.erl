@@ -25,10 +25,10 @@ parse(Bin) ->
 %%% Parsers
 %%%
 validate('category', V, Acc) ->
-    lists:foldl(fun val_category/2, Acc, p_categories(V, []));
+    lists:foldl(fun val_category/2, Acc, p_categories(eat_ws(V), []));
 
 validate('x-occi-attribute', V, Acc) ->
-    lists:foldl(fun val_attribute/2, Acc, p_attributes(V, []));
+    lists:foldl(fun val_attribute/2, Acc, p_attributes(eat_ws(V), []));
 
 validate('link', V, Acc) ->
     lists:foldl(fun ({link, Map}, Acc1) ->
@@ -38,10 +38,10 @@ validate('link', V, Acc) ->
 				    false -> Link#{ kind => ?link_kind_id }
 				end,
 			Acc#{ links => [ Link1 | maps:get(links, Acc1, []) ] }
-		end, Acc, p_links(V, []));
+		end, Acc, p_links(eat_ws(V), []));
 
 validate('x-occi-location', V, Acc) ->
-    lists:foldl(fun val_location/2, Acc, p_locations(V, [])).
+    lists:foldl(fun val_location/2, Acc, p_locations(eat_ws(V), [])).
 
 
 val_category({category, #{ class := action }=Cat}, Acc) ->
@@ -466,8 +466,11 @@ p_location2(<< C, Rest/binary >>, Acc) ->
 p_location3(<<>>, Acc) ->
     {location, Acc, <<>>};
 
+p_location3(<< $\s, Rest/binary >>, Acc) ->
+    p_location3(Rest, Acc);
+
 p_location3(<< $;, Rest/binary >>, Acc) ->
-    {location, Acc, Rest};
+    {location, Acc, eat_ws(Rest)};
 
 p_location3(<< C, _Rest/binary >>, _Acc) ->
     throw({parse_error, {location, C}}).
