@@ -117,6 +117,13 @@ init_per_group('user_mixin', Config) ->
 	  end,
     [ {check, Fun}, {occi_type, occi_mixin} | Config ];
 
+init_per_group('user_mixin_b', Config) ->
+    Fun = fun(M)  ->
+		  ?assertMatch({<<"http://example.org/occi/my_stuff#">>, <<"stufik">>},
+			       occi_mixin:id(M))
+	  end,
+    [ {check, Fun}, {occi_type, occi_mixin} | Config ];
+
 init_per_group('collection', Config) ->
     Fun = fun(C)  ->
 		  ?assertMatch([<<"/resource0">>, <<"/resource1">>],
@@ -158,6 +165,7 @@ groups() ->
     ,{'compute_a_comma',   [], [parse_text]}
     ,{'netif_link',        [], [parse_xml, parse_text, parse_json]}
     ,{'user_mixin',        [], [parse_xml, parse_json, parse_text]}
+    ,{'user_mixin_b',      [], [parse_text]}
     ,{'collection',        [], [parse_xml, parse_json, parse_text]}
     ,{'invoke',            [], [parse_xml, parse_json, parse_text]}
     ].
