@@ -10,4 +10,4 @@ x-occi-attribute: occi.compute.memory=2.50000
 x-occi-attribute: occi.compute.speed=4.50000
 x-occi-attribute: occi.compute.state="inactive"
 x-occi-attribute: occi.core.title="My super compute"
-x-occi-attribute: occi.core.id="http://example.org:8080/ns1/mycompute0"
+x-occi-attribute: occi.core.id="ns1/mycompute0"

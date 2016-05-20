@@ -6,4 +6,4 @@ link: <http://example.org:8080/ns1/mycompute0?action=stop>; rel="http://schemas.
 link: <http://example.org:8080/ns1/mycompute0?action=suspend>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#suspend"
 x-occi-attribute: occi.compute.cores=4
 x-occi-attribute: occi.compute.state="inactive"
-x-occi-attribute: occi.core.id="http://example.org:8080/ns1/mycompute0"
+x-occi-attribute: occi.core.id="ns1/mycompute0"

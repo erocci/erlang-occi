@@ -37,9 +37,10 @@ init_per_group('categories', Config) ->
     [ {object, Object}, {ctx, ?ctx} | Config ];
 
 init_per_group('core_resource', Config) ->
-    Id = occi_uri:from_string(<<"myresource">>, ?ctx),
-    Object = occi_resource:new(Id, {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>}),
-    [ {object, Object}, {ctx, ?ctx} | Config ];
+    Id = <<"myresource">>,
+    R0 = occi_resource:new(Id, {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>}),
+    R1 = occi_resource:location(<< $/, Id/binary >>, R0),
+    [ {object, R1}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_a', Config) ->
     Id = <<"ns1/mycompute0">>,
@@ -50,7 +51,8 @@ init_per_group('compute_a', Config) ->
 			      <<"occi.compute.hostname">> => <<"mycompute">>,
 			      <<"occi.compute.speed">> => 4.5,
 			      <<"occi.compute.memory">> => 2.5 }, client, R0),
-    [ {object, R1}, {ctx, ?ctx} | Config ];
+    R2 = occi_resource:location(<< $/, Id/binary >>, R1),
+    [ {object, R2}, {ctx, ?ctx} | Config ];
 
 init_per_group('compute_b', Config) ->
     RId = <<"ns1/mycompute0">>,
@@ -62,7 +64,8 @@ init_per_group('compute_b', Config) ->
 		      <<"network0">>, undefined),
     R1 = occi_resource:add_link(L, R),
     R2 = occi_resource:set(#{ <<"occi.compute.cores">> => 4 }, client, R1),
-    [ {object, R2}, {ctx, ?ctx} | Config ];
+    R3 = occi_resource:location(<< $/, RId/binary >>, R2),
+    [ {object, R3}, {ctx, ?ctx} | Config ];
 
 init_per_group('netif', Config) ->
     Id = <<"myif">>,
@@ -78,7 +81,8 @@ init_per_group('netif', Config) ->
 			  <<"occi.networkinterface.mac">> => <<"00:11:22:33:44:55">>,
 			  <<"occi.networkinterface.address">> => <<"192.168.0.1">>,
 			  <<"occi.networkinterface.allocation">> => <<"static">>}, client, L0),
-    [ {object, L1}, {ctx, ?ctx} | Config ];
+    L2 = occi_link:location(<< $/, Id/binary >>, L1),
+    [ {object, L2}, {ctx, ?ctx} | Config ];
 
 init_per_group('bounded_collection', Config) ->
     Kind = {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>},
