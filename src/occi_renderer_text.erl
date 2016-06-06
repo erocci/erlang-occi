@@ -93,7 +93,11 @@ to_headers(kind, Kind, Headers, Ctx) ->
 	     [] -> C2;
 	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
 	 end,
-    append("category", C3, Headers);
+    C4 = case r_action_list(occi_kind:actions(Kind), []) of
+	     [] -> C3;
+	     Actions -> [C3, "; actions=\"", Actions, "\""]
+	 end,
+    append("category", C4, Headers);
 
 to_headers(mixin, Mixin, Headers, Ctx) ->
     {Scheme, Term} = occi_mixin:id(Mixin),
@@ -183,6 +187,14 @@ r_attribute_defs([ Attr | Tail ], Acc) ->
 	       _ -> [ Def, "{", string:join(Props1, " "), "}" ]
 	   end,
     r_attribute_defs(Tail, [ Def1 | Acc ]).
+
+
+r_action_list([], Acc) ->
+    iolist_join(Acc, " ");
+
+r_action_list([ Action | Tail ], Acc) ->
+    {Scheme, Term} = occi_action:id(Action),
+    r_action_list(Tail, [ [Scheme, Term] | Acc ]).
 
 
 r_category_id(Class, {Scheme, Term}) ->
