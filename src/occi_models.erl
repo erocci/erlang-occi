@@ -15,7 +15,8 @@
 
 -behaviour(gen_server).
 
--export([start_link/0]).
+-export([start_link/0,
+	 init_mnesia/0]).
 
 -export([import/1,
 	 categories/0,
@@ -212,6 +213,10 @@ attributes(CatId) ->
 
 %%% gen_server callbacks
 init([]) ->
+    {ok, undefined}.
+
+
+init_mnesia() ->
     case mnesia:create_table(?REC, [{ram_copies, nodes()}, {attributes, record_info(fields, ?REC)}]) of
 	{atomic, ok} -> 
 	    init_core();
@@ -224,8 +229,8 @@ init([]) ->
 
 init_core() ->
     case load_imports([?core_scheme], []) of
-	{ok, _Categories} -> {ok, undefined};
-	{error, Err} -> {stop, Err}
+	{ok, _Categories} -> ok;
+	{error, _}=Err -> Err
     end.
 
 

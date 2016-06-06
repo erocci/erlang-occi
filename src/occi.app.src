@@ -11,6 +11,7 @@
     occi_dl,
     occi_models
    ]},
+  {start_phases, [{mnesia, []}]},
   {applications, 
    [ 
      inets,
