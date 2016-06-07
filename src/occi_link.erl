@@ -10,6 +10,7 @@
 -include("occi.hrl").
 -include("occi_uri.hrl").
 -include("occi_entity.hrl").
+-include("occi_log.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
 -mixin([{occi_entity, except, [from_map/2, change_prefix/3]},
@@ -49,7 +50,7 @@ new(Id, KindId, Src, Target) when ?is_uri(Id),
 
 %% @doc Creates a new link
 %% @end
--spec new(uri:t(), occi_category:id() | binary(), 
+-spec new(occi_uri:url() | undefined, occi_category:id() | binary(), 
 	  binary(), 
 	  occi_category:id(),
 	  binary(),
@@ -60,8 +61,7 @@ new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_binary(KindId) ->
 new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
     new(Id, occi_models:kind(link, KindId), Src, SrcKind, Target, TargetKind);
 
-new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_binary(Src),
-						     is_binary(Target) ->
+new(Id, Kind, Src, SrcKind, Target, TargetKind) ->
     Link = occi_entity:merge_parents(Kind, {link, Id, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}),
     set(#{ <<"occi.core.source">> => Src, 
 	   <<"occi.core.source.kind">> => SrcKind,

@@ -115,15 +115,15 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
 
 
 add_link_from_map(LinkMap, Acc, Id, Kind) ->
-    LinkMap2 = case maps:is_key(source, LinkMap) of
-		   true -> 
-		       LinkMap;
-		   false ->
-		       LinkMap#{ source => #{ location => Id,
-					      kind => occi_kind:id(Kind) } }
-	       end,
-    add_link(occi_link:from_map(LinkMap2), Acc).    
-
+    Src0 = maps:get(source, LinkMap, #{ kind => occi_kind:id(Kind) }),
+    Src = case maps:get(location, Src0, undefined) of
+	      undefined ->
+		  Src0#{ location => Id };
+	      _Else ->
+		  Src0
+	  end,
+    Link = occi_link:from_map(LinkMap#{ source => Src }),
+    add_link(Link, Acc).
 
 %% @doc Change urls prefix
 %% @end
