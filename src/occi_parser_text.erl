@@ -358,14 +358,14 @@ p_value(Bin, rel) ->
 
 p_value(Bin, self) ->
     {qs, Self, Rest} = p_qs(Bin, $", $"),
-    {self, Self, Rest};
+    p_value3(Rest, self, Self);
 
 p_value(Bin, scheme) ->
     p_scheme(Bin);
 
 p_value(Bin, title) ->
     {qs, S, Rest} = p_qs(Bin, $", $"),
-    {title, S, Rest};
+    p_value3(Rest, title, S);
 
 p_value(Bin, Key) ->
     p_value2(Bin, Key).
@@ -412,6 +412,16 @@ p_value2(<< C, Rest/binary >>, Key) when ?is_alpha(C) ->
 
 p_value2(<< C, _Rest/binary >>, _Key) ->
     throw({parse_error, {value, C}}).
+
+
+p_value3(<< $;, Rest/binary >>, Key, Value) ->
+    {Key, Value, eat_ws(Rest)};
+
+p_value3(<<>>, Key, Value) ->
+    {Key, Value, <<>>};
+
+p_value3(Rest, Key, Value) ->
+    {Key, Value, Rest}.
 
 
 p_location_value(<<>>) ->

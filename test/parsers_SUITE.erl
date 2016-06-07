@@ -140,6 +140,13 @@ init_per_group('invoke', Config) ->
 	  end,
     [ {check, Fun}, {occi_type, occi_invoke} | Config ];
 
+init_per_group('invoke_b', Config) ->
+    Fun = fun(Action)  ->
+		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure/compute/action#">>, <<"start">>},
+			       occi_invoke:id(Action))
+	  end,
+    [ {check, Fun}, {occi_type, occi_invoke} | Config ];
+
 init_per_group(_, Config) ->
     Config.
 
@@ -168,6 +175,7 @@ groups() ->
     ,{'user_mixin_b',      [], [parse_text]}
     ,{'collection',        [], [parse_xml, parse_json, parse_text]}
     ,{'invoke',            [], [parse_xml, parse_json, parse_text]}
+    ,{'invoke_b',          [], [parse_text]}
     ].
 
 
@@ -182,6 +190,7 @@ all() ->
     ,{group, 'user_mixin'}
     ,{group, 'collection'}
     ,{group, 'invoke'}
+    ,{group, 'invoke_b'}
     ].
 
 
