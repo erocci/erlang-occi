@@ -10,6 +10,7 @@
 -include("occi.hrl").
 -include("occi_entity.hrl").
 -include("occi_uri.hrl").
+-include("occi_log.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
 -mixin([{occi_entity, except, [from_map/2, change_prefix/3]},
@@ -102,15 +103,8 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
 	    R1 = lists:foldl(fun (M, Acc1) ->
 				     add_mixin(M, Acc1)
 			     end, R0, maps:get(mixins, Map, [])),
-	    R2 = lists:foldl(fun (Map2, Acc2) ->
-				     Map3 = case maps:is_key(source, Map2) of
-						true -> 
-						    Map2;
-						false ->
-						    Map2#{ source => #{ location => Id,
-									kind => occi_kind:id(Kind) } }
-					    end,
-				     add_link(occi_link:from_map(Map3), Acc2)
+	    R2 = lists:foldl(fun (LinkMap, Acc2) ->
+				     add_link_from_map(LinkMap, Acc2, Id, Kind)
 			     end, R1, maps:get(links, Map, [])),
 	    Attrs0 = maps:get(attributes, Map, #{}),
 	    occi_entity:set(Attrs0, client, R2)
@@ -118,6 +112,17 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
     catch error:{badkey, _}=Err ->
 	    throw(Err)
     end.
+
+
+add_link_from_map(LinkMap, Acc, Id, Kind) ->
+    LinkMap2 = case maps:is_key(source, LinkMap) of
+		   true -> 
+		       LinkMap;
+		   false ->
+		       LinkMap#{ source => #{ location => Id,
+					      kind => occi_kind:id(Kind) } }
+	       end,
+    add_link(occi_link:from_map(LinkMap2), Acc).    
 
 
 %% @doc Change urls prefix

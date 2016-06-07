@@ -31,17 +31,26 @@ validate('x-occi-attribute', V, Acc) ->
     lists:foldl(fun val_attribute/2, Acc, p_attributes(eat_ws(V), []));
 
 validate('link', V, Acc) ->
-    lists:foldl(fun ({link, Map}, Acc1) ->
-			Link = maps:fold(fun val_link/3, #{}, Map),
-			Link1 = case maps:is_key(kind, Link) of
-				    true -> Link;
-				    false -> Link#{ kind => ?link_kind_id }
-				end,
-			Acc#{ links => [ Link1 | maps:get(links, Acc1, []) ] }
-		end, Acc, p_links(eat_ws(V), []));
+    lists:foldl(fun add_link_or_action/2, Acc, p_links(eat_ws(V), []));
 
 validate('x-occi-location', V, Acc) ->
     lists:foldl(fun val_location/2, Acc, p_locations(eat_ws(V), [])).
+
+
+add_link_or_action({link, Map}, Acc) ->
+    [RelBin] = maps:get(rel, Map),
+    Rel = occi_category:parse_id(RelBin),
+    case occi_category:class(occi_models:category(Rel)) of
+	action ->
+	    Acc#{ actions => [ Rel | maps:get(actions, Acc, []) ] };
+	_ ->
+	    Link = maps:fold(fun val_link/3, #{}, Map),
+	    Link1 = case maps:is_key(kind, Link) of
+			true -> Link;
+			false -> Link#{ kind => ?link_kind_id }
+		    end,
+	    Acc#{ links => [ Link1 | maps:get(links, Acc, []) ] }
+    end.
 
 
 val_category({category, #{ class := action }=Cat}, Acc) ->
