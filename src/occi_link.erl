@@ -60,8 +60,7 @@ new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_binary(KindId) ->
 new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
     new(Id, occi_models:kind(link, KindId), Src, SrcKind, Target, TargetKind);
 
-new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_binary(Id), 
-						     is_binary(Src),
+new(Id, Kind, Src, SrcKind, Target, TargetKind) when is_binary(Src),
 						     is_binary(Target) ->
     Link = occi_entity:merge_parents(Kind, {link, Id, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}),
     set(#{ <<"occi.core.source">> => Src, 
