@@ -354,7 +354,7 @@ p_value(Bin, actions) ->
     {actions, Actions, Rest};
 
 p_value(Bin, category) ->
-    p_link_type(eat_ws(Bin), <<>>, []);
+    p_link_type(eat_ws(Bin));
 
 p_value(Bin, class) ->
     p_class(Bin);
@@ -565,18 +565,34 @@ p_scheme3(<< C, _Rest/binary >>, _Uri) ->
     throw({parse_error, {scheme, C}}).
 
 
+p_link_type(<< $", Rest/binary >>) ->
+    p_link_type(Rest, <<>>, []);
+
+p_link_type(<< C, _Rest/binary >>) ->
+    throw({parse_error, {invalid_link_type, C}}).
+
+
 p_link_type(<<>>, <<>>, []) ->
     throw({parse_error, {'link-type', <<>>}});
-
-p_link_type(<<>>, Acc, Categories) ->
-    {category, lists:reverse([ Acc | Categories ]), <<>>};
 
 p_link_type(<< $\s, Rest/binary >>, Acc, Categories) ->
     p_link_type(eat_ws(Rest), <<>>, [ Acc | Categories ]);
 
+p_link_type(<< $", Rest/binary >>, Acc, Categories) ->
+    p_link_type2(eat_ws(Rest), lists:reverse([Acc | Categories]));
+
 p_link_type(<< C, Rest/binary >>, Acc, Categories) ->
     p_link_type(Rest, << Acc/binary, C >>, Categories).
 
+
+p_link_type2(<<>>, Categories) ->
+    {category, Categories, <<>>};
+
+p_link_type2(<< $;, Rest/binary >>, Categories) ->
+    {category, Categories, eat_ws(Rest)};
+
+p_link_type2(<< C, _Rest/binary >>, _) ->
+    throw({parse_error, {invalid_link_type, C}}).
 
 p_number(<<>>, Acc) ->
     {integer, binary_to_integer(Acc), <<>>};
@@ -794,17 +810,21 @@ filter_categories([], Kind, Mixins) ->
     {Kind, Mixins};
 
 filter_categories([ Id | Tail ], KindAcc, MixinsAcc) ->
-    Category = occi_models:category(Id),
-    case occi_category:class(Category) of
-	kind ->
-	    AddKind = fun (Kind, undefined) ->
-			      Kind;
-			  (Kind, _) ->
-			      throw({parse_error, {kind_already_defined, Kind}})
-		      end,
-	    filter_categories(Tail, AddKind(Category, KindAcc), MixinsAcc);
-	mixin ->
-	    filter_categories(Tail, KindAcc, [ Id | MixinsAcc ])
+    case occi_models:category(Id) of
+	undefined ->
+	    throw({parse_error, {unknown_category, Id}});
+	Category ->
+	    case occi_category:class(Category) of
+		kind ->
+		    AddKind = fun (Kind, undefined) ->
+				      Kind;
+				  (Kind, _) ->
+				      throw({parse_error, {kind_already_defined, Kind}})
+			      end,
+		    filter_categories(Tail, AddKind(Category, KindAcc), MixinsAcc);
+		mixin ->
+		    filter_categories(Tail, KindAcc, [ Id | MixinsAcc ])
+	    end
     end.
 
 %%%
