@@ -821,7 +821,7 @@ filter_categories([ Id | Tail ], KindAcc, MixinsAcc) ->
 				  (Kind, _) ->
 				      throw({parse_error, {kind_already_defined, Kind}})
 			      end,
-		    filter_categories(Tail, AddKind(Category, KindAcc), MixinsAcc);
+		    filter_categories(Tail, AddKind(Id, KindAcc), MixinsAcc);
 		mixin ->
 		    filter_categories(Tail, KindAcc, [ Id | MixinsAcc ])
 	    end
