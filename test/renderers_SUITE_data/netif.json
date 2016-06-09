@@ -5,7 +5,7 @@
     "occi.networkinterface.interface": "eth0",
     "occi.networkinterface.mac": "00:11:22:33:44:55"
   },
-  "id": "http://example.org:8080/myif",
+  "id": "myif",
   "kind": "http://schemas.ogf.org/occi/infrastructure#networkinterface",
   "mixins": [
     "http://schemas.ogf.org/occi/infrastructure/networkinterface#ipnetworkinterface"

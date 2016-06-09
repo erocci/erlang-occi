@@ -70,8 +70,8 @@ r_type(categories, Categories, Ctx) ->
     end;
 
 r_type(collection, Coll, Ctx) ->
-    SplitFun = fun ({Id, undefined}, Acc) ->
-		       Entity = #{ id => occi_uri:to_string(Id, Ctx) },
+    SplitFun = fun ({Location, undefined}, Acc) ->
+		       Entity = #{ location => occi_uri:to_string(Location, Ctx) },
 		       Acc#{ entities => [ Entity | maps:get(entities, Acc, []) ] };
 		   ({_, E}, Acc) ->
 		       case occi_type:type(E) of
@@ -228,14 +228,14 @@ r_attr_type(resource) ->
 
 r_link(L, Ctx) ->
     M = r_entity(L, Ctx),
-    M#{ id => occi_uri:to_string(occi_resource:id(L), Ctx),
+    M#{ id => occi_resource:id(L),
 	source => r_link_end(occi_link:get(<<"occi.core.source">>, L), 
 			     occi_link:get(<<"occi.core.source.kind">>, L), Ctx),
 	target => r_link_end(occi_link:get(<<"occi.core.target">>, L), 
 			     occi_link:get(<<"occi.core.target.kind">>, L), Ctx) }.
 
 
-r_entity(E, Ctx) ->
+r_entity(E, _Ctx) ->
     M = #{ kind => r_type_id(occi_entity:kind(E)) },
     M1 = case occi_entity:mixins(E) of
 	     [] -> M;
@@ -252,7 +252,7 @@ r_entity(E, Ctx) ->
 	     Actions -> 
 		 M2#{ actions => [ r_type_id(Action) || Action <- Actions ] }
 	 end,
-    M4 = M3#{ id => occi_uri:to_string(occi_entity:id(E), Ctx) },
+    M4 = M3#{ id => occi_entity:id(E) },
     case occi_link:get(<<"occi.core.title">>, E) of
 	undefined -> M4;
 	Title -> M4#{ title => r_string(Title) }
