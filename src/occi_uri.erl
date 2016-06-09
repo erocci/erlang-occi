@@ -18,15 +18,11 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--export([urn/1, path_strip/1,
-	 from_string/1,
-	 from_string/2,
+-export([from_string/1,
 	 to_string/1,
 	 to_string/2,
-	 append_path/2,
 	 change_prefix/3,
-	 add_prefix/2,
-	 rm_prefix/2]).
+	 canonical/1]).
 
 -record(uri, {scheme, user_info, host, port, path, q, frag, raw}).
 
@@ -47,28 +43,29 @@ from_string(S) ->
     uri:from_string(S).
 
 
-%% @doc Parse uri, eventually completing with host/port and path's 
-%% prefix from context
+%% @doc Make uri canonical: add default port if necessary
 %% @end
--spec from_string(binary() | string(), t()) -> t().
-from_string(Url, Ctx) when is_list(Url) ->
-    from_string(list_to_binary(Url) ,Ctx);
+-spec canonical(url()) -> url().
+canonical(<< $/, _/binary >> =Bin) ->
+    Bin;
 
-from_string(<< "http://", _/binary >> = Url, _Ctx) ->
-    uri:from_string(Url);
-
-from_string(<< "https://", _/binary >> = Url, _Ctx) ->
-    uri:from_string(Url);
-
-from_string(<< $/, _/binary >> = Url, Ctx) when ?is_uri(Ctx)  ->
-    uri:path(Ctx, Url);
-
-from_string(Url, Ctx) when ?is_uri(Ctx), is_binary(Url)  ->
-    append_path(Ctx, Url);
-
-from_string(Url, _) ->
-    from_string(Url).
-
+canonical(Bin) ->
+    Uri0 = from_string(Bin),
+    Uri = case uri:port(Uri0) of
+	      undefined ->
+		  case uri:scheme(Uri0) of
+		      <<"http">> ->
+			  uri:port(Uri0, 80);
+		      <<"https">> ->
+			  uri:port(Uri0, 443);
+		      _ ->
+			  Uri0
+		  end;
+	      _ ->
+		  Uri0
+	  end,
+    uri:to_string(Uri).
+	
 
 %% @doc Render uri as binary
 %% @end
@@ -99,14 +96,6 @@ to_string(Uri, _) ->
     to_string(Uri).
 
 
-%% @doc Given a (binary) seed, return a urn
-%% @end
--spec urn(binary()) -> t().
-urn(Seed) ->
-    U = <<"urn:uuid:", (uuid:uuid_to_string(uuid:get_v3(oid, Seed), binary_standard))/binary >>,
-    from_string(U).
-
-
 %% @doc Append a path to the existing path of the system
 -spec append_path(t(), binary()) -> t().
 append_path(Uri, <<$/, NewPath/binary>>) ->
@@ -120,6 +109,9 @@ append_path(Uri=#uri{path=Path}, NewPath) when is_binary(NewPath) ->
 %% @doc Change prefix of url
 %% @end
 -spec change_prefix(prefix_op(), binary(), binary()) -> binary().
+change_prefix(_, _, undefined) ->
+    undefined;
+
 change_prefix(add, Prefix, Path) ->
     add_prefix(Prefix, Path);
 
@@ -180,15 +172,6 @@ path_strip2(L) ->
 %%% eunit
 %%%
 -ifdef(TEST).
-from_string2_test_() ->
-    Ctx = from_string(<<"http://localhost:8080/coll">>),
-    [
-     ?_assertMatch(#uri{ raw = <<"http://localhost:8080/coll/myresource">> }, 
-		   from_string(<<"myresource">>, Ctx)),
-     ?_assertMatch(#uri{ raw = <<"http://example.org/myresource">> }, 
-		   from_string(<<"http://example.org/myresource">>, Ctx))
-    ].
-
 to_string2_test_() ->
     Ctx = from_string(<<"http://localhost:8080">>),
     [
@@ -228,5 +211,16 @@ add_prefix_test_() ->
 rm_prefix_test_() ->
     [
      ?_assertMatch(<<"path">>, rm_prefix(<<"/my/prefix">>, <<"/my/prefix/path">>))
+    ].
+
+canonical_test_() ->
+    [
+     ?_assertMatch(<<"/path/to/somewhere">>, canonical(<<"/path/to/somewhere">>)),
+     ?_assertMatch(<<"http://localhost:80/path/to/somewhere">>, 
+		   canonical(<<"http://localhost/path/to/somewhere">>)),
+     ?_assertMatch(<<"https://localhost:443/path/to/somewhere">>, 
+		   canonical(<<"https://localhost/path/to/somewhere">>)),
+     ?_assertMatch(<<"https://localhost:8080/path/to/somewhere">>, 
+		   canonical(<<"https://localhost:8080/path/to/somewhere">>))     
     ].
 -endif.
