@@ -157,6 +157,9 @@ endpoint_relative(Endpoint, Path) ->
     endpoint_relative2(Endpoint, Path).
 
 
+endpoint_relative2(<< $/ >>, << $/, _/binary >> =Path) ->
+    Path;
+
 endpoint_relative2(<<>>, << $/, _/binary >> =Path) ->
     Path;
 
@@ -171,7 +174,7 @@ endpoint_relative2(_, _) ->
 %%% eunit
 %%%
 -ifdef(TEST).
-endpoint_relative_test_() ->
+endpoint_test_() ->
     [
      ?_assertMatch(<<"/path/to/a/resource">>,
 		   endpoint_relative(<<"http://localhost:8080">>, <<"http://localhost:8080/path/to/a/resource">>)),
