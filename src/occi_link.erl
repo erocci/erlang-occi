@@ -112,11 +112,15 @@ from_map(Kind, Map) ->
 -spec endpoint(occi_uri:url(), t()) -> t().
 endpoint(Endpoint, Link) ->
     Endpoint0 = occi_uri:canonical(Endpoint),
-    Source0 = source(Link),
-    Source = case endpoint_relative(Endpoint0, occi_uri:canonical(Source0)) of
-		  out_of_domain -> throw({invalid_link, Source0});
-		  S -> S
-	      end,
+    Source = case source(Link) of
+		 undefined ->
+		     undefined;
+		 Source0 ->
+		     case endpoint_relative(Endpoint0, occi_uri:canonical(Source0)) of
+			 out_of_domain -> throw({invalid_link, Source0});
+			 S -> S
+		     end
+	     end,
     Target0 = target(Link),
     Target = case endpoint_relative(Endpoint0, occi_uri:canonical(Target0)) of
 		 out_of_domain -> Target0;
