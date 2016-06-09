@@ -106,7 +106,6 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
 	    R2 = lists:foldl(fun (LinkMap, Acc2) ->
 				     add_link_from_map(LinkMap, Acc2, Id, Kind)
 			     end, R1, maps:get(links, Map, [])),
-	    ?debug("resource: ~p", [R2]),
 	    Attrs0 = maps:get(attributes, Map, #{}),
 	    occi_entity:set(Attrs0, client, R2)
 	end
@@ -124,15 +123,19 @@ add_link_from_map(LinkMap, Acc, Id, Kind) ->
 		  Src0
 	  end,
     Link = occi_link:from_map(LinkMap#{ source => Src }),
-    ?debug("add_link_from_map: ~p", [Link]),
     add_link(Link, Acc).
 
 %% @doc Change urls prefix
 %% @end
 -spec change_prefix(occi_uri:prefix_op(), binary(), t()) -> t().
 change_prefix(Op, Prefix, Res) ->
-    Location2 = occi_uri:change_prefix(Op, Prefix, element(?location, Res)),
-    Res2 = location(Location2, Res),
+    Res2 = case element(?location, Res) of
+	       undefined ->
+		   Res;
+	       Location -> 
+		   Location2 = occi_uri:change_prefix(Op, Prefix, Location),
+		   location(Location2, Res)
+	   end,
     Links2 = lists:foldl(fun (Link, Acc) when is_binary(Link) ->
 				 [ occi_uri:change_prefix(Op, Prefix, Link) | Acc ];
 			     (Link, Acc) when ?is_link(Link) ->

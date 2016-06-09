@@ -19,7 +19,8 @@
 -export([new/4,
 	 new/6,
 	 source/1,
-	 target/1]).
+	 target/1,
+	 endpoint/2]).
 
 -export([from_map/2, 
 	 change_prefix/3]).
@@ -69,12 +70,12 @@ new(Id, Kind, Src, SrcKind, Target, TargetKind) ->
 	   <<"occi.core.target.kind">> => TargetKind }, internal, Link).
 
 
--spec source(t()) -> occi_uri:t().
+-spec source(t()) -> occi_uri:url().
 source(E) ->
     get(<<"occi.core.source">>, E).
 
 
--spec target(t()) -> occi_uri:t().
+-spec target(t()) -> occi_uri:url().
 target(E) ->
     get(<<"occi.core.target">>, E).
 
@@ -103,13 +104,81 @@ from_map(Kind, Map) ->
     end.
 
 
+%% @doc Make source / target urls relative to endpoint
+%% URL are canonicalized: default ports are added to scheme if necessary
+%% Throws `{invalid_link, binary()}' if source is outside of endpoint's domain
+%% @throw {invalid_link, binary()}
+%% @end
+-spec endpoint(occi_uri:url(), t()) -> t().
+endpoint(Endpoint, Link) ->
+    Endpoint0 = occi_uri:canonical(Endpoint),
+    Source0 = source(Link),
+    Source = case endpoint_relative(Endpoint0, occi_uri:canonical(Source0)) of
+		  out_of_domain -> throw({invalid_link, Source0});
+		  S -> S
+	      end,
+    Target0 = target(Link),
+    Target = case endpoint_relative(Endpoint0, occi_uri:canonical(Target0)) of
+		 out_of_domain -> Target0;
+		 T -> T
+	     end,
+    occi_entity:set(#{ <<"occi.core.source">> => Source,
+		       <<"occi.core.target">> => Target }, internal, Link).
+
+
 %% @doc Change urls prefix
 %% @end
 -spec change_prefix(occi_uri:prefix_op(), binary(), t()) -> t().
 change_prefix(Op, Prefix, Link) ->
-    Location2 = occi_uri:change_prefix(Op, Prefix, element(?location, Link)),
-    Link2 = location(Location2, Link),
+    Link2 = case element(?location, Link) of
+		undefined ->
+		    Link;
+		Location ->
+		    Location2 = occi_uri:change_prefix(Op, Prefix, Location),
+		    location(Location2, Link)
+	    end,
     Source = occi_uri:change_prefix(Op, Prefix, occi_entity:get(<<"occi.core.source">>, Link2)),
     Target = occi_uri:change_prefix(Op, Prefix, occi_entity:get(<<"occi.core.target">>, Link2)),
     occi_entity:update(#{ <<"occi.core.source">> => Source,
 			  <<"occi.core.target">> => Target }, internal, Link2).
+
+
+%%%
+%%% Priv
+%%%
+endpoint_relative(_Endpoint, << $/, _/binary >> =Path) ->
+    Path;
+
+endpoint_relative(Endpoint, Path) ->
+    endpoint_relative2(Endpoint, Path).
+
+
+endpoint_relative2(<<>>, << $/, _/binary >> =Path) ->
+    Path;
+
+endpoint_relative2(<< C, Rest/binary >>, << C, Path/binary >>) ->
+    endpoint_relative2(Rest, Path);
+
+endpoint_relative2(_, _) ->
+    out_of_domain.
+
+
+%%%
+%%% eunit
+%%%
+-ifdef(TEST).
+endpoint_relative_test_() ->
+    [
+     ?_assertMatch(<<"/path/to/a/resource">>,
+		   endpoint_relative(<<"http://localhost:8080">>, <<"http://localhost:8080/path/to/a/resource">>)),
+
+     ?_assertMatch(<<"/path/to/a/resource">>,
+		   endpoint_relative(<<"http://localhost:8080">>, <<"/path/to/a/resource">>)),
+
+     ?_assertMatch(out_of_domain,
+		   endpoint_relative(<<"http://localhost:80">>, <<"http://localhost:8080/path/to/a/resource">>)),
+
+     ?_assertMatch(out_of_domain,
+		   endpoint_relative(<<"http://localhost:80">>, <<"http://example.org/path/to/a/resource">>))
+    ].
+-endif.

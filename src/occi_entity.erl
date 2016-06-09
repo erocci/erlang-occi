@@ -79,7 +79,7 @@ id(Id, E) ->
     setelement(?id, E, Id).
 
 
--spec location(t()) -> occi_uri:url().
+-spec location(t()) -> occi_uri:url() | undefined.
 location(E) ->
     element(?location, E).
 
