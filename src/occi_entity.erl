@@ -43,7 +43,7 @@
 -export([change_prefix/3]).
 
 %% Internal (for subtypes)
--export([merge_parents/2, gen_location/2]).
+-export([merge_parents/2]).
 
 -type entity() :: {
 	      Class      :: occi_type:name(),
@@ -256,15 +256,9 @@ from_map(Map) ->
 %% @end
 -spec from_map(occi_category:t() | binary(), occi_rendering:ast()) -> t().
 from_map(Kind, Map) when ?is_kind(Kind) ->
-    Map1 = case maps:get(location, Map, undefined) of
-	       undefined ->
-		   Map#{ location => gen_location(maps:get(id, Map, undefined), Kind) };
-	       _Location ->
-		   Map
-	   end,
     case occi_kind:known_parent(Kind) of
-	resource -> occi_resource:from_map(Kind, Map1);
-	link -> occi_link:from_map(Kind, Map1)
+	resource -> occi_resource:from_map(Kind, Map);
+	link -> occi_link:from_map(Kind, Map)
     end;
 
 from_map(Path, Map) when is_binary(Path) ->
@@ -505,45 +499,45 @@ do_fun(ActionId, Attributes, Fun, E) ->
     end.
 
 
-gen_location(Id, Kind) when is_binary(Id) ->
-    case valid_id(Id) of
-	true -> 
-	    << (occi_kind:location(Kind))/binary, $/, Id/binary >>;
-	false ->
-	    throw({invalid_id, Id})
-    end;
+%% gen_location(Id, Kind) when is_binary(Id) ->
+%%     case valid_id(Id) of
+%% 	true -> 
+%% 	    << (occi_kind:location(Kind))/binary, $/, Id/binary >>;
+%% 	false ->
+%% 	    throw({invalid_id, Id})
+%%     end;
 
-gen_location(_, Kind) ->
-    Uuid = uuid:uuid_to_string(uuid:get_v4(), binary_standard),
-    << (occi_kind:location(Kind))/binary, $/, Uuid/binary >>.
-
-
--define(is_alpha(C), ((C >= 65 andalso C =< 90) orelse (C >= 97 andalso C =< 122))).
--define(is_digit(C), (C >= 48 andalso C =< 57)).
-
-valid_id(<<>>) ->
-    false;
-
-valid_id(<< C, Rest/binary >>) when ?is_alpha(C) orelse ?is_digit(C) ->
-    valid_id2(Rest);
-
-valid_id(_) ->
-    false.
+%% gen_location(_, Kind) ->
+%%     Uuid = uuid:uuid_to_string(uuid:get_v4(), binary_standard),
+%%     << (occi_kind:location(Kind))/binary, $/, Uuid/binary >>.
 
 
-valid_id2(<<>>) ->
-    true;
+%% -define(is_alpha(C), ((C >= 65 andalso C =< 90) orelse (C >= 97 andalso C =< 122))).
+%% -define(is_digit(C), (C >= 48 andalso C =< 57)).
 
-valid_id2(<< C, Rest/binary >>) when ?is_alpha(C) 
-				     orelse ?is_digit(C) 
-				     orelse $- =:= C
-				     orelse $_ =:= C
-				     orelse $+ =:= C
-				     orelse $: =:= C ->
-    valid_id2(Rest);
+%% valid_id(<<>>) ->
+%%     false;
 
-valid_id2(_) ->
-    false.
+%% valid_id(<< C, Rest/binary >>) when ?is_alpha(C) orelse ?is_digit(C) ->
+%%     valid_id2(Rest);
+
+%% valid_id(_) ->
+%%     false.
+
+
+%% valid_id2(<<>>) ->
+%%     true;
+
+%% valid_id2(<< C, Rest/binary >>) when ?is_alpha(C) 
+%% 				     orelse ?is_digit(C) 
+%% 				     orelse $- =:= C
+%% 				     orelse $_ =:= C
+%% 				     orelse $+ =:= C
+%% 				     orelse $: =:= C ->
+%%     valid_id2(Rest);
+
+%% valid_id2(_) ->
+%%     false.
 
 
 

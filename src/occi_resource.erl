@@ -106,6 +106,7 @@ from_map(Kind, Map) when ?is_kind(Kind), is_map(Map) ->
 	    R2 = lists:foldl(fun (LinkMap, Acc2) ->
 				     add_link_from_map(LinkMap, Acc2, Id, Kind)
 			     end, R1, maps:get(links, Map, [])),
+	    ?debug("resource: ~p", [R2]),
 	    Attrs0 = maps:get(attributes, Map, #{}),
 	    occi_entity:set(Attrs0, client, R2)
 	end
@@ -123,6 +124,7 @@ add_link_from_map(LinkMap, Acc, Id, Kind) ->
 		  Src0
 	  end,
     Link = occi_link:from_map(LinkMap#{ source => Src }),
+    ?debug("add_link_from_map: ~p", [Link]),
     add_link(Link, Acc).
 
 %% @doc Change urls prefix
