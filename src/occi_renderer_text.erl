@@ -229,8 +229,8 @@ r_resource_link(Link, Ctx) ->
 		  (_, undefined, Acc) ->
 		      Acc;
 		  (K, V, Acc) ->
-		      [ [ "; ", K, "=", r_attribute_value(V, Ctx) ] | Acc ]
-	      end, L, occi_link:attributes(Link)).
+		      [ Acc, "; ", K, "=", r_attribute_value(V, Ctx) ]
+		   end, L, occi_link:attributes(Link)).
 
 
 r_action_link(Id, {Scheme, Term}) ->
