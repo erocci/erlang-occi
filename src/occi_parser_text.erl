@@ -1,6 +1,5 @@
-%%% @author Jean Parpaillon <jean.parpaillon@free.fr>
-%%% @copyright (C) 2016, Jean Parpaillon
-%%% @doc
+%%% @author Jean Parpaillon <jean.parpaillon@free.fr> @copyright (C)
+%%% 2016, Jean Parpaillon @doc
 %%%
 %%% @end
 %%% Created :  8 Mar 2016 by Jean Parpaillon <jean.parpaillon@free.fr>
@@ -40,7 +39,12 @@ validate('x-occi-location', V, Acc) ->
 add_link_or_action({link, Map}, Acc) ->
     [RelBin] = maps:get(rel, Map),
     Rel = occi_category:parse_id(RelBin),
-    case occi_category:class(occi_models:category(Rel)) of
+    Category = case occi_models:category(Rel) of
+		   undefined ->
+		       throw({parse_error, {undefined_category, Rel}});
+		   C -> C
+	       end,
+    case occi_category:class(Category) of
 	action ->
 	    Acc#{ actions => [ Rel | maps:get(actions, Acc, []) ] };
 	_ ->

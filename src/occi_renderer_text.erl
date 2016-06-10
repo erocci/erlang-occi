@@ -15,6 +15,7 @@
 %%%-------------------------------------------------------------------
 -module(occi_renderer_text).
 
+-include("occi.hrl").
 -include("occi_uri.hrl").
 -include("occi_log.hrl").
 
@@ -204,7 +205,7 @@ r_category_id(Class, {Scheme, Term}) ->
 r_resource_link(Link, Ctx) ->
     Rel = case occi_link:get(<<"occi.core.target.kind">>, Link) of
 	      undefined ->
-		  {<<"http://schemas.ogf.org/core/occi#">>, <<"entity">>};
+		  ?entity_kind_id;
 	      TypeId ->
 		  TypeId
 	  end,

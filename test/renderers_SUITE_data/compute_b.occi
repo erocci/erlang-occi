@@ -1,5 +1,5 @@
 category: compute; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind
-link: <http://example.org:8080/network0>; rel="http://schemas.ogf.org/core/occi#entity"; self="http://example.org:8080/ns1/mycompute0/netif0"; category="http://schemas.ogf.org/occi/infrastructure#networkinterface"
+link: <http://example.org:8080/network0>; rel="http://schemas.ogf.org/occi/core#entity"; self="http://example.org:8080/ns1/mycompute0/netif0"; category="http://schemas.ogf.org/occi/infrastructure#networkinterface"
 link: <http://example.org:8080/ns1/mycompute0?action=restart>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#restart"
 link: <http://example.org:8080/ns1/mycompute0?action=start>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#start"
 link: <http://example.org:8080/ns1/mycompute0?action=stop>; rel="http://schemas.ogf.org/occi/infrastructure/compute/action#stop"
