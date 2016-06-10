@@ -213,7 +213,7 @@ r_resource_link(Link, Ctx) ->
     L = [ 
 	  "<", occi_uri:to_string(occi_link:get(<<"occi.core.target">>, Link), Ctx), ">; rel=\"", 
 	  r_type_id(Rel), "\"; self=\"", 
-	  occi_uri:to_string(occi_link:id(Link), Ctx) ,
+	  occi_uri:to_string(occi_link:location(Link), Ctx) ,
 	  "\"; category=\"", Categories, "\""
 	], 
     maps:fold(fun (<<"occi.core.id">>, _, Acc) ->
@@ -236,6 +236,12 @@ r_resource_link(Link, Ctx) ->
 r_action_link(Id, {Scheme, Term}) ->
     [ "<", Id, "?action=", Term, ">; rel=\"", Scheme, Term, "\"" ].
 
+
+r_attribute(<<"occi.core.source">> =K, V, Ctx) ->
+    [ K, "=\"", occi_uri:to_string(V, Ctx), "\"" ];
+
+r_attribute(<<"occi.core.target">> =K, V, Ctx) ->
+    [ K, "=\"", occi_uri:to_string(V, Ctx), "\"" ];
 
 r_attribute(K, V, Ctx) ->
     [ K, "=", r_attribute_value(V, Ctx) ].
