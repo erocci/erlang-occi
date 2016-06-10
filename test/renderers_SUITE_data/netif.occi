@@ -1,8 +1,8 @@
 category: networkinterface; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind
 category: ipnetworkinterface; scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#"; class=mixin
-x-occi-attribute: occi.core.source="http://localhost:8080/mycompute"
+x-occi-attribute: occi.core.source="http://example.org:8080/mycompute"
 x-occi-attribute: occi.core.source.kind="http://schemas.ogf.org/occi/infrastructure#compute"
-x-occi-attribute: occi.core.target="http://localhost:8080/mynetwork"
+x-occi-attribute: occi.core.target="http://example.org:8080/mynetwork"
 x-occi-attribute: occi.core.target.kind="http://schemas.ogf.org/occi/infrastructure#network"
 x-occi-attribute: occi.networkinterface.address="192.168.0.1"
 x-occi-attribute: occi.networkinterface.allocation="static"
