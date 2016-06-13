@@ -107,7 +107,7 @@ from_map(Kind, Map) ->
 %% @doc Make source / target urls relative to endpoint
 %% URL are canonicalized: default ports are added to scheme if necessary
 %% Throws `{invalid_link, binary()}' if source is outside of endpoint's domain
-%% @throw {invalid_link, binary()}
+%% @throws {invalid_link, binary()}
 %% @end
 -spec endpoint(occi_uri:url(), t()) -> t().
 endpoint(Endpoint, Link) ->
