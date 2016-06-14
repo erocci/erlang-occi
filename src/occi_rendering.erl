@@ -99,11 +99,11 @@ render(Mimetype, T, Ctx) ->
 parser({<<"application">>, <<"occi+xml">>, _})   -> occi_parser_xml;
 parser({<<"application">>, <<"occi+json">>, _})  -> occi_parser_json;
 parser({<<"text">>, <<"occi+plain">>, _})        -> occi_parser_text;
-parser({<<"text">>, <<"occi">>, _})              -> occi_parser_text.
+parser({<<"text">>, <<"occi">>, _})              -> occi_parser_occi.
 
 
 renderer({<<"application">>, <<"occi+xml">>, _}) -> occi_renderer_xml;
 renderer({<<"application">>, <<"occi+json">>, _})-> occi_renderer_json;
 renderer({<<"text">>, <<"occi+plain">>, _})      -> occi_renderer_text;
-renderer({<<"text">>, <<"occi">>, _})            -> occi_renderer_text;
+renderer({<<"text">>, <<"occi">>, _})            -> occi_renderer_occi;
 renderer({<<"text">>, <<"uri-list">>, _})        -> occi_renderer_uri.

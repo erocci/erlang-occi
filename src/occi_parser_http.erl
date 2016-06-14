@@ -18,14 +18,22 @@
 
 %% @doc Parse HTTP-style headers and return dictionary
 %% @end
--spec parse(binary()) -> orddict:orddict().
-parse(Bin) ->
-    p_headers(Bin, orddict:new()).
+-spec parse(binary() | proplists:proplist()) -> orddict:orddict().
+parse(Bin) when is_binary(Bin) ->
+    p_headers(Bin, orddict:new());
+
+parse(Headers) when is_list(Headers) ->
+    p_proplist(Headers, ordict:new()).
 
 
 %%%
 %%% Priv
 %%%
+p_proplist([ {Name, Bin} | Tail ], Acc) ->
+    {Name, Values, _} = p_header_name3(Bin, Name),
+    p_proplist(Tail, add_header_values(Name, Values, Acc)).
+
+
 p_headers(<<>>, Acc) ->
     reverse(Acc);
 

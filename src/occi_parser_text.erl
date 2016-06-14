@@ -11,6 +11,10 @@
 
 -export([parse/1]).
 
+%% For occi_parser_occi
+-export([validate/3]).
+
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
@@ -20,9 +24,7 @@
 parse(Bin) ->
     orddict:fold(fun validate/3, #{}, occi_parser_http:parse(Bin)).
 
-%%%
-%%% Parsers
-%%%
+
 validate('category', V, Acc) ->
     lists:foldl(fun val_category/2, Acc, p_categories(eat_ws(V), []));
 
@@ -36,6 +38,9 @@ validate('x-occi-location', V, Acc) ->
     lists:foldl(fun val_location/2, Acc, p_locations(eat_ws(V), [])).
 
 
+%%%
+%%% Parsers
+%%%
 add_link_or_action({link, Map}, Acc) ->
     [RelBin] = maps:get(rel, Map),
     Rel = occi_category:parse_id(RelBin),
