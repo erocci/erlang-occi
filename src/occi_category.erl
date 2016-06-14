@@ -51,13 +51,15 @@ new(CatId, Cls) when is_binary(CatId) ->
 new({Scheme, Term}, Cls) when Cls =:= kind; Cls =:= mixin; Cls =:= action ->
     {Cls, {Scheme, Term}, #{
 	    title => "",
-	    attributes => #{}
+	    attributes => #{},
+	    location => undefined
 	   }};
 
 new({<<"http://schemas.ogf.org/occi/core#">>, <<"entity">>}=Id, kind) ->
     {kind, Id, #{ 
 	     title => "Entity",
-	     attributes => #{} 
+	     attributes => #{},
+	     location => undefined
 	    }}.
 
 

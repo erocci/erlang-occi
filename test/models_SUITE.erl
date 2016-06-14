@@ -134,7 +134,7 @@ mixin_override_resource(_Config) ->
 %% @end
 mixin_delete_resource1(_Config) ->
     M = occi_rendering:parse(xml, ?mixin2_xml, occi_mixin),
-    ok = occi_models:add_category(M),
+    _ = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({<<"http://schemas.example.org/occi#">>, <<"mixin2">>}, R),
     ?assertMatch(<<"Default value 1">>, occi_resource:get(<<"occi.mixin.attr1">>, R1)),
@@ -146,7 +146,7 @@ mixin_delete_resource1(_Config) ->
 %% @end
 mixin_delete_resource2(_Config) ->
     M = occi_rendering:parse(xml, ?mixin2_xml, occi_mixin),
-    ok = occi_models:add_category(M),
+    _ = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({<<"http://schemas.example.org/occi#">>, <<"mixin2">>}, R),
     ?assertMatch(<<"Default value 1">>, occi_resource:get(<<"occi.mixin.attr1">>, R1)),
