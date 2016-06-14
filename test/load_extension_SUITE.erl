@@ -191,7 +191,7 @@ locations(_Config) ->
     ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"network">>},
 		 occi_category:id(occi_models:location(<<"/categories/network">>))),
 
-    ok = occi_models:add_category(occi_mixin:new(<<"http://schemas.example.org#">>, <<"compute">>)),
+    _ = occi_models:add_category(occi_mixin:new(<<"http://schemas.example.org#">>, <<"compute">>)),
     ?assertMatch({<<"http://schemas.example.org#">>, <<"compute">>},
 		 occi_category:id(occi_models:location(<<"/categories/compute0">>))),    
     ok.

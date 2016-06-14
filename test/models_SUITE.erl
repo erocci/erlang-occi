@@ -100,7 +100,7 @@ simple_resource(_Config) ->
 
 mixin_resource(_Config) ->
     M = occi_rendering:parse(xml, ?mixin0_xml, occi_mixin),
-    ok = occi_models:add_category(M),
+    _ = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({<<"http://schemas.example.org/occi#">>, <<"mixin0">>}, R),
     ?assertMatch(undefined, occi_resource:get(<<"occi.core.title">>, R1)),
@@ -109,7 +109,7 @@ mixin_resource(_Config) ->
 
 mixin_depend_resource(_Config) ->
     M = occi_rendering:parse(xml, ?mixin1_xml, occi_mixin),
-    ok = occi_models:add_category(M),
+    _ = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({<<"http://schemas.example.org/occi#">>, <<"mixin1">>}, R),
     ?assertMatch(undefined, occi_resource:get(<<"occi.core.title">>, R1)),
@@ -120,7 +120,7 @@ mixin_depend_resource(_Config) ->
 
 mixin_override_resource(_Config) ->
     M = occi_rendering:parse(xml, ?mixin2_xml, occi_mixin),
-    ok = occi_models:add_category(M),
+    _ = occi_models:add_category(M),
     R = occi_resource:new(?entity_id),
     R1 = occi_resource:add_mixin({<<"http://schemas.example.org/occi#">>, <<"mixin2">>}, R),
     ?assertMatch(undefined, occi_resource:get(<<"occi.core.title">>, R1)),

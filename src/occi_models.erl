@@ -67,9 +67,9 @@ import(E) ->
 	{ok, Categories1} ->
 	    ok = lists:foreach(fun (Category) -> 
 				       ?debug("Add category ~p", [occi_category:id(Category)]),
-				       add_category(Category),
+				       _ = add_category(Category),
 				       lists:foreach(fun (Action) ->
-							     ok = add_category(Action)
+							     _ = add_category(Action)
 						     end, occi_category:actions(Category))
 			       end, Categories0),
 	    {ok, Categories1};
@@ -163,10 +163,13 @@ category(Id) when ?is_category_id(Id) ->
     end.
 
 
--spec add_category(occi_category:t()) -> ok.
+%% @doc Add category to model and returns the stored category,
+%% eventually with location set
+%% @end
+-spec add_category(occi_category:t()) -> occi_category:t().
 add_category(Cat) when ?is_category(Cat) ->
     case mnesia:transaction(fun () -> add_category_t(Cat) end) of
-	{atomic, ok} -> ok;
+	{atomic, Cat1} -> Cat1;
 	{aborted, Err} -> throw(Err)
     end.
 
@@ -358,10 +361,15 @@ resolve_t(action, C) ->
 add_category_t(Cat) ->
     case mnesia:read(?REC, occi_category:id(Cat)) of
 	[] -> 
-	    mnesia:write(category_record_t(Cat));
+	    Cat1 = case occi_category:location(Cat) of
+		       undefined -> gen_location(Cat);
+		       _ -> Cat
+		   end,
+	    ok = mnesia:write(category_record_t(Cat1)),
+	    Cat1;
 	_ ->
 	    %% Ignore duplicate category
-	    ok
+	    Cat
     end.
 
 
@@ -369,10 +377,17 @@ category_record_t(Cat) when ?is_action(Cat) ->
     #?REC{id=occi_category:id(Cat), location=undefined, value=Cat};
 
 category_record_t(Cat) ->
+    Location = occi_category:location(Cat),
+    #?REC{id=occi_category:id(Cat), location=Location, value=Cat}.
+
+
+gen_location(Cat) when ?is_action(Cat) ->
+    Cat;
+
+gen_location(Cat) ->
     {_Scheme, Term} = occi_category:id(Cat),
     Location = hash_location(Term),
-    #?REC{id=occi_category:id(Cat), location=Location, value=occi_category:location(Location, Cat)}.
-
+    occi_category:location(Location, Cat).
 
 %%%
 %%% eunit
