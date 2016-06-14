@@ -7,6 +7,7 @@
 
 -module(occi_utils).
 
+-include("occi.hrl").
 -include("occi_log.hrl").
 
 -export([is_absolute/1,
@@ -88,18 +89,6 @@ mimetype(Path) ->
 	Ext ->
 	    throw({unknown_mimetype, Ext})
     end.
-
-
--define(mimetype_plain,    {<<"text">>, <<"occi+plain">>, []}).
--define(mimetype_plain(V), {<<"text">>, <<"occi+plain">>, V}).
--define(mimetype_occi,     {<<"text">>, <<"occi">>, []}).
--define(mimetype_occi(V),  {<<"text">>, <<"occi">>, V}).
--define(mimetype_uri,      {<<"text">>, <<"uri-list">>, []}).
--define(mimetype_uri(V),   {<<"text">>, <<"uri-list">>, V}).
--define(mimetype_xml,      {<<"application">>, <<"occi+xml">>, []}).
--define(mimetype_xml(V),   {<<"application">>, <<"occi+xml">>, V}).
--define(mimetype_json,     {<<"application">>, <<"occi+json">>, []}).
--define(mimetype_json(V),  {<<"application">>, <<"occi+json">>, V}).
 
 
 -spec normalize_mimetype(term()) -> occi_utils:mimetype().
