@@ -93,6 +93,7 @@
 	<xs:complexType name="attributeSpecType">
 	  <xs:complexContent>
 	    <xs:extension base="xs:attribute">
+	      <xs:attribute name="description" type="xs:string" default="" />
 	      <xs:attribute name="immutable" type="xs:boolean" default="false">
 		<xs:annotation>
 		  <xs:documentation>
@@ -119,13 +120,17 @@
 
 	<xs:complexType name="resourceLinkType" >
 	  <xs:complexType>
-	    <xs:extension base="occi:linkType" />
+	    <xs:extension base="occi:entityType" >
+	      <xs:attribute name="target" type="xs:anyURI" use="required"/>
+	    </xs:extension>
 	  </xs:complexType>
 	</xs:complexType>
 
 	<xs:complexType name="linkType">
 	  <xs:complexContent>
-	    <xs:extension base="occi:entityType" />
+	    <xs:extension base="occi:resourceLinkType" >
+	      <xs:attribute name="source" type="xs:anyURI" use="required"/>
+	    </xs:extension>
 	  </xs:complexContent>
 	</xs:complexType>
 

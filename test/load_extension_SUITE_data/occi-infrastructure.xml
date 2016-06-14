@@ -22,7 +22,8 @@
     <occi:attribute name="occi.compute.cores" type="xs:integer" title="CPU cores number" />
     <occi:attribute name="occi.compute.hostname" type="xs:string" title="System hostname" />
     <occi:attribute name="occi.compute.speed" type="xs:float" title="CPU speed (GHz)" />
-    <occi:attribute name="occi.compute.memory" type="xs:float" title="System RAM (GB)" />
+    <occi:attribute name="occi.compute.memory" type="xs:float" title="System RAM (GB)"
+		    description="Quantity of RAM" />
     <occi:attribute name="occi.compute.state" use="required"
                     default="inactive" immutable="true"
                     title="System state" type="xs:string" >

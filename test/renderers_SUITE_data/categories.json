@@ -134,7 +134,6 @@
         },
         "occi.compute.state": {
           "default": "inactive",
-          "description": "inactive",
           "mutable": false,
           "required": true,
           "type": "array"

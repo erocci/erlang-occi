@@ -135,6 +135,8 @@ categories(_Config) ->
     Cat0 = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}),
     ?assertMatch(kind, occi_category:class(Cat0)),
     ?assertMatch(<<"/categories/compute">>, occi_category:location(Cat0)),
+    Mem = occi_kind:attribute(<<"occi.compute.memory">>, Cat0),
+    ?assertMatch(<<"Quantity of RAM">>, occi_attribute:description(Mem)),
 
     Cat1 = occi_models:category({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"network">>}),
     ?assertMatch(kind, occi_category:class(Cat1)),

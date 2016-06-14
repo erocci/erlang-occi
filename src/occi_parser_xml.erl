@@ -257,7 +257,7 @@ handle_start_el(occi, attribute, A, _Pos, #{ ns := NS, parents := [ {occi, Cls} 
 			     <<"false">> -> true
 			 end,
 	      default => attr("default", A, undefined),
-	      description => attr("default", A, <<>>) },
+	      description => attr("description", A, <<>>) },
     S#{ attribute => { Name, Spec } };
 
 %% entity attribute instance
