@@ -7,7 +7,6 @@
 
 -module(occi_parser_occi).
 
-
 -export([parse/1]).
 
 -spec parse(proplists:proplist()) -> occi_rendering:ast().

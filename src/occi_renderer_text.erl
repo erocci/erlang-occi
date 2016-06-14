@@ -22,6 +22,9 @@
 %% API
 -export([render/2]).
 
+%% For OCCI renderer
+-export([to_headers/4]).
+
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
@@ -72,7 +75,7 @@ to_headers(extension, Ext, Headers, Ctx) ->
 
 to_headers(collection, Coll, Headers, Ctx) ->
     ordsets:fold(fun ({Id, _}, Acc) ->
-			 append("x-occi-location", occi_uri:to_string(Id, Ctx), Acc)
+			 append(<<"x-occi-location">>, occi_uri:to_string(Id, Ctx), Acc)
 		 end, Headers, occi_collection:elements(Coll));
 
 to_headers(kind, Kind, Headers, Ctx) ->
@@ -98,7 +101,7 @@ to_headers(kind, Kind, Headers, Ctx) ->
 	     [] -> C3;
 	     Actions -> [C3, "; actions=\"", Actions, "\""]
 	 end,
-    append("category", C4, Headers);
+    append(<<"category">>, C4, Headers);
 
 to_headers(mixin, Mixin, Headers, Ctx) ->
     {Scheme, Term} = occi_mixin:id(Mixin),
@@ -119,7 +122,7 @@ to_headers(mixin, Mixin, Headers, Ctx) ->
 	     [] -> C2;
 	     Attributes -> [C2, "; attributes=\"", Attributes, "\""]
 	 end,
-    append("category", C3, Headers);
+    append(<<"category">>, C3, Headers);
 
 to_headers(action, Action, Headers, _Ctx) ->
     {Scheme, Term} = occi_action:id(Action),
@@ -132,42 +135,52 @@ to_headers(action, Action, Headers, _Ctx) ->
 	     [] -> C0;
 	     Attributes -> [C0, "; attributes=\"", Attributes, "\""]
 	 end,
-    append("category", C1, Headers);
+    append(<<"category">>, C1, Headers);
 
 to_headers(resource, Resource, Headers, Ctx) ->
     Url = occi_uri:to_string(occi_resource:location(Resource), Ctx),
-    H0 = append("category", r_category_id(kind, occi_resource:kind(Resource)), Headers),
+    H0 = append(<<"category">>, r_category_id(kind, occi_resource:kind(Resource)), Headers),
     H1 = lists:foldl(fun (MixinId, Acc) ->
-			     append("category", r_category_id(mixin, MixinId), Acc)
+			     append(<<"category">>, r_category_id(mixin, MixinId), Acc)
 		     end, H0, occi_resource:mixins(Resource)),
     H2 = lists:foldl(fun (Link, Acc) ->
-			     append("link", r_resource_link(Link, Ctx), Acc)
+			     append(<<"link">>, r_resource_link(Link, Ctx), Acc)
 		     end, H1, occi_resource:links(Resource)),
     H3 = lists:foldl(fun (Action, Acc) ->
-			     append("link", r_action_link(Url, Action), Acc)
+			     append(<<"link">>, r_action_link(Url, Action), Acc)
 		     end, H2, occi_resource:actions(Resource)),
     H4 = maps:fold(fun (_, undefined, Acc) ->
 			   Acc;
 		       (K, V, Acc) ->
-			   append("x-occi-attribute", r_attribute(K, V, Ctx), Acc)
+			   append(<<"x-occi-attribute">>, r_attribute(K, V, Ctx), Acc)
 		   end, H3, occi_resource:attributes(Resource)),
-    append("x-occi-attribute", r_attribute("occi.core.id", occi_resource:id(Resource), Ctx), H4);
+    case occi_resource:id(Resource) of
+	undefined ->
+	    H4;
+	Id ->
+	    append(<<"x-occi-attribute">>, r_attribute("occi.core.id", Id, Ctx), H4)
+    end;
 
 to_headers(link, Link, Headers, Ctx) ->
     Url = occi_uri:to_string(occi_link:location(Link), Ctx),
-    H0 = append("category", r_category_id(kind, occi_resource:kind(Link)), Headers),
+    H0 = append(<<"category">>, r_category_id(kind, occi_resource:kind(Link)), Headers),
     H1 = lists:foldl(fun (MixinId, Acc) ->
-			     append("category", r_category_id(mixin, MixinId), Acc)
+			     append(<<"category">>, r_category_id(mixin, MixinId), Acc)
 		     end, H0, occi_link:mixins(Link)),
     H2 = lists:foldl(fun (Action, Acc) ->
-			     append("link", r_action_link(Url, Action), Acc)
+			     append(<<"link">>, r_action_link(Url, Action), Acc)
 		     end, H1, occi_link:actions(Link)),
     H3 = maps:fold(fun (_, undefined, Acc) ->
 			   Acc;
 		       (K, V, Acc) ->
-			   append("x-occi-attribute", r_attribute(K, V, Ctx), Acc)
+			   append(<<"x-occi-attribute">>, r_attribute(K, V, Ctx), Acc)
 		   end, H2, occi_link:attributes(Link)),
-    append("x-occi-attribute", r_attribute("occi.core.id", occi_link:id(Link), Ctx), H3).
+    case occi_link:id(Link) of
+	undefined ->
+	    H3;
+	Id ->
+	    append(<<"x-occi-attribute">>, r_attribute("occi.core.id", Id, Ctx), H3)
+    end.
 
 
 r_attribute_defs([], Acc) ->

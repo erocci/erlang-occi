@@ -35,7 +35,11 @@ validate('link', V, Acc) ->
     lists:foldl(fun add_link_or_action/2, Acc, p_links(eat_ws(V), []));
 
 validate('x-occi-location', V, Acc) ->
-    lists:foldl(fun val_location/2, Acc, p_locations(eat_ws(V), [])).
+    lists:foldl(fun val_location/2, Acc, p_locations(eat_ws(V), []));
+
+validate(_, _, Acc) ->
+    %% Ignore unknown headers
+    Acc.
 
 
 %%%

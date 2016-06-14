@@ -23,15 +23,18 @@ parse(Bin) when is_binary(Bin) ->
     p_headers(Bin, orddict:new());
 
 parse(Headers) when is_list(Headers) ->
-    p_proplist(Headers, ordict:new()).
+    p_proplist(Headers, orddict:new()).
 
 
 %%%
 %%% Priv
 %%%
+p_proplist([], Acc) ->
+    reverse(Acc);
+
 p_proplist([ {Name, Bin} | Tail ], Acc) ->
-    {Name, Values, _} = p_header_name3(Bin, Name),
-    p_proplist(Tail, add_header_values(Name, Values, Acc)).
+    {Key, Values, _} = p_header_name3(Bin, Name),
+    p_proplist(Tail, add_header_values(Key, Values, Acc)).
 
 
 p_headers(<<>>, Acc) ->
