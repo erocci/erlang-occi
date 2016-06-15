@@ -111,18 +111,17 @@ from_map(Kind, Map) ->
 %% @end
 -spec endpoint(occi_uri:url(), t()) -> t().
 endpoint(Endpoint, Link) ->
-    Endpoint0 = occi_uri:canonical(Endpoint),
     Source = case source(Link) of
 		 undefined ->
 		     undefined;
 		 Source0 ->
-		     case endpoint_relative(Endpoint0, occi_uri:canonical(Source0)) of
+		     case occi_uri:relative(Endpoint, Source0) of
 			 out_of_domain -> throw({invalid_link, Source0});
 			 S -> S
 		     end
 	     end,
     Target0 = target(Link),
-    Target = case endpoint_relative(Endpoint0, occi_uri:canonical(Target0)) of
+    Target = case occi_uri:relative(Endpoint, Target0) of
 		 out_of_domain -> Target0;
 		 T -> T
 	     end,
@@ -150,42 +149,10 @@ change_prefix(Op, Prefix, Link) ->
 %%%
 %%% Priv
 %%%
-endpoint_relative(_Endpoint, << $/, _/binary >> =Path) ->
-    Path;
-
-endpoint_relative(Endpoint, Path) ->
-    endpoint_relative2(Endpoint, Path).
-
-
-endpoint_relative2(<< $/ >>, << $/, _/binary >> =Path) ->
-    Path;
-
-endpoint_relative2(<<>>, << $/, _/binary >> =Path) ->
-    Path;
-
-endpoint_relative2(<< C, Rest/binary >>, << C, Path/binary >>) ->
-    endpoint_relative2(Rest, Path);
-
-endpoint_relative2(_, _) ->
-    out_of_domain.
 
 
 %%%
 %%% eunit
 %%%
 -ifdef(TEST).
-endpoint_test_() ->
-    [
-     ?_assertMatch(<<"/path/to/a/resource">>,
-		   endpoint_relative(<<"http://localhost:8080">>, <<"http://localhost:8080/path/to/a/resource">>)),
-
-     ?_assertMatch(<<"/path/to/a/resource">>,
-		   endpoint_relative(<<"http://localhost:8080">>, <<"/path/to/a/resource">>)),
-
-     ?_assertMatch(out_of_domain,
-		   endpoint_relative(<<"http://localhost:80">>, <<"http://localhost:8080/path/to/a/resource">>)),
-
-     ?_assertMatch(out_of_domain,
-		   endpoint_relative(<<"http://localhost:80">>, <<"http://example.org/path/to/a/resource">>))
-    ].
 -endif.

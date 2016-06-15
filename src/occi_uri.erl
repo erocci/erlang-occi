@@ -22,7 +22,8 @@
 	 to_string/1,
 	 to_string/2,
 	 change_prefix/3,
-	 canonical/1]).
+	 canonical/1,
+	 relative/2]).
 
 -record(uri, {scheme, user_info, host, port, path, q, frag, raw}).
 
@@ -65,6 +66,13 @@ canonical(Bin) ->
 		  Uri0
 	  end,
     uri:to_string(Uri).
+
+
+%% @doc Returns url without endpoint, if they match
+%% @end
+-spec relative(Endpoint :: url(), Url :: url()) -> url().
+relative(Endpoint, Url) ->
+    relative2(canonical(Endpoint), canonical(Url)).
 	
 
 %% @doc Render uri as binary
@@ -168,6 +176,26 @@ path_strip2(L) ->
     list_to_binary(lists:reverse(L)).
 
 
+relative2(_Endpoint, << $/, _/binary >> =Path) ->
+    Path;
+
+relative2(Endpoint, Path) ->
+    relative3(Endpoint, Path).
+
+
+relative3(<< $/ >>, << $/, _/binary >> =Path) ->
+    Path;
+
+relative3(<<>>, << $/, _/binary >> =Path) ->
+    Path;
+
+relative3(<< C, Rest/binary >>, << C, Path/binary >>) ->
+    relative3(Rest, Path);
+
+relative3(_, _) ->
+    out_of_domain.
+
+
 %%%
 %%% eunit
 %%%
@@ -222,5 +250,26 @@ canonical_test_() ->
 		   canonical(<<"https://localhost/path/to/somewhere">>)),
      ?_assertMatch(<<"https://localhost:8080/path/to/somewhere">>, 
 		   canonical(<<"https://localhost:8080/path/to/somewhere">>))     
+    ].
+
+relative_test_() ->
+    [
+     ?_assertMatch(<<"/path/to/a/resource">>,
+		   relative(<<"http://localhost:8080">>, <<"http://localhost:8080/path/to/a/resource">>)),
+
+     ?_assertMatch(<<"/path/to/a/resource">>,
+		   relative(<<"http://localhost:80">>, <<"http://localhost/path/to/a/resource">>)),
+
+     ?_assertMatch(<<"/path/to/a/resource">>,
+		   relative(<<"https://localhost:443">>, <<"https://localhost/path/to/a/resource">>)),
+
+     ?_assertMatch(<<"/path/to/a/resource">>,
+		   relative(<<"http://localhost:8080">>, <<"/path/to/a/resource">>)),
+
+     ?_assertMatch(out_of_domain,
+		   relative(<<"http://localhost:80">>, <<"http://localhost:8080/path/to/a/resource">>)),
+
+     ?_assertMatch(out_of_domain,
+		   relative(<<"http://localhost:80">>, <<"http://example.org/path/to/a/resource">>))
     ].
 -endif.

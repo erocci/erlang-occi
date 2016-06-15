@@ -20,7 +20,8 @@
 	 elements/2,
 	 size/1,
 	 delete/2,
-	 append/2]).
+	 append/2,
+	 endpoint/2]).
 
 -export([from_map/1,
 	 from_map/2,
@@ -151,18 +152,30 @@ from_map(Id, Map) ->
 render(Mimetype, E, Ctx) ->
     occi_rendering:render(Mimetype, E, Ctx).
 
+
+%% @doc Remove endpoint from locations if necessary
+%% @end
+-spec endpoint(occi_uri:url(), t()) -> t().
+endpoint(Endpoint, #collection{ elements=Elements }=Coll) ->
+    Elements2 = maps:fold(fun (Location, Entity, Acc) ->
+				  Acc#{ occi_uri:relative(Endpoint, Location) => Entity }
+			  end, #{}, Elements),
+    Coll#collection{ elements=Elements2 }.
+
+
 %%%
 %%% Priv
 %%%
 from_map2(Coll, Map) ->
-    Fun = fun (Id, Acc) when is_binary(Id) ->
-		  [ Id | Acc ];
+    Fun = fun (Location, Acc) when is_binary(Location) ->
+		  [ Location | Acc ];
 	      (Map1, Acc) when is_map(Map1) ->
 		  case maps:is_key(kind, Map1) of
 		      true ->
 			  [ occi_entity:from_map(Map1) | Acc ];
 		      false ->
-			  [ maps:get(location, Map1, maps:get(id, Map1)) | Acc ]
+			  Location = maps:get(location, Map1,maps:get(id, Map1)),
+			  [ Location | Acc ]
 		  end
 	  end,
     E0 = lists:foldl(Fun, [], maps:get(entities, Map, [])),
