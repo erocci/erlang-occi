@@ -127,7 +127,7 @@ init_per_group('user_mixin_b', Config) ->
 init_per_group('collection', Config) ->
     Fun = fun(C)  ->
 		  ?assertMatch([<<"/resource0">>, <<"/resource1">>],
-			       occi_collection:ids(C))
+			       occi_collection:locations(C))
 	  end,
     [ {check, Fun}, {occi_type, occi_collection} | Config ];
 

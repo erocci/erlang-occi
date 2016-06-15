@@ -14,10 +14,12 @@
 	 new/1,
 	 new/2,
 	 id/1,
-	 ids/1,
+	 entity/2,
+	 locations/1,
 	 elements/1,
 	 elements/2,
 	 size/1,
+	 delete/2,
 	 append/2]).
 
 -export([from_map/1,
@@ -28,7 +30,7 @@
 -type elem() :: {occi_uri:url(), occi_entity:t() | undefined}.
 
 -record(collection, {id                    :: id(),
-		     elements = ordsets:new() :: ordsets:ordset()}).
+		     elements = #{}        :: maps:map()}).
 
 -opaque t() :: #collection{}.
 
@@ -39,7 +41,7 @@
 %% @end
 -spec new() -> t().
 new() ->
-    #collection{id=undefined, elements=ordsets:new()}.
+    #collection{id=undefined, elements=#{}}.
 
 
 %% @doc Create a new collection.
@@ -48,10 +50,10 @@ new() ->
 %% @end
 -spec new(binary() | occi_category:id()) -> t().
 new(Id) when is_binary(Id) ->
-    #collection{id=Id, elements=ordsets:new()};
+    #collection{id=Id, elements=#{}};
 
 new({_Scheme, _Term}=Id) ->
-    #collection{id=Id, elements=ordsets:new()}.
+    #collection{id=Id, elements=#{}}.
 
 
 %% @doc Creates a new bounded collection
@@ -68,43 +70,58 @@ id(#collection{id=Id}) ->
     Id.
 
 
-%% @doc Get all entity ids
+%% @doc Get an entity given a location
 %% @end
--spec ids(t()) -> [].
-ids(#collection{ elements=Elements }) ->
-    lists:reverse(ordsets:fold(fun ({Id, _}, Acc) ->
-				       [ Id | Acc ]
-			       end, [], Elements)).
+-spec entity(occi_uri:url(), t()) -> occi_entity:t().
+entity(Location, #collection{ elements=Elements }) ->
+    maps:get(Location, Elements).
+
+
+%% @doc Get all entity locations
+%% @end
+-spec locations(t()) -> [].
+locations(#collection{ elements=Elements }) ->
+    maps:keys(Elements).
 
 
 %% @doc Get all elements
 %% @end
--spec elements(t()) -> ordsets:ordset().
+-spec elements(t()) -> [elem()].
 elements(#collection{ elements=Elements }) ->
-    Elements.
+    maps:to_list(Elements).
 
 
 %% @doc Set elements or entities
 %% @end
 -spec elements([elem() | occi_entity:id() | occi_entity:t()], t()) -> t().
 elements(Elements, #collection{}=C) ->
-    Elements2 = lists:reverse(ordsets:fold(fun to_elem/2, ordsets:new(), Elements)),
+    Elements2 = lists:foldl(fun to_elem/2, #{}, Elements),
     C#collection{ elements=Elements2 }.
 
 
 %% @doc Append elements to the collection
 %% @end
--spec append(ordsets:ordset(), t()) -> t().
+-spec append([elem()], t()) -> t().
 append(NewElements, #collection{ elements=Elements }=C) ->
-    Elements2 = ordsets:union(ordsets:fold(fun to_elem/2, ordsets:new(), NewElements), Elements),
+    Elements2 = lists:foldl(fun to_elem/2, Elements, NewElements),
     C#collection{ elements=Elements2 }.
 
+
+%% @doc Delete elements from collection
+%% @end
+-spec delete([occi_entity:id()], t()) -> t().
+delete(ToDelete, #collection{ elements=Elements }=C) ->
+    Elements2 = lists:foldl(fun (Location, Acc) ->
+				    maps:remove(Location, Acc)
+			    end, Elements, ToDelete),
+    C#collection{ elements=Elements2 }.
+				   
 
 %% @doc Collection size
 %% @end
 -spec size(t()) -> integer().
 size(#collection{ elements=Elements }) ->
-    ordsets:size(Elements).
+    maps:size(Elements).
 
 
 -spec from_map(occi_rendering:ast()) -> t().
@@ -146,10 +163,10 @@ from_map2(Coll, Map) ->
 
 
 to_elem(Location, Acc) when is_binary(Location) ->
-    ordsets:add_element({Location, undefined}, Acc);
+    Acc#{ Location => undefined };
 
-to_elem({Location, _}=E, Acc) when is_binary(Location) ->
-    ordsets:add_element(E, Acc);
+to_elem({Location, Entity}, Acc) when is_binary(Location) ->
+    Acc#{ Location => Entity };
 
 to_elem(E, Acc) when ?is_entity(E) ->
     Location = case occi_entity:location(E) of
@@ -158,4 +175,4 @@ to_elem(E, Acc) when ?is_entity(E) ->
 		   L -> 
 		       L
 	       end,
-    ordsets:add_element({Location, E}, Acc).
+    Acc#{ Location => E }.
