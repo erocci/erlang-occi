@@ -100,8 +100,12 @@ elements(Elements, #collection{}=C) ->
 
 
 %% @doc Append elements to the collection
+%% If element is already present, it is replaced
 %% @end
--spec append([elem()], t()) -> t().
+-spec append([elem()] | occi_entity:t(), t()) -> t().
+append(Element, Coll) when ?is_entity(Element) ->
+    append([Element], Coll);
+
 append(NewElements, #collection{ elements=Elements }=C) ->
     Elements2 = lists:foldl(fun to_elem/2, Elements, NewElements),
     C#collection{ elements=Elements2 }.
@@ -109,12 +113,17 @@ append(NewElements, #collection{ elements=Elements }=C) ->
 
 %% @doc Delete elements from collection
 %% @end
--spec delete([occi_entity:id()], t()) -> t().
-delete(ToDelete, #collection{ elements=Elements }=C) ->
-    Elements2 = lists:foldl(fun (Location, Acc) ->
+-spec delete([occi_uri:url()] | occi_uri:url() | occi_entity:t(), t()) -> t().
+delete(ToDelete, #collection{ elements=Elements }=C) when is_list(ToDelete) ->
+    Elements2 = lists:foldl(fun (Entity, Acc) when ?is_entity(Entity) ->
+				    maps:remove(occi_entity:location(Entity), Acc);
+				(Location, Acc) when is_binary(Location) ->
 				    maps:remove(Location, Acc)
 			    end, Elements, ToDelete),
-    C#collection{ elements=Elements2 }.
+    C#collection{ elements=Elements2 };
+
+delete(ToDelete, Coll) ->
+    delete([ToDelete], Coll).
 				   
 
 %% @doc Collection size
