@@ -72,9 +72,9 @@ id(#collection{id=Id}) ->
 
 %% @doc Get an entity given a location
 %% @end
--spec entity(occi_uri:url(), t()) -> occi_entity:t().
+-spec entity(occi_uri:url(), t()) -> occi_entity:t() | undefined.
 entity(Location, #collection{ elements=Elements }) ->
-    maps:get(Location, Elements).
+    maps:get(Location, Elements, undefined).
 
 
 %% @doc Get all entity locations
