@@ -26,6 +26,7 @@
 	 add_mixin/2,
 	 rm_mixin/2,
 	 attributes/1,
+	 raw_attributes/1,
 	 get/2,
 	 set/3,
 	 update/3,
@@ -155,7 +156,7 @@ rm_mixin({_Scheme, _Term}=MixinId, E) ->
 %% If attribute has default value, return the default value.
 %% If attribute is not set and there is no default value, the attribute is not returned.
 %% @end
--spec attributes(t()) -> map().
+-spec attributes(t()) -> maps:map().
 attributes(E) ->
     maps:fold(fun (Key, undefined, Acc) ->
 		      Def = spec(Key, E),
@@ -166,6 +167,13 @@ attributes(E) ->
 		  (Key, Value, Acc) ->
 		      Acc#{ Key => Value }
 	      end, #{}, element(?values, E)).
+
+
+%% @doc Returns key-value attributes map
+%% @end
+-spec raw_attributes(t()) -> maps:map().
+raw_attributes(E) ->
+    element(?values, E).
 
 
 %% @throws {invalid_key, occi_attribute:key()}
