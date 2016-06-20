@@ -16,8 +16,7 @@
 -mixin([{occi_entity, except, [from_map/2, change_prefix/3]},
 	occi_type]).
 
--export([new/1,
-	 new/2,
+-export([new/2,
 	 add_link/2,
 	 links/1,
 	 links/2]).
@@ -46,13 +45,6 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
-
-
-%% @doc Creates a resource with given id, of kind ...core#resource
-%% @end
--spec new(occi_entity:id()) -> t().
-new(Id) ->
-    occi_resource:new(Id, ?resource_kind_id).
 
 
 %% @throws {unknown_category, term()}
