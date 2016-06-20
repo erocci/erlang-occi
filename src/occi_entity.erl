@@ -17,7 +17,8 @@
 -include("occi_entity.hrl").
 -include("occi_type.hrl").
 
--export([id/1,
+-export([new/1,
+	 id/1,
 	 id/2,
 	 location/1,
 	 location/2,
@@ -69,6 +70,17 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
+
+-spec new(occi_kind:id()) -> t().
+new(KindId) ->
+    Kind = occi_models:kind(KindId),
+    case occi_kind:known_parent(Kind) of
+	resource ->
+	    occi_resource:new(undefined, Kind);
+	link ->
+	    occi_link:new(undefined, Kind)
+    end.
+
 
 -spec id(t()) -> id().
 id(E) ->
@@ -153,7 +165,7 @@ rm_mixin({_Scheme, _Term}=MixinId, E) ->
 
 
 %% @doc Return key-value attributes map
-%% If attribute has default value, return the default value.
+%% Return default value for attribute if If attribute has default value, return the default value.
 %% If attribute is not set and there is no default value, the attribute is not returned.
 %% @end
 -spec attributes(t()) -> maps:map().
@@ -170,10 +182,28 @@ attributes(E) ->
 
 
 %% @doc Returns key-value attributes map
+%% Return default value for undefined required attributes with default value
 %% @end
 -spec raw_attributes(t()) -> maps:map().
 raw_attributes(E) ->
-    element(?values, E).
+    M = maps:fold(fun (Key, undefined, Acc) ->
+			  Def = spec(Key, E),
+			  case occi_attribute:required(Def) of
+			      true ->
+				  case occi_attribute:default(Def) of
+				      undefined -> Acc;
+				      Default -> Acc#{ Key => Default }
+				  end;
+			      false ->
+				  Acc
+			  end;
+		      (Key, Value, Acc) ->
+			  Acc#{ Key => Value }
+		  end, #{}, element(?values, E)),
+    case id(E) of
+	undefined -> M;
+	Id -> M#{ <<"occi.core.id">> => Id }
+    end.
 
 
 %% @throws {invalid_key, occi_attribute:key()}

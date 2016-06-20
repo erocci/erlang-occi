@@ -16,7 +16,8 @@
 -mixin([{occi_entity, except, [from_map/2, change_prefix/3]},
 	occi_type]).
 
--export([new/4,
+-export([new/2,
+	 new/4,
 	 new/6,
 	 source/1,
 	 target/1,
@@ -32,6 +33,10 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
+
+
+new(Id, Kind) ->
+    occi_entity:merge_parents(Kind, {link, Id, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}).
 
 
 %% @equiv new(Id, KindId, Src, Target, occi_resource:kind(Target))
