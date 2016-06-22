@@ -29,6 +29,10 @@
       "attributes": {
         "size": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         }
@@ -46,6 +50,10 @@
       "attributes": {
         "method": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
@@ -63,6 +71,10 @@
       "attributes": {
         "method": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
@@ -75,6 +87,10 @@
       "attributes": {
         "method": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
@@ -89,6 +105,10 @@
       "attributes": {
         "occi.core.summary": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
@@ -109,32 +129,56 @@
       "attributes": {
         "occi.compute.architecture": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": false,
           "type": "array"
         },
         "occi.compute.cores": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         },
         "occi.compute.hostname": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         },
         "occi.compute.memory": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         },
         "occi.compute.speed": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         },
         "occi.compute.state": {
           "default": "inactive",
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": true,
           "type": "array"
         }
@@ -156,11 +200,19 @@
       "attributes": {
         "occi.storage.size": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": true,
           "type": "number"
         },
         "occi.storage.state": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": true,
           "type": "array"
         }
@@ -175,11 +227,19 @@
       "attributes": {
         "occi.core.id": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         },
         "occi.core.title": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
@@ -197,16 +257,28 @@
       "attributes": {
         "occi.network.label": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         },
         "occi.network.state": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": true,
           "type": "array"
         },
         "occi.network.vlan": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         }
@@ -221,21 +293,37 @@
       "attributes": {
         "occi.core.source": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": true,
           "type": "string"
         },
         "occi.core.source.kind": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         },
         "occi.core.target": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": true,
           "type": "string"
         },
         "occi.core.target.kind": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
@@ -250,16 +338,28 @@
       "attributes": {
         "occi.networkinterface.interface": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": true,
           "type": "string"
         },
         "occi.networkinterface.mac": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": true,
           "type": "string"
         },
         "occi.networkinterface.state": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": true,
           "type": "array"
         }
@@ -274,16 +374,28 @@
       "attributes": {
         "occi.storagelink.deviceid": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": true,
           "type": "string"
         },
         "occi.storagelink.mountpoint": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         },
         "occi.storagelink.state": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": true,
           "type": "array"
         }
@@ -315,21 +427,37 @@
       "attributes": {
         "occi.compute.architecture": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         },
         "occi.compute.cores": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         },
         "occi.compute.memory": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         },
         "occi.compute.speed": {
           "mutable": false,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "number"
+          },
           "required": false,
           "type": "number"
         }
@@ -352,16 +480,28 @@
       "attributes": {
         "occi.network.address": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         },
         "occi.network.allocation": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": true,
           "type": "array"
         },
         "occi.network.gateway": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
@@ -375,16 +515,28 @@
       "attributes": {
         "occi.networkinterface.address": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": true,
           "type": "string"
         },
         "occi.networkinterface.allocation": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "array"
+          },
           "required": true,
           "type": "array"
         },
         "occi.networkinterface.gateway": {
           "mutable": true,
+          "pattern": {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "string"
+          },
           "required": false,
           "type": "string"
         }
