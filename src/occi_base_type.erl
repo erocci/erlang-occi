@@ -44,6 +44,9 @@ cast(V, {enum, Enum}) when is_binary(V) ->
 cast(V, string) when is_binary(V) ->
     V;
 
+cast(V, string) when is_list(V) ->
+    V;
+
 cast(V, string) ->
     throw({invalid_value, string, V});
 
@@ -53,8 +56,14 @@ cast(V, integer) ->
 cast(V, float) ->
     cast_float(V);
 
+cast(V, uri) when is_list(V) ->
+    list_to_binary(V);
+
 cast(V, uri) when is_binary(V) ->
     V;
+
+cast({Scheme, Term}, kind) when is_list(Scheme), is_list(Term) ->
+    {list_to_binary(Scheme), list_to_binary(Term)};
 
 cast({Scheme, Term}=V, kind) when is_binary(Scheme), is_binary(Term) ->
     V;

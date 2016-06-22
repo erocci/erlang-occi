@@ -133,7 +133,10 @@ location(Location, C) when is_binary(Location) ->
 
 
 %% @throws {invalid_cid, term()}
--spec parse_id(binary()) -> id().
+-spec parse_id(string() | binary()) -> id().
+parse_id(Id) when is_list(Id) ->
+    parse_id(list_to_binary(Id));
+
 parse_id(Id) when is_binary(Id) ->
     case binary:split(Id, [<<$#>>], [global, trim_all]) of
 	[Scheme, Term] ->
