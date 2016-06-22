@@ -183,7 +183,7 @@ r_attr_def(Def) ->
 	 },
     M0 = case occi_attribute:pattern(Def) of
 	     undefined ->
-		 M;
+		 r_attr_pattern(Def, M);
 	     Pattern ->
 		 M#{ pattern => Pattern }
 	 end,
@@ -199,6 +199,14 @@ r_attr_def(Def) ->
 	Desc ->
 	    M1#{ description => Desc }
     end.
+
+
+r_attr_pattern(Def, Map) ->
+    Pattern = #{
+      <<"$schema">> => <<"http://json-schema.org/draft-04/schema#">>,
+      <<"type">> => r_attr_type(occi_attribute:type(Def))
+     },
+    Map#{ pattern => Pattern }.
 
 
 r_attr_type({enum, _}) ->

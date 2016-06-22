@@ -21,6 +21,9 @@
 -endif.
 
 -spec parse(binary()) -> occi_rendering:ast().
+parse(<<>>) ->
+    throw({parse_error, empty});
+
 parse(Bin) ->
     case xmerl_sax_parser:stream(Bin, options(fun handle_event/3)) of
 	{ok, Ast, _Rest} -> 

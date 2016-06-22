@@ -21,6 +21,9 @@
 
 
 -spec parse(binary()) -> occi_rendering:ast().
+parse(<<>>) ->
+    throw({parse_error, empty});
+
 parse(Bin) ->
     orddict:fold(fun validate/3, #{}, occi_parser_http:parse(Bin)).
 

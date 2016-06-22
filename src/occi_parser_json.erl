@@ -17,6 +17,9 @@
 -endif.
 
 -spec parse(binary()) -> occi_rendering:ast().
+parse(<<>>) ->
+    throw({parse_error, empty});
+    
 parse(Bin) ->
     maps:fold(fun validate/3, #{}, jsx:decode(Bin, [return_maps])).
 
