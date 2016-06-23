@@ -290,7 +290,7 @@ p_link_attribute(undefined, #{ attributes := Attributes }=Link) ->
     {link, Link#{ attributes := lists:reverse(Attributes) }};
 
 p_link_attribute({kv, {Key, Value}, Rest}, #{ attributes := Attributes }=Link) ->
-    p_link_attribute(p_kv(Rest), Link#{ attributes := [ {Key, Value} | Attributes ]});
+    p_link_attribute(p_kv(Rest), Link#{ attributes := [ {attribute, Key, Value} | Attributes ]});
 
 p_link_attribute({Type, Value, _Rest}, _Link) ->
     throw({parse_error, {link, {Type, Value}}}).

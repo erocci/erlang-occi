@@ -55,15 +55,11 @@ canonical(Bin) ->
     Uri = case uri:port(Uri0) of
 	      undefined ->
 		  case uri:scheme(Uri0) of
-		      <<"http">> ->
-			  uri:port(Uri0, 80);
-		      <<"https">> ->
-			  uri:port(Uri0, 443);
-		      _ ->
-			  Uri0
+		      <<"http">> -> uri:port(Uri0, 80);
+		      <<"https">> -> uri:port(Uri0, 443);
+		      _ -> Uri0
 		  end;
-	      _ ->
-		  Uri0
+	      _ -> Uri0
 	  end,
     uri:to_string(Uri).
 
@@ -72,7 +68,12 @@ canonical(Bin) ->
 %% @end
 -spec relative(Endpoint :: url(), Url :: url()) -> url().
 relative(Endpoint, Url) ->
-    relative2(canonical(Endpoint), canonical(Url)).
+    try canonical(Url) of
+	Url0 ->
+	    relative2(canonical(Endpoint), Url0)
+    catch error:{badmatch, _} ->
+	    Url
+    end.
 	
 
 %% @doc Render uri as binary
@@ -254,6 +255,8 @@ canonical_test_() ->
 
 relative_test_() ->
     [
+     ?_assertMatch(<<"2e0063bc-fec4-4bf3-892d-8023908018f7">>,
+		   relative(<<"http://localhost:8080">>, <<"2e0063bc-fec4-4bf3-892d-8023908018f7">>)),
      ?_assertMatch(<<"/path/to/a/resource">>,
 		   relative(<<"http://localhost:8080">>, <<"http://localhost:8080/path/to/a/resource">>)),
 
