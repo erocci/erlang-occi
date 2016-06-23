@@ -31,10 +31,15 @@
 %%%===================================================================
 -spec render(T :: occi:t(), Ctx :: occi_ctx:t()) -> iolist().
 render(Categories, Ctx) when ?is_categories(Categories) ->
-    lists:map(fun (Category) ->
-		      Location = occi_category:location(Category),
-		      [ occi_uri:to_string(Location, Ctx), $\n ]
-	      end, Categories);
+    lists:foldl(fun (Category, Acc) ->
+			case occi_category:class(Category) of
+			    action ->
+				Acc;
+			    _ ->
+				Location = occi_category:location(Category),
+				[ Acc, occi_uri:to_string(Location, Ctx), $\n ]
+			end
+		end, [], Categories);
 
 render(Coll, Ctx) when ?is_collection(Coll) ->
     ordsets:fold(fun ({Id, _}, Acc) ->
