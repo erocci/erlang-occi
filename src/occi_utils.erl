@@ -92,8 +92,6 @@ mimetype(Path) ->
 
 
 -spec normalize_mimetype(term()) -> occi_utils:mimetype().
-normalize_mimetype(undefined)                                -> ?mimetype_occi;
-normalize_mimetype(<<"*/*">>)                                -> ?mimetype_occi;
 normalize_mimetype(<<"application/xml">>)                    -> ?mimetype_xml;
 normalize_mimetype(<<"application/occi+xml">>)               -> ?mimetype_xml;
 normalize_mimetype({<<"application">>, <<"xml">>, V})        -> ?mimetype_xml(V);
@@ -113,4 +111,5 @@ normalize_mimetype({<<"text">>, <<"occi">>, V})              -> ?mimetype_occi(V
 normalize_mimetype(text)                                     -> ?mimetype_plain;
 normalize_mimetype(<<"text/uri-list">>)                      -> ?mimetype_uri;
 normalize_mimetype({<<"text">>, <<"uri-list">>, V})          -> ?mimetype_uri(V);
-normalize_mimetype('uri-list')                               -> ?mimetype_uri.
+normalize_mimetype('uri-list')                               -> ?mimetype_uri;
+normalize_mimetype(_)                                        -> ?mimetype_occi.
