@@ -14,6 +14,7 @@
   },
   "id": "ns1/mycompute0",
   "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
+  "location": "http://example.org:8080/ns1/mycompute0",
   "mixins": [
     "http://occi.example.org/occi/infrastructure/os_tpl#debian6"
   ],

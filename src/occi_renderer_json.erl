@@ -243,7 +243,7 @@ r_link(L, Ctx) ->
 			     occi_link:get(<<"occi.core.target.kind">>, L), Ctx) }.
 
 
-r_entity(E, _Ctx) ->
+r_entity(E, Ctx) ->
     M = #{ kind => r_type_id(occi_entity:kind(E)) },
     M1 = case occi_entity:mixins(E) of
 	     [] -> M;
@@ -260,10 +260,14 @@ r_entity(E, _Ctx) ->
 	     Actions -> 
 		 M2#{ actions => [ r_type_id(Action) || Action <- Actions ] }
 	 end,
-    M4 = M3#{ id => occi_entity:id(E) },
+    M4 = case occi_entity:id(E) of
+	     undefined -> M3;
+	     Id -> M3#{ id => Id }
+	 end,
+    M5 = M4#{ location => occi_uri:to_string(occi_entity:location(E), Ctx) },
     case occi_link:get(<<"occi.core.title">>, E) of
-	undefined -> M4;
-	Title -> M4#{ title => r_string(Title) }
+	undefined -> M5;
+	Title -> M5#{ title => r_string(Title) }
     end.
 
 

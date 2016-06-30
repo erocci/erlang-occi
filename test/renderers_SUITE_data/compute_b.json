@@ -15,6 +15,7 @@
     {
       "id": "myif0",
       "kind": "http://schemas.ogf.org/occi/infrastructure#networkinterface",
+      "location": "http://example.org:8080/ns1/mycompute0/netif0",
       "source": {
         "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
         "location": "http://example.org:8080/ns1/mycompute0"
@@ -23,5 +24,7 @@
         "location": "http://example.org:8080/network0"
       }
     }
-  ]
+  ],
+  "location": "http://example.org:8080/ns1/mycompute0"
 }
+
