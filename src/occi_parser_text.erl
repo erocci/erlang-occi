@@ -408,28 +408,28 @@ p_value2(<< "true" >>, Key) ->
 
 p_value2(<< "true", C, Rest/binary >>, Key) when C =:= $\s;
 						 C =:= $, ->
-    {kv, {Key, true}, eat_ws(Rest)};
+    p_value3(Rest, kv, {Key, true});
 
 p_value2(<< "false" >>, Key) ->
     {kv, {Key, false}, <<>>};
 
 p_value2(<< "false", C, Rest/binary >>, Key) when C =:= $\s;
 						  C =:= $, ->
-    {kv, {Key, false}, eat_ws(Rest)};
+    p_value3(Rest, kv, {Key, false});
 
 p_value2(<< $", Rest/binary >>, Key) ->
     {string, Value, Rest2} = p_string(Rest, <<>>),
-    {kv, {Key, {string, Value}}, Rest2};
+    p_value3(Rest2, kv, {Key, {string, Value}});
 
 p_value2(<< C, Rest/binary >>, Key) when ?is_digit(C);
 					 C =:= $+;
 					 C =:= $- ->
     {Type, Value, Rest2} = p_number(Rest, << C >>),
-    {kv, {Key, {Type, Value}}, Rest2};
+    p_value3(Rest2, kv, {Key, {Type, Value}});
 
 p_value2(<< $., Rest/binary >>, Key) ->
     {float, Value, Rest2} = p_float(Rest, << $. >>),
-    {kv, {Key, {float, Value}}, Rest2};
+    p_value3(Rest2, kv, {Key, {float, Value}});
 
 p_value2(<< C, Rest/binary >>, Key) when ?is_alpha(C) ->
     End = fun (X) when X =:= $\s;
@@ -440,7 +440,7 @@ p_value2(<< C, Rest/binary >>, Key) when ?is_alpha(C) ->
 		  false
 	  end,
     {alnum, Value, Rest2} = p_alnum(Rest, End, << C >>),
-    {kv, {Key, {alnum, Value}}, Rest2};
+    p_value3(Rest2, kv, {Key, {alnum, Value}});
 
 p_value2(<< C, _Rest/binary >>, _Key) ->
     throw({parse_error, {value, C}}).
