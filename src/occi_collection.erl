@@ -174,7 +174,7 @@ from_map2(Coll, Map) ->
 		      true ->
 			  [ occi_entity:from_map(Map1) | Acc ];
 		      false ->
-			  Location = maps:get(location, Map1,maps:get(id, Map1)),
+			  Location = maps:get(location, Map1),
 			  [ Location | Acc ]
 		  end
 	  end,

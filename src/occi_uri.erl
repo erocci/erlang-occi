@@ -131,7 +131,7 @@ change_prefix(rm, Prefix, Path) ->
 %% @doc Prepend path with prefix
 %% @end
 -spec add_prefix(binary(), binary()) -> binary().
-add_prefix(Prefix, Path) when is_binary(Prefix), is_binary(Prefix) ->
+add_prefix(Prefix, Path) when is_binary(Prefix), is_binary(Path) ->
     filename:join([Prefix, Path]).
 
 

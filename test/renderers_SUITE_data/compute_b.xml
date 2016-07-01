@@ -1,10 +1,12 @@
 <?xml version="1.0"?>
-<resource id="http://example.org:8080/ns1/mycompute0" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<resource href="http://example.org:8080/ns1/mycompute0" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="compute"/>
   <attribute name="occi.compute.cores" value="4"/>
   <attribute name="occi.compute.state" value="inactive"/>
-  <link id="http://example.org:8080/myif0" source="http://example.org:8080/ns1/mycompute0" target="http://example.org:8080/network0">
+  <attribute name="occi.core.id" value="ns1/mycompute0"/>
+  <link href="http://example.org:8080/ns1/mycompute0/netif0" source="http://example.org:8080/ns1/mycompute0" target="http://example.org:8080/network0">
     <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="networkinterface"/>
+    <attribute name="occi.core.id" value="myif0"/>
     <attribute name="occi.core.source.kind" value="http://schemas.ogf.org/occi/infrastructure#compute"/>
   </link>
   <action scheme="http://schemas.ogf.org/occi/infrastructure/compute/action#" term="restart"/>

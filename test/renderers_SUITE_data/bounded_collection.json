@@ -1,12 +1,10 @@
 {
   "resources": [
     {
-      "id": "resource1",
       "kind": "http://schemas.ogf.org/occi/core#resource",
       "location": "http://example.org:8080/resource1"
     },
     {
-      "id": "resource0",
       "kind": "http://schemas.ogf.org/occi/core#resource",
       "location": "http://example.org:8080/resource0"
     }

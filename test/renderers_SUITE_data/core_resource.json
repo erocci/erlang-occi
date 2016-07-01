@@ -1,4 +1,7 @@
 {
+  "attributes": {
+    "occi.core.id": "myresource"
+  },
   "id": "myresource",
   "kind": "http://schemas.ogf.org/occi/core#resource",
   "location": "http://example.org:8080/myresource"

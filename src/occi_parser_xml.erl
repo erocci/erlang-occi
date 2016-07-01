@@ -193,27 +193,32 @@ handle_start_el(occi, mixin, A, _Pos, S) ->
     S#{ mixin => M1 };
 
 handle_start_el(occi, resource, A, _Pos, S) ->
-    R0 = #{ id => attr("id", A),
-	    attributes => #{ <<"occi.core.title">> => attr("title", A, undefined) }
-	  },
-    R1 = case attr("title", A, undefined) of
-	     undefined -> R0;
-	     Title -> R0#{ attributes => #{ <<"occi.core.title">> => Title } }
-	 end,
-    S#{ resource => R1 };
+    Attrs = lists:foldl(fun ({_, undefined}, Acc) ->
+				Acc;
+			    ({K, V}, Acc) ->
+				Acc#{ K => V }
+			end, #{}, [{<<"occi.core.id">>, attr("id", A, undefined)},
+				   {<<"occi.core.title">>, attr("title", A, undefined)}]),
+    R = case attr("href", A, undefined) of
+	    undefined -> #{ attributes => Attrs };
+	    Location -> #{ attributes => Attrs, location => Location }
+	end,
+    S#{ resource => R };
 
 handle_start_el(occi, link, A, _Pos, S) ->
-    L0 = #{ id => attr("id", A),
+    Attrs = lists:foldl(fun ({_, undefined}, Acc) ->
+				Acc;
+			    ({K, V}, Acc) ->
+				Acc#{ K => V }
+			end, #{}, [{<<"occi.core.id">>, attr("id", A, undefined)},
+				   {<<"occi.core.title">>, attr("title", A, undefined)}]),
+    L0 = #{ attributes => Attrs,
 	    target => #{ location => attr("target", A) } },
     L1 = case attr("source", A, undefined) of
 	     undefined -> L0;
 	     Source -> L0#{ source => #{ location => Source } }
 	 end,
-    L2 = case attr("title", A, undefined) of
-	     undefined -> L1;
-	     Title -> L1#{ attributes => #{ <<"occi.core.title">> => Title } }
-	 end,
-    S#{ link => L2 };
+    S#{ link => L1 };
 
 handle_start_el(occi, depends, A, _Pos, #{ mixin := M }=S) ->
     Depend = { attr("scheme", A), attr("term", A) },

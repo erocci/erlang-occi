@@ -7,12 +7,16 @@
   ],
   "attributes": {
     "occi.compute.cores": 4,
-    "occi.compute.state": "inactive"
+    "occi.compute.state": "inactive",
+    "occi.core.id": "ns1/mycompute0"
   },
   "id": "ns1/mycompute0",
   "kind": "http://schemas.ogf.org/occi/infrastructure#compute",
   "links": [
     {
+      "attributes": {
+        "occi.core.id": "myif0"
+      },
       "id": "myif0",
       "kind": "http://schemas.ogf.org/occi/infrastructure#networkinterface",
       "location": "http://example.org:8080/ns1/mycompute0/netif0",
@@ -27,4 +31,3 @@
   ],
   "location": "http://example.org:8080/ns1/mycompute0"
 }
-

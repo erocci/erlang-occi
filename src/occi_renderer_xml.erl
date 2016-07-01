@@ -186,11 +186,13 @@ to_xml(attribute, Attr, _Ctx) ->
     {attribute, lists:reverse(A5), lists:reverse(C0)};
 
 to_xml(resource, R, Ctx) ->
-    Id = occi_resource:id(R),
-    A = [{id, occi_uri:to_string(Id, Ctx)}],
-    A1 = case occi_resource:get(<<"occi.core.title">>, R) of
-	     undefined -> A;
-	     Title -> [{title, Title} | A]
+    A1 = case occi_resource:location(R) of
+	     undefined -> [];
+	     Location -> [ {href, occi_uri:to_string(Location, Ctx) } ]
+	 end,
+    A2 = case occi_resource:get(<<"occi.core.title">>, R) of
+	     undefined -> A1;
+	     Title -> [{title, Title} | A1]
 	 end,
     C = [ category_id(kind, occi_resource:kind(R)) ],
     C0 = lists:foldl(fun (MixinId, Acc) ->
@@ -209,18 +211,21 @@ to_xml(resource, R, Ctx) ->
     C3 = lists:foldl(fun ({Scheme, Term}, Acc) ->
 			     [ {action, [{scheme, Scheme}, {term, Term}], []} | Acc ]
 		     end, C2, occi_resource:actions(R)),
-    {resource, lists:reverse(A1), lists:reverse(C3)};
+    {resource, lists:reverse(A2), lists:reverse(C3)};
 
 to_xml(link, L, Ctx) ->
-    Id = occi_link:id(L),
-    A = [
-	 {target, occi_uri:to_string(occi_link:get(<<"occi.core.target">>, L), Ctx)},
-	 {source, occi_uri:to_string(occi_link:get(<<"occi.core.source">>, L), Ctx)},
-	 {id, occi_uri:to_string(Id, Ctx)}
-	],
-    A1 = case occi_link:get(<<"occi.core.title">>, L) of
-	     undefined -> A;
-	     Title -> [{title, Title} | A]
+    A1 = case occi_link:location(L) of
+	     undefined -> [];
+	     Location -> [ {href, occi_uri:to_string(Location, Ctx)} ]
+	 end,
+    A2 = [
+	  {target, occi_uri:to_string(occi_link:get(<<"occi.core.target">>, L), Ctx)},
+	  {source, occi_uri:to_string(occi_link:get(<<"occi.core.source">>, L), Ctx)}
+	  | A1
+	 ],
+    A3 = case occi_link:get(<<"occi.core.title">>, L) of
+	     undefined -> A2;
+	     Title -> [{title, Title} | A2]
 	 end,
     C = [ category_id(kind, occi_link:kind(L)) ],
     C0 = lists:foldl(fun (MixinId, Acc) ->
@@ -236,7 +241,7 @@ to_xml(link, L, Ctx) ->
 		       (K, V, Acc) ->
 			   [ {attribute, [{name, K}, {value, attr_value(V)}], []} | Acc ]
 		   end, C1, occi_resource:attributes(L)),
-    {link, lists:reverse(A1), lists:reverse(C2)}.
+    {link, lists:reverse(A3), lists:reverse(C2)}.
 
 
 %%%

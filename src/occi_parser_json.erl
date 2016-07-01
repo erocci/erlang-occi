@@ -59,7 +59,7 @@ validate(<<"actions">>, V, Acc) when is_list(V) ->
 validate(<<"id">>, V, Acc) when is_binary(V) ->
     %% resource: String
     %% link: String
-    Acc#{ id => V };
+    Acc#{ attributes => maps:put(<<"occi.core.id">>, V, maps:get(attributes, Acc, #{})) };
 
 validate(<<"links">>, V, Acc) when is_list(V) ->
     %% resource: Array
@@ -235,10 +235,13 @@ val_link(<<"actions">>, V, Acc) when is_list(V) ->
     Acc#{ actions => [ type_id(Bin) || Bin <- V ] };
 
 val_link(<<"id">>, V, Acc) when is_binary(V) ->
-    Acc#{ id => V };
+    Acc#{ attributes => maps:put(<<"occi.core.id">>, V, maps:get(attributes, Acc, #{})) };
+
+val_link(<<"location">>, V, Acc) when is_binary(V) ->
+    Acc#{ location => V };
 
 val_link(<<"title">>, V, Acc) when is_binary(V) ->
-    Acc#{ title => maps:put(<<"occi.core.title">>, V, maps:get(attributes, Acc, #{})) };
+    Acc#{ attributes => maps:put(<<"occi.core.title">>, V, maps:get(attributes, Acc, #{})) };
 
 val_link(<<"source">>, V, Acc) when is_map(V) ->
     Source = maps:fold(fun link_end/3, #{}, V),
@@ -266,7 +269,7 @@ val_resource(<<"actions">>, V, Acc) when is_list(V) ->
     Acc#{ actions => [ type_id(Bin) || Bin <- V ] };
 
 val_resource(<<"id">>, V, Acc) when is_binary(V) ->
-    Acc#{ id => V };
+    Acc#{ attributes => maps:put(<<"occi.core.id">>, V, maps:get(attributes, Acc, #{})) };
 
 val_resource(<<"links">>, V, Acc) when is_list(V) ->
     Acc#{ links => [ val_link(Bin) || Bin <- V ] };
@@ -275,7 +278,10 @@ val_resource(<<"title">>, V, Acc) when is_binary(V) ->
     Acc#{ title => maps:put(<<"occi.core.title">>, V, maps:get(attributes, Acc, #{})) };
 
 val_resource(<<"summary">>, V, Acc) when is_binary(V) ->
-    Acc#{ summary => maps:put(<<"occi.core.summary">>, V, maps:get(attributes, Acc, #{})) }.
+    Acc#{ summary => maps:put(<<"occi.core.summary">>, V, maps:get(attributes, Acc, #{})) };
+
+val_resource(<<"location">>, V, Acc) when is_binary(V) ->
+    Acc#{ location => V }.
 
 
 val_attributes(<<"mutable">>, V, Acc) when is_boolean(V) ->

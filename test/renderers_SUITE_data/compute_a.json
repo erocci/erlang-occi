@@ -10,7 +10,8 @@
     "occi.compute.hostname": "mycompute",
     "occi.compute.memory": 2.5,
     "occi.compute.speed": 4.5,
-    "occi.compute.state": "inactive"
+    "occi.compute.state": "inactive",
+    "occi.core.id": "ns1/mycompute0"
   },
   "id": "ns1/mycompute0",
   "kind": "http://schemas.ogf.org/occi/infrastructure#compute",

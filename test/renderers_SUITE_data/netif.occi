@@ -1,5 +1,6 @@
 category: networkinterface; scheme="http://schemas.ogf.org/occi/infrastructure#"; class=kind
 category: ipnetworkinterface; scheme="http://schemas.ogf.org/occi/infrastructure/networkinterface#"; class=mixin
+x-occi-attribute: occi.core.id="myif"
 x-occi-attribute: occi.core.source="http://example.org:8080/mycompute"
 x-occi-attribute: occi.core.source.kind="http://schemas.ogf.org/occi/infrastructure#compute"
 x-occi-attribute: occi.core.target="http://example.org:8080/mynetwork"
@@ -8,4 +9,3 @@ x-occi-attribute: occi.networkinterface.address="192.168.0.1"
 x-occi-attribute: occi.networkinterface.allocation="static"
 x-occi-attribute: occi.networkinterface.interface="eth0"
 x-occi-attribute: occi.networkinterface.mac="00:11:22:33:44:55"
-x-occi-attribute: occi.core.id="myif"

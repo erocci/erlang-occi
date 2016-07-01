@@ -32,7 +32,7 @@ end_per_suite(_Config) ->
 
 init_per_group(core_resource, Config) ->
     Fun = fun(R)  ->
-		  ?assertMatch(<<"resource1">>, occi_resource:id(R)),
+		  ?assertMatch(<<"resource1">>, occi_resource:get(<<"occi.core.id">>, R)),
 		  ?assertMatch(undefined, occi_resource:location(R)),
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>}, occi_resource:kind(R)),
 		  ?assertMatch(#{}, occi_resource:attributes(R))
@@ -41,7 +41,7 @@ init_per_group(core_resource, Config) ->
 
 init_per_group(core_link, Config) ->
     Fun = fun(L)  ->
-		  ?assertMatch(<<"link1">>, occi_link:id(L)),
+		  ?assertMatch(<<"link1">>, occi_link:get(<<"occi.core.id">>, L)),
 		  ?assertMatch(undefined, occi_link:location(L)),
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/core#">>, <<"link">>}, occi_link:kind(L)),
 		  ?assertMatch(<<"/myresource0">>, occi_link:source(L)),
@@ -52,7 +52,7 @@ init_per_group(core_link, Config) ->
 
 init_per_group('netif_link', Config) ->
     Fun = fun(L)  ->
-		  ?assertMatch(<<"netif1">>, occi_link:id(L)),
+		  ?assertMatch(<<"netif1">>, occi_link:get(<<"occi.core.id">>, L)),
 		  ?assertMatch(undefined, occi_link:location(L)),
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"networkinterface">>}, 
 			       occi_link:kind(L)),
@@ -70,10 +70,10 @@ init_per_group('netif_link', Config) ->
 
 init_per_group('resource_link', Config) ->
     Fun = fun(R)  ->
-		  ?assertMatch(<<"resource1">>, occi_resource:id(R)),
+		  ?assertMatch(<<"resource1">>, occi_resource:get(<<"occi.core.id">>, R)),
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>}, occi_resource:kind(R)),
 		  [Link] = occi_resource:links(R),
- 		  ?assertMatch(<<"mylink1">>, occi_link:id(Link)),
+ 		  ?assertMatch(<<"mylink1">>, occi_link:get(<<"occi.core.id">>, Link)),
  		  ?assertMatch({<<"http://schemas.ogf.org/occi/core#">>, <<"link">>}, occi_link:kind(Link)),
  		  ?assertMatch(<<"http://example.org/another_resource1">>, occi_link:target(Link)),
 		  ?assertMatch(#{}, occi_resource:attributes(R))
@@ -82,7 +82,7 @@ init_per_group('resource_link', Config) ->
 
 init_per_group('compute_a', Config) ->
     Fun = fun(R)  ->
-		  ?assertMatch(<<"compute1">>, occi_resource:id(R)),
+		  ?assertMatch(<<"compute1">>, occi_resource:get(<<"occi.core.id">>, R)),
 		  ?assertMatch(undefined, occi_resource:location(R)),
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}, occi_resource:kind(R)),
 		  ?assertMatch(#{ <<"occi.core.summary">> := <<"A super computer">>,
@@ -97,7 +97,7 @@ init_per_group('compute_a', Config) ->
 
 init_per_group('compute_a_comma', Config) ->
     Fun = fun(R)  ->
-		  ?assertMatch(<<"compute1">>, occi_resource:id(R)),
+		  ?assertMatch(<<"compute1">>, occi_resource:get(<<"occi.core.id">>, R)),
 		  ?assertMatch(undefined, occi_resource:location(R)),
 		  ?assertMatch({<<"http://schemas.ogf.org/occi/infrastructure#">>, <<"compute">>}, occi_resource:kind(R)),
 		  ?assertMatch(#{ <<"occi.core.summary">> := <<"A super, virtual computer">>,

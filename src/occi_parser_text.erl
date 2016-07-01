@@ -65,7 +65,17 @@ add_link_or_action({link, Map}, Acc) ->
 			true -> Link;
 			false -> Link#{ kind => ?link_kind_id }
 		    end,
-	    Acc#{ links => [ Link1 | maps:get(links, Acc, []) ] }
+	    Attrs = maps:get(attributes, Link1, #{}),
+	    Link2 = case maps:get(<<"occi.core.id">>, Attrs, undefined) of
+			undefined ->
+			    case maps:get(location, Link1, undefined) of
+				undefined -> Link1;
+				Location -> Link1#{ attributes => 
+							Attrs#{ <<"occi.core.id">> => filename:basename(Location) }}
+			    end;
+			_ -> Link1
+		    end,
+	    Acc#{ links => [ Link2 | maps:get(links, Acc, []) ] }
     end.
 
 
@@ -90,9 +100,6 @@ val_category({category, #{ class := mixin }=Cat}, Acc) ->
 	  term => Term }.
 
 
-val_attribute({attribute, <<"occi.core.id">>, {_Type, Value}}, Acc) ->
-    Acc#{ id => Value };
-
 val_attribute({attribute, <<"occi.core.source">>, {_Type, Value}}, Acc) ->
     Source = maps:get(source, Acc, #{}),
     Acc#{ source => Source#{ location => Value } };
@@ -115,7 +122,7 @@ val_attribute({attribute, Key, {_Type, Value}}, Acc) ->
 
 
 val_link(self, Self, Acc) ->
-    Acc#{ id => Self };
+    Acc#{ location => Self };
 
 val_link(categories, Categories, Acc) ->
     {Kind, Mixins} = filter_categories(Categories, undefined, []),

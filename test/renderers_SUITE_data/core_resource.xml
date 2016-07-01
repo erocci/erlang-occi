@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
-<resource id="http://example.org:8080/myresource" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<resource href="http://example.org:8080/myresource" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <kind scheme="http://schemas.ogf.org/occi/core#" term="resource"/>
+  <attribute name="occi.core.id" value="myresource"/>
 </resource>

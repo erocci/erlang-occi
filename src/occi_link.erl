@@ -13,12 +13,12 @@
 -include("occi_log.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [from_map/2, change_prefix/3]},
+-mixin([{occi_entity, except, [new/1, from_map/2, change_prefix/3]},
 	occi_type]).
 
--export([new/2,
-	 new/4,
-	 new/6,
+-export([new/1,
+	 new/3,
+	 new/5,
 	 source/1,
 	 target/1,
 	 endpoint/2]).
@@ -35,40 +35,39 @@
 -endif.
 
 
-new(Id, Kind) ->
-    occi_entity:merge_parents(Kind, {link, Id, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}).
+new(Kind) ->
+    occi_entity:merge_parents(Kind, {link, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}).
 
 
-%% @equiv new(Id, KindId, Src, Target, occi_resource:kind(Target))
+%% @equiv new(KindId, Src, Target, occi_resource:kind(Target))
 %% @end
--spec new(uri:t(), occi_category:id() | binary(), 
+-spec new(occi_category:id() | binary(), 
 	  binary() | occi_resource:t(), 
 	  binary() | occi_resource:t()) -> t().
-new(Id, KindId, Src, Target) when ?is_uri(Id), 
-				  element(?class, Src) =:= resource, 
-				  element(?class, Target) =:= resource ->
+new(KindId, Src, Target) when element(?class, Src) =:= resource, 
+			      element(?class, Target) =:= resource ->
     TargetKind = case is_binary(Target) of
 		     true -> undefined;
 		     false -> occi_resource:kind(Target)
 		 end,
-    new(Id, KindId, Src, occi_resource:kind(Src), Target, TargetKind).
+    new(KindId, Src, occi_resource:kind(Src), Target, TargetKind).
 
 
 %% @doc Creates a new link
 %% @end
--spec new(occi_uri:url() | undefined, occi_category:id() | binary(), 
+-spec new(occi_category:id() | binary(), 
 	  binary(), 
 	  occi_category:id(),
 	  binary(),
 	  occi_category:id() | undefined) -> t().
-new(Id, KindId, Src, SrcKind, Target, TargetKind) when is_binary(KindId) ->
-    new(Id, occi_category:parse_id(KindId), Src, SrcKind, Target, TargetKind);
+new(KindId, Src, SrcKind, Target, TargetKind) when is_binary(KindId) ->
+    new(occi_category:parse_id(KindId), Src, SrcKind, Target, TargetKind);
 
-new(Id, {_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
-    new(Id, occi_models:kind(link, KindId), Src, SrcKind, Target, TargetKind);
+new({_Scheme, _Term}=KindId, Src, SrcKind, Target, TargetKind) ->
+    new(occi_models:kind(link, KindId), Src, SrcKind, Target, TargetKind);
 
-new(Id, Kind, Src, SrcKind, Target, TargetKind) ->
-    Link = occi_entity:merge_parents(Kind, {link, Id, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}),
+new(Kind, Src, SrcKind, Target, TargetKind) ->
+    Link = occi_entity:merge_parents(Kind, {link, undefined, occi_kind:id(Kind), [], #{}, #{}, #{}}),
     set(#{ <<"occi.core.source">> => Src, 
 	   <<"occi.core.source.kind">> => SrcKind,
 	   <<"occi.core.target">> => Target,
@@ -88,10 +87,9 @@ target(E) ->
 -spec from_map(occi_kind:t(), occi_rendering:ast()) -> t().
 from_map(Kind, Map) ->
     try begin
-	    Id = maps:get(id, Map, undefined),
 	    Src = maps:get(source, Map),
 	    Target = maps:get(target, Map),
-	    L = new(Id, Kind,
+	    L = new(Kind,
 		    maps:get(location, Src), maps:get(kind, Src, undefined), 
 		    maps:get(location, Target), maps:get(kind, Target, undefined)),
 	    L0 = case maps:get(location, Map, undefined) of
@@ -154,10 +152,3 @@ change_prefix(Op, Prefix, Link) ->
 %%%
 %%% Priv
 %%%
-
-
-%%%
-%%% eunit
-%%%
--ifdef(TEST).
--endif.

@@ -1,10 +1,10 @@
 {
   "resources": [
     {
-      "id": "/resource0",
+      "location": "/resource0",
     },
     {
-      "id": "/resource1",
+      "location": "/resource1",
     }
   ]
 }

@@ -235,12 +235,15 @@ r_attr_type(resource) ->
 
 
 r_link(L, Ctx) ->
-    M = r_entity(L, Ctx),
-    M#{ id => occi_resource:id(L),
-	source => r_link_end(occi_link:get(<<"occi.core.source">>, L), 
-			     occi_link:get(<<"occi.core.source.kind">>, L), Ctx),
-	target => r_link_end(occi_link:get(<<"occi.core.target">>, L), 
-			     occi_link:get(<<"occi.core.target.kind">>, L), Ctx) }.
+    M0 = r_entity(L, Ctx),
+    M1 = case occi_resource:get(<<"occi.core.id">>, L, undefined) of
+	     undefined -> M0;
+	     Id -> M0#{ id => Id }
+	 end,
+    M1#{ source => r_link_end(occi_link:get(<<"occi.core.source">>, L), 
+			      occi_link:get(<<"occi.core.source.kind">>, L), Ctx),
+	 target => r_link_end(occi_link:get(<<"occi.core.target">>, L), 
+			      occi_link:get(<<"occi.core.target.kind">>, L), Ctx) }.
 
 
 r_entity(E, Ctx) ->
@@ -260,7 +263,7 @@ r_entity(E, Ctx) ->
 	     Actions -> 
 		 M2#{ actions => [ r_type_id(Action) || Action <- Actions ] }
 	 end,
-    M4 = case occi_entity:id(E) of
+    M4 = case occi_entity:get(<<"occi.core.id">>, E, undefined) of
 	     undefined -> M3;
 	     Id -> M3#{ id => Id }
 	 end,
@@ -291,7 +294,6 @@ r_link_end(Location, Kind, Ctx) ->
 
 r_attributes(Attributes) ->
     maps:fold(fun (_, undefined, Acc) ->	       Acc;
-		  (<<"occi.core.id">>, _, Acc) ->	       Acc;
 		  (<<"occi.core.summary">>, _, Acc) ->     Acc;
 		  (<<"occi.core.title">>, _, Acc) ->       Acc;
 		  (<<"occi.core.source">>, _, Acc) ->      Acc;

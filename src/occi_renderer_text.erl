@@ -149,17 +149,11 @@ to_headers(resource, Resource, Headers, Ctx) ->
     H3 = lists:foldl(fun (Action, Acc) ->
 			     append(<<"link">>, r_action_link(Url, Action), Acc)
 		     end, H2, occi_resource:actions(Resource)),
-    H4 = maps:fold(fun (_, undefined, Acc) ->
-			   Acc;
-		       (K, V, Acc) ->
-			   append(<<"x-occi-attribute">>, r_attribute(K, V, Ctx), Acc)
-		   end, H3, occi_resource:attributes(Resource)),
-    case occi_resource:id(Resource) of
-	undefined ->
-	    H4;
-	Id ->
-	    append(<<"x-occi-attribute">>, r_attribute("occi.core.id", Id, Ctx), H4)
-    end;
+    maps:fold(fun (_, undefined, Acc) ->
+		      Acc;
+		  (K, V, Acc) ->
+		      append(<<"x-occi-attribute">>, r_attribute(K, V, Ctx), Acc)
+	      end, H3, occi_resource:attributes(Resource));
 
 to_headers(link, Link, Headers, Ctx) ->
     Url = occi_uri:to_string(occi_link:location(Link), Ctx),
@@ -170,17 +164,11 @@ to_headers(link, Link, Headers, Ctx) ->
     H2 = lists:foldl(fun (Action, Acc) ->
 			     append(<<"link">>, r_action_link(Url, Action), Acc)
 		     end, H1, occi_link:actions(Link)),
-    H3 = maps:fold(fun (_, undefined, Acc) ->
-			   Acc;
-		       (K, V, Acc) ->
-			   append(<<"x-occi-attribute">>, r_attribute(K, V, Ctx), Acc)
-		   end, H2, occi_link:attributes(Link)),
-    case occi_link:id(Link) of
-	undefined ->
-	    H3;
-	Id ->
-	    append(<<"x-occi-attribute">>, r_attribute("occi.core.id", Id, Ctx), H3)
-    end.
+    maps:fold(fun (_, undefined, Acc) ->
+		      Acc;
+		  (K, V, Acc) ->
+		      append(<<"x-occi-attribute">>, r_attribute(K, V, Ctx), Acc)
+	      end, H2, occi_link:attributes(Link)).
 
 
 r_attribute_defs([], Acc) ->
@@ -230,9 +218,7 @@ r_resource_link(Link, Ctx) ->
 	  occi_uri:to_string(occi_link:location(Link), Ctx) ,
 	  "\"; category=\"", Categories, "\""
 	], 
-    maps:fold(fun (<<"occi.core.id">>, _, Acc) ->
-		      Acc;
-		  (<<"occi.core.source">>, _, Acc) ->
+    maps:fold(fun (<<"occi.core.source">>, _, Acc) ->
 		      Acc;
 		  (<<"occi.core.source.kind">>, _, Acc) ->
 		      Acc;

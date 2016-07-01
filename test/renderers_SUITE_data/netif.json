@@ -1,5 +1,6 @@
 {
   "attributes": {
+    "occi.core.id": "myif",
     "occi.networkinterface.address": "192.168.0.1",
     "occi.networkinterface.allocation": "static",
     "occi.networkinterface.interface": "eth0",

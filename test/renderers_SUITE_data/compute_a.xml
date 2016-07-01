@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<resource id="http://example.org:8080/ns1/mycompute0" title="My super compute" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<resource href="http://example.org:8080/ns1/mycompute0" title="My super compute" xmlns="http://schemas.ogf.org/occi" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <kind scheme="http://schemas.ogf.org/occi/infrastructure#" term="compute"/>
   <mixin scheme="http://occi.example.org/occi/infrastructure/os_tpl#" term="debian6"/>
   <attribute name="occi.compute.cores" value="4"/>
@@ -7,6 +7,7 @@
   <attribute name="occi.compute.memory" value="2.5"/>
   <attribute name="occi.compute.speed" value="4.5"/>
   <attribute name="occi.compute.state" value="inactive"/>
+  <attribute name="occi.core.id" value="ns1/mycompute0"/>
   <action scheme="http://schemas.ogf.org/occi/infrastructure/compute/action#" term="restart"/>
   <action scheme="http://schemas.ogf.org/occi/infrastructure/compute/action#" term="start"/>
   <action scheme="http://schemas.ogf.org/occi/infrastructure/compute/action#" term="stop"/>

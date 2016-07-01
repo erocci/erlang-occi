@@ -18,8 +18,6 @@
 -include("occi_type.hrl").
 
 -export([new/1,
-	 id/1,
-	 id/2,
 	 location/1,
 	 location/2,
 	 kind/1,
@@ -29,6 +27,7 @@
 	 attributes/1,
 	 raw_attributes/1,
 	 get/2,
+	 get/3,
 	 set/3,
 	 update/3,
 	 actions/1,
@@ -49,7 +48,6 @@
 
 -type entity() :: {
 	      Class      :: occi_type:name(),
-	      Id         :: binary(),
 	      Location   :: occi_uri:url(),
 	      Kind       :: occi_category:id(),
 	      Mixins     :: [occi_category:id()],
@@ -63,9 +61,9 @@
 %% @doc opaque type representing an entity
 %% @end
 -opaque t() :: entity().
--type id() :: binary() | undefined.
+-type location() :: binary() | undefined.
 
--export_type([t/0, id/0]).
+-export_type([t/0, location/0]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -76,20 +74,10 @@ new(KindId) ->
     Kind = occi_models:kind(KindId),
     case occi_kind:known_parent(Kind) of
 	resource ->
-	    occi_resource:new(undefined, Kind);
+	    occi_resource:new(Kind);
 	link ->
-	    occi_link:new(undefined, Kind)
+	    occi_link:new(Kind)
     end.
-
-
--spec id(t()) -> id().
-id(E) ->
-    element(?id, E).
-
-
--spec id(id(), t()) -> t().
-id(Id, E) ->
-    setelement(?id, E, Id).
 
 
 -spec location(t()) -> occi_uri:url() | undefined.
@@ -186,23 +174,30 @@ attributes(E) ->
 %% @end
 -spec raw_attributes(t()) -> maps:map().
 raw_attributes(E) ->
-    M = maps:fold(fun (Key, undefined, Acc) ->
-			  Def = spec(Key, E),
-			  case occi_attribute:required(Def) of
-			      true ->
-				  case occi_attribute:default(Def) of
-				      undefined -> Acc;
-				      Default -> Acc#{ Key => Default }
-				  end;
-			      false ->
-				  Acc
-			  end;
-		      (Key, Value, Acc) ->
+    maps:fold(fun (Key, undefined, Acc) ->
+		      Def = spec(Key, E),
+		      case occi_attribute:required(Def) of
+			  true ->
+			      case occi_attribute:default(Def) of
+				  undefined -> Acc;
+				  Default -> Acc#{ Key => Default }
+			      end;
+			  false ->
+			      Acc
+		      end;
+		  (Key, Value, Acc) ->
 			  Acc#{ Key => Value }
-		  end, #{}, element(?values, E)),
-    case id(E) of
-	undefined -> M;
-	Id -> M#{ <<"occi.core.id">> => Id }
+	      end, #{}, element(?values, E)).
+
+
+%% @throws {invalid_key, occi_attribute:key()}
+-spec get(occi_attribute:key(), t(), term()) -> occi_attribute:value() | term().
+get(Key, E, Default) ->
+    try ?g(Key, E) of
+	undefined -> Default;
+	Value -> Value
+    catch error:{badkey, _} ->
+	    throw({invalid_key, Key})
     end.
 
 
@@ -535,67 +530,3 @@ do_fun(ActionId, Attributes, Fun, E) ->
     catch _:Err ->
 	    throw({do, {internal, Err}})
     end.
-
-
-%% gen_location(Id, Kind) when is_binary(Id) ->
-%%     case valid_id(Id) of
-%% 	true -> 
-%% 	    << (occi_kind:location(Kind))/binary, $/, Id/binary >>;
-%% 	false ->
-%% 	    throw({invalid_id, Id})
-%%     end;
-
-%% gen_location(_, Kind) ->
-%%     Uuid = uuid:uuid_to_string(uuid:get_v4(), binary_standard),
-%%     << (occi_kind:location(Kind))/binary, $/, Uuid/binary >>.
-
-
-%% -define(is_alpha(C), ((C >= 65 andalso C =< 90) orelse (C >= 97 andalso C =< 122))).
-%% -define(is_digit(C), (C >= 48 andalso C =< 57)).
-
-%% valid_id(<<>>) ->
-%%     false;
-
-%% valid_id(<< C, Rest/binary >>) when ?is_alpha(C) orelse ?is_digit(C) ->
-%%     valid_id2(Rest);
-
-%% valid_id(_) ->
-%%     false.
-
-
-%% valid_id2(<<>>) ->
-%%     true;
-
-%% valid_id2(<< C, Rest/binary >>) when ?is_alpha(C) 
-%% 				     orelse ?is_digit(C) 
-%% 				     orelse $- =:= C
-%% 				     orelse $_ =:= C
-%% 				     orelse $+ =:= C
-%% 				     orelse $: =:= C ->
-%%     valid_id2(Rest);
-
-%% valid_id2(_) ->
-%%     false.
-
-
-
-%% rel_id(#{ id := <<"/", _/binary >> =Path }=Map) ->
-%%     << "/", Path1/binary >> = occi_utils:normalize(Path),
-%%     Map#{ id  := Path1 };
-
-%% rel_id(#{ id := << "http://", _/binary >> =Url }=Map) when is_binary(Url) ->
-%%     url_id(Url, Map);
-
-%% rel_id(#{ id := << "https://", _/binary >> =Url }=Map) when is_binary(Url) ->
-%%     url_id(Url, Map);
-
-%% rel_id(#{ id := << "urn:", _/binary >> =Url }=Map) when is_binary(Url) ->
-%%     url_id(Url, Map);
-
-%% rel_id(Map) ->
-%%     Map.
-
-
-%% url_id(Url, Map) ->
-%%     << $/, Path/binary >> = occi_uri:path(occi_uri:from_string(Url)),
-%%     Map#{ id := Path }.
