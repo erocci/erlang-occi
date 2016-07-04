@@ -33,7 +33,8 @@
 	 actions/1,
 	 do/3,
 	 do/4,
-	 is_subtype/2]).
+	 is_subtype/2,
+	 endpoint/2]).
 
 
 -export([from_map/1,
@@ -358,6 +359,21 @@ change_prefix(Op, Prefix, Entity) ->
 	    occi_resource:change_prefix(Op, Prefix, Entity);
 	link ->
 	    occi_link:change_prefix(Op, Prefix, Entity)
+    end.
+
+
+%% @doc Make location relative to endpoint
+%% URL are canonicalized: default ports are added to scheme if necessary
+%% Throws `{invalid_link, binary()}' if location is outside of endpoint's domain
+%% @throws {invalid_link, binary()}
+%% @end
+-spec endpoint(occi_uri:url(), t()) -> t().
+endpoint(Endpoint, E) ->
+    case element(?location, E) of
+	undefined ->
+	    E;
+	Location ->
+	    setelement(?location, E, occi_uri:relative(Endpoint, Location))
     end.
 
 

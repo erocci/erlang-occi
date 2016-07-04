@@ -13,7 +13,7 @@
 -include("occi_log.hrl").
 -include_lib("mixer/include/mixer.hrl").
 
--mixin([{occi_entity, except, [new/1, from_map/2, change_prefix/3]},
+-mixin([{occi_entity, except, [new/1, from_map/2, change_prefix/3, endpoint/2]},
 	occi_type]).
 
 -export([new/1,
@@ -128,8 +128,9 @@ endpoint(Endpoint, Link) ->
 		 out_of_domain -> Target0;
 		 T -> T
 	     end,
-    occi_entity:set(#{ <<"occi.core.source">> => Source,
-		       <<"occi.core.target">> => Target }, internal, Link).
+    Link1 = occi_entity:set(#{ <<"occi.core.source">> => Source,
+			       <<"occi.core.target">> => Target }, internal, Link),
+    occi_entity:endpoint(Endpoint, Link1).
 
 
 %% @doc Change urls prefix
