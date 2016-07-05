@@ -290,9 +290,17 @@ from_map(Map) ->
 %% @end
 -spec from_map(occi_category:t() | binary(), occi_rendering:ast()) -> t().
 from_map(Kind, Map) when ?is_kind(Kind) ->
+    %% JSON rendering: resources and links can be nested in "resources" or "links" 
+    %% key: we arbtitrarisly take first resource or first link...
+    EntityMap = case maps:get(resources, Map, maps:get(links, Map, [])) of
+		    [] ->
+			throw({badkey, resources_or_links});
+		    [ M1 | _ ] ->
+			M1
+		end,
     case occi_kind:known_parent(Kind) of
-	resource -> occi_resource:from_map(Kind, Map);
-	link -> occi_link:from_map(Kind, Map)
+	resource -> occi_resource:from_map(Kind, EntityMap);
+	link -> occi_link:from_map(Kind, EntityMap)
     end;
 
 from_map(Path, Map) when is_binary(Path) ->
