@@ -21,7 +21,12 @@ parse(<<>>) ->
     throw({parse_error, empty});
     
 parse(Bin) ->
-    maps:fold(fun validate/3, #{}, jsx:decode(Bin, [return_maps])).
+    try jsx:decode(Bin, [return_maps]) of
+	Json ->
+	    maps:fold(fun validate/3, #{}, Json)
+    catch error:badarg ->
+	    throw({parse_error, invalid_json})
+    end.
 
 %%%
 %%% Parsers
