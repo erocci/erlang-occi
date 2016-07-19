@@ -25,7 +25,9 @@ parse(Bin) ->
 	Json ->
 	    maps:fold(fun validate/3, #{}, Json)
     catch error:badarg ->
-	    throw({parse_error, invalid_json})
+	    throw({parse_error, invalid_json});
+	  throw:Err ->
+	    throw({parse_error, Err})
     end.
 
 %%%
@@ -128,15 +130,20 @@ validate(<<"applies">>, V, Acc) when is_list(V) ->
 
 validate(<<"resources">>, V, Acc) when is_list(V) ->
     %% collection: Array
-    Acc#{ resources => [ val_resource(Bin) || Bin <- V ] }.
+    Acc#{ resources => [ val_resource(Bin) || Bin <- V ] };
 
+validate(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 link_end(<<"location">>, V, Acc) when is_binary(V) ->
     Acc#{ location => V };
 
 link_end(<<"kind">>, V, Acc) when is_binary(V) ->
-    Acc#{ kind => type_id(V) }.
+    Acc#{ kind => type_id(V) };
+
+link_end(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 val_kind(V) when is_map(V) ->
@@ -163,7 +170,10 @@ val_kind(<<"parent">>, V, Acc) when is_list(V) ->
     Acc#{ parent => type_id(V) };
     
 val_kind(<<"location">>, V, Acc) when is_binary(V) ->
-    Acc#{ location => V }.
+    Acc#{ location => V };
+
+val_kind(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 val_mixin(V) when is_binary(V) ->
@@ -196,7 +206,10 @@ val_mixin(<<"applies">>, V, Acc) when is_list(V) ->
     Acc#{ applies => [ type_id(Bin) || Bin <- V ]};
 
 val_mixin(<<"location">>, V, Acc) when is_binary(V) ->
-    Acc#{ location => V }.
+    Acc#{ location => V };
+
+val_mixin(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 val_action(V) when is_binary(V) ->
@@ -220,7 +233,10 @@ val_action(<<"attributes">>, V, Acc) when is_map(V) ->
     Acc#{ attributes => maps:fold(fun val_attributes/3, #{}, V) };
 
 val_action(<<"location">>, V, Acc) when is_binary(V) ->
-    Acc#{ location => V }.
+    Acc#{ location => V };
+
+val_action(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 val_link(V) when is_map(V) ->
@@ -254,7 +270,10 @@ val_link(<<"source">>, V, Acc) when is_map(V) ->
 
 val_link(<<"target">>, V, Acc) when is_map(V) ->
     Target = maps:fold(fun link_end/3, #{}, V),
-    Acc#{ target => Target }.
+    Acc#{ target => Target };
+
+val_link(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 val_resource(V) when is_map(V) ->
@@ -286,7 +305,10 @@ val_resource(<<"summary">>, V, Acc) when is_binary(V) ->
     Acc#{ summary => maps:put(<<"occi.core.summary">>, V, maps:get(attributes, Acc, #{})) };
 
 val_resource(<<"location">>, V, Acc) when is_binary(V) ->
-    Acc#{ location => V }.
+    Acc#{ location => V };
+
+val_resource(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 val_attributes(<<"mutable">>, V, Acc) when is_boolean(V) ->
@@ -310,7 +332,10 @@ val_attributes(<<"default">>, V, Acc) when is_binary(V);
     Acc#{ default => V };
 
 val_attributes(<<"description">>, V, Acc) when is_binary(V) ->
-    Acc#{ description => V }.
+    Acc#{ description => V };
+
+val_attributes(Name, Value, _Acc) ->
+    throw({invalid, {Name, Value}}).
 
 
 type_id(Bin) ->
