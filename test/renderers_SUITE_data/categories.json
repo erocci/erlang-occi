@@ -415,6 +415,12 @@
       "title": "OS Template"
     },
     {
+      "location": "http://example.org:8080/categories/tag",
+      "scheme": "http://erocci.ow2.org/occi#",
+      "term": "tag",
+      "title": "User mixin root mixin"
+    },
+    {
       "depends": [
         "http://schemas.ogf.org/occi/infrastructure#os_tpl"
       ],

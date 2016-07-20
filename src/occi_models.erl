@@ -40,6 +40,7 @@
 
 %% internal
 -define(core_scheme, <<"http://schemas.ogf.org/occi/core#">>).
+-define(erocci_scheme, <<"http://erocci.ow2.org/occi#">>).
 
 -define(REC, ?MODULE).
 -record ?REC, {id        :: occi_category:id(),
@@ -231,7 +232,7 @@ init_mnesia() ->
 
 
 init_core() ->
-    case load_imports([?core_scheme], []) of
+    case load_imports([?core_scheme, ?erocci_scheme], []) of
 	{ok, _Categories} -> ok;
 	{error, _}=Err -> Err
     end.

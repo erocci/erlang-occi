@@ -103,6 +103,7 @@
     </attribute>
   </kind>
   <mixin term="os_tpl" scheme="http://schemas.ogf.org/occi/infrastructure#" title="OS Template" location="http://example.org:8080/categories/os_tpl"/>
+  <mixin term="tag" scheme="http://erocci.ow2.org/occi#" title="User mixin root mixin" location="http://example.org:8080/categories/tag"/>
   <mixin term="debian6" scheme="http://occi.example.org/occi/infrastructure/os_tpl#" location="http://example.org:8080/categories/debian6">
     <depends scheme="http://schemas.ogf.org/occi/infrastructure#" term="os_tpl"/>
   </mixin>

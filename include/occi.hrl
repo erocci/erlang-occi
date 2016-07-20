@@ -5,6 +5,7 @@
 -define(resource_kind_id, {<<"http://schemas.ogf.org/occi/core#">>, <<"resource">>}).
 -define(link_kind_id, {<<"http://schemas.ogf.org/occi/core#">>, <<"link">>}).
 
+-define(tag_mixin_id, {<<"http://erocci.ow2.org/occi#">>, <<"tag">>}).
 
 -define(mimetype_plain,    {<<"text">>, <<"occi+plain">>, []}).
 -define(mimetype_plain(V), {<<"text">>, <<"occi+plain">>, V}).

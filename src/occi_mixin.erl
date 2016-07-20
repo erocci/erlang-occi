@@ -7,6 +7,7 @@
 
 -module(occi_mixin).
 
+-include("occi.hrl").
 -include("occi_category.hrl").
 
 -include_lib("mixer/include/mixer.hrl").
@@ -17,7 +18,9 @@
 	 add_apply/2,
 	 applies/1,
 	 add_depend/2,
+	 rm_depend/2,
 	 depends/1,
+	 depend/2,
 	 tag/1,
 	 tag/2]).
 
@@ -34,7 +37,7 @@
 new(Scheme, Term) ->
     M0 = occi_category:new(Scheme, Term, mixin),
     Map = M0#mixin.m,
-    M0#mixin{m = Map#{applies => [], depends => [], actions => #{}, location => undefined, tag => false } }.
+    M0#mixin{m = Map#{applies => [], depends => [], actions => #{}, location => undefined } }.
 
 
 -spec add_apply(binary() | occi_category:id(), t()) -> t().
@@ -55,12 +58,22 @@ applies(M) ->
 -spec add_depend(binary() | occi_category:id(), t()) -> t().
 add_depend(Depend, Mixin) when is_binary(Depend) ->
     DependId = occi_category:parse_id(Depend),
-    Depends = ?g(depends, Mixin),
-    ?s(depends, [ DependId | Depends ], Mixin);
+    add_depend(DependId, Mixin);
 
-add_depend({_Scheme, _Term}=Depend, Mixin) ->
+add_depend({_Scheme, _Term}=DependId, Mixin) ->
     Depends = ?g(depends, Mixin),
-    ?s(depends, [ Depend | Depends ], Mixin).
+    case lists:member(DependId, Depends) of
+	true ->
+	    Mixin;
+	false ->
+	    ?s(depends, [ DependId | Depends ], Mixin)
+    end.
+
+
+-spec rm_depend(occi_category:id(), t()) -> t().
+rm_depend(CategoryId, Mixin) ->
+    Depends = ?g(depends, Mixin),
+    ?s(depends, lists:delete(CategoryId, Depends), Mixin).
 
 
 -spec depends(t()) -> [occi_category:id()].
@@ -68,14 +81,23 @@ depends(M) ->
     ?g(depends, M).
 
 
+-spec depend(occi_category:id(), t()) -> boolean().
+depend(CategoryId, Mixin) ->
+    lists:member(CategoryId, ?g(depends, Mixin)).
+
+
 -spec tag(t()) -> boolean().
 tag(M) ->
-    ?g(tag, M).
+    depend(?tag_mixin_id, M).
 
 
 -spec tag(boolean(), t()) -> t().
-tag(IsTag, M) when is_boolean(IsTag) ->
-    ?s(tag, IsTag, M).
+tag(true, M) ->
+    add_depend(?tag_mixin_id, M);
+
+tag(false, M) ->
+    rm_depend(?tag_mixin_id, M).
+
 
 
 %% @doc Load mixin from an AST
