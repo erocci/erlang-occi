@@ -12,7 +12,7 @@ erl_crash.dump
 
 # Specific build output
 /annotations.config
-/priv/resources
+/priv/resources/http%3A%2F%2Fschemas.ogf.org%2Focci%2Finfrastructure%23.xml
 
 # Dialyzer output
 /.*.plt
